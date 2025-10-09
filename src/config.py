@@ -21,7 +21,7 @@ config = {
         }
     },
     'windows': {  # required  when supporting windows game
-        'exe': 'Star.exe',
+        'exe': 'BPSR_STEAM.exe',
         # 'hwnd_class': 'UnrealWindow', #增加重名检查准确度
         'interaction': 'PyDirect',
         'can_bit_blt': True,  # default false, opengl games does not support bit_blt
