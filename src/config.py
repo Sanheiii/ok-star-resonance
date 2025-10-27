@@ -14,7 +14,7 @@ key_config_option = ConfigOption(
     config_type={
         "Game Language": {
             "type": "drop_down",
-            "options": ["简体中文", "English"],
+            "options": ["简体中文", "繁體中文", "English"],
         }
     },
 )
@@ -36,7 +36,7 @@ config = {
         }
     },
     'windows': {  # required  when supporting windows game
-        'exe': ['Star.exe', 'BPSR.exe', 'BPSR_STEAM.exe'],
+        'exe': ['Star.exe', 'BPSR.exe', 'BPSR_STEAM.exe', 'StarTW.exe'],
         # 'hwnd_class': 'UnrealWindow', #增加重名检查准确度
         'interaction': 'Pynput',
         'can_bit_blt': True,  # default false, opengl games does not support bit_blt

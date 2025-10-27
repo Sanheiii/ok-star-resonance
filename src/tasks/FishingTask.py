@@ -38,12 +38,17 @@ class FishingTask(SRTriggerTask):
         self._fish_pos_lock = threading.Lock()
 
         self.regex_map = {
-            'chinese': {
+            'zhs': {
                 'pole': re.compile('添加鱼竿'),
                 'continue_fishing': re.compile('继续钓鱼'),
                 'use': re.compile('使用'),
             },
-            'english': {
+            'zht': {
+                'pole': re.compile('添加魚竿'),
+                'continue_fishing': re.compile('續[钓釣]魚'),
+                'use': re.compile('使用'),
+            },
+            'en': {
                 'pole': re.compile('pole'),
                 'continue_fishing': re.compile('Continue fishing'),
                 'use': re.compile('Use'),
@@ -232,14 +237,14 @@ class FishingTask(SRTriggerTask):
         return ret
 
     def _find_fishing_level(self):
-        if self.get_game_language() == 'chinese':
+        if self.get_game_language() == 'zhs' or self.get_game_language() == 'zht':
             return self.find_one("box_fishing_level", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
         else:
             return self.find_one("box_fishing_level_eng", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
 
     def _match_continue_fishing(self):
         lang = self.get_game_language()
-        if lang == 'chinese':
+        if lang == 'zhs' or lang == 'zht':
             return self.ocr(0.79, 0.88, 0.87, 0.93, match=self.get_regex('continue_fishing'))
         else:
             return self.ocr(0.76, 0.88, 0.90, 0.93, match=self.get_regex('continue_fishing'))

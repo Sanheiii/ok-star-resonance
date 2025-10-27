@@ -30,9 +30,12 @@ class GatherTask(SRTriggerTask):
 
         self.last_run_time = time.time()
 
-        if lang == 'chinese':
+        if lang == 'zhs':
             pattern1 = re.compile('采集')
             pattern2_str = '专注'
+        if lang == 'zht':
+            pattern1 = re.compile('探集')
+            pattern2_str = '專注'
         else:
             pattern1 = re.compile('Focused|Normal')
             pattern2_str = 'Focused'
