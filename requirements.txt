@@ -45,6 +45,8 @@ pydirectinput==1.0.4
     # via ok-script
 pynput==1.8.1
     # via -r requirements.in
+pypushdeer==0.0.3
+    # via -r requirements.in
 pyside6==6.9.1
     # via pyside6-fluent-widgets
 pyside6-addons==6.9.1
@@ -62,7 +64,9 @@ pywin32==311
     #   ok-script
     #   pysidesix-frameless-window
 requests==2.32.4
-    # via ok-script
+    # via
+    #   ok-script
+    #   pypushdeer
 shapely==2.1.1
     # via onnxocr-ppocrv4
 shiboken6==6.9.1
