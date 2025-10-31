@@ -4,6 +4,7 @@ import re
 import threading
 
 from ok import og
+from pypushdeer import PushDeer
 
 from src.tasks.SRTriggerTask import SRTriggerTask
 
@@ -17,6 +18,9 @@ class FishingTask(SRTriggerTask):
         self.default_config.update({
             'Always Rapid Click': False,
             'Switch Pole Key': 'm',
+            'Fishing Interruption Notice': False,
+            'PushDeer Server': 'Put your server url here if not using official server',
+            'PushDeer ApiKey': 'Get from your PushDeer app'
         })
         
         self.trigger_count = 0
@@ -32,6 +36,9 @@ class FishingTask(SRTriggerTask):
         self.last_reeling_time = None
         self.last_continue_time = None
         self.last_switch_time = None
+        self.pushdeer = None
+        self.start_message_sent = False
+        self.interrupted_message_sent = False
 
         # 用于异步查找水花
         self._splash_finder_thread = None
@@ -70,6 +77,8 @@ class FishingTask(SRTriggerTask):
         根据当前的游戏状态调用对应的处理函数。
         """
         if self._handle_minigame():
+            return
+        if self._handle_interruption_notice():
             return
         if self._handle_start_and_pole_change():
             return
@@ -153,6 +162,49 @@ class FishingTask(SRTriggerTask):
             self._reset_minigame_state()
             return True
         return False
+
+    def _handle_interruption_notice(self) -> bool:
+        server = self.config.get('PushDeer Server')
+        key = self.config.get('PushDeer ApiKey')
+
+        if self.config.get('Fishing Interruption Notice') == False:
+            return True
+
+        regex = re.compile(
+            r'^(https?|ftp)://'  # 协议 http, https, ftp
+            r'([A-Z0-9_]([A-Z0-9-_]{0,61}[A-Z0-9_])?\.)+[A-Z]{2,6}\.?'  # 域名
+            r'|'  # 或者
+            r'localhost'  # localhost
+            r'|'  # 或者
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # IP 地址
+            r'(:\d+)?'  # 可选的端口号
+            r'(/?|[/?]\S+)$', re.IGNORECASE)  # 可选的路径和查询参数
+
+        if self.pushdeer is None:
+            if regex.fullmatch(server) is not None and 'PDU' in key:
+                self.pushdeer = PushDeer(server = server, pushkey= key)
+            elif 'PDU' in key:
+                self.pushdeer = PushDeer(pushkey= key)
+
+        if self.pushdeer:
+            now = time.time()
+            if self.start_message_sent == False and self.last_start_time is not None and self.last_continue_time is None:
+                self.pushdeer.send_text('开始钓鱼')
+                self.start_message_sent = True
+                self.interrupted_message_sent = False
+                return True
+            elif self.interrupted_message_sent == False and self.last_start_time is not None and now - self.last_start_time > 300:
+                self.pushdeer.send_text('钓鱼被打断')
+                self.last_continue_time = None
+                self.last_start_time = None
+                self.interrupted_message_sent = True
+                self.start_message_sent = False
+                return True
+            else:
+                return False
+        else:
+            raise Exception('未设置正确的PushDeer参数')
+
 
     def _play_the_fish(self, fish_pos: float):
         delta_time = self._update_time()
