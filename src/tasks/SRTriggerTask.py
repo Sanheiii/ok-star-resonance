@@ -44,3 +44,10 @@ class SRTriggerTask(TriggerTask):
     
     def get_regex(self, key: str):
         return self.regex_map.get(self.get_game_language(), {}).get(key, None)
+
+    def enable(self) -> None:
+        super().enable()
+        self.on_enabled()
+
+    def on_enabled(self) -> None:
+        pass

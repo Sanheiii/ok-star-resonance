@@ -167,8 +167,8 @@ class FishingTask(SRTriggerTask):
         server = self.config.get('PushDeer Server')
         key = self.config.get('PushDeer ApiKey')
 
-        if self.config.get('Fishing Interruption Notice') == False:
-            return True
+        if not self.config.get('Fishing Interruption Notice'):
+            return False
 
         regex = re.compile(
             r'^(https?|ftp)://'  # 协议 http, https, ftp
@@ -300,3 +300,14 @@ class FishingTask(SRTriggerTask):
             return self.ocr(0.79, 0.88, 0.87, 0.93, match=self.get_regex('continue_fishing'))
         else:
             return self.ocr(0.76, 0.88, 0.90, 0.93, match=self.get_regex('continue_fishing'))
+
+    def on_enabled(self) -> None:
+        self.clean_pushdeer_related_resources()
+
+    def clean_pushdeer_related_resources(self):
+        self.last_start_time = None
+        self.last_continue_time = None
+        self.start_message_sent = False
+        self.interrupted_message_sent = False
+        self.pushdeer = None
+        self.log_info('real function executed')
