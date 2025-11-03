@@ -62,11 +62,11 @@ class FishingTask(SRTriggerTask):
             }
         }
 
-    def _splash_finder_worker(self):
+    def _splash_finder_worker(self, frame):
         """
         异步查找水花的任务。
         """
-        splash_box = self.find_splash()
+        splash_box = self.find_splash(frame)
         if splash_box:
             with self._fish_pos_lock:
                 self.fish_pos_from_game = splash_box[0].center()[0] / (self.width / 2) - 1 + 0.04
@@ -150,7 +150,7 @@ class FishingTask(SRTriggerTask):
                 self.my_mouse_down(0.5, 0.5)
             # 获取鱼的实际位置
             if self._splash_finder_thread is None or not self._splash_finder_thread.is_alive():
-                self._splash_finder_thread = threading.Thread(target=self._splash_finder_worker)
+                self._splash_finder_thread = threading.Thread(target=self._splash_finder_worker, args=(self.frame,))
                 self._splash_finder_thread.start()
             fish_pos_for_minigame = 0
             with self._fish_pos_lock:
@@ -281,11 +281,8 @@ class FishingTask(SRTriggerTask):
         self.last_update_time = None
         self.fish_pos_from_game = 0
 
-    def find_splash(self, threshold=0.5):
-        ret = og.my_app.yolo_detect(self.frame, threshold=threshold, label=0)
-        # for box in ret:
-        #     self.log_info(box, notify=False)
-        #     self.screenshot('splash', show_box=True, frame_box=box)
+    def find_splash(self, frame, threshold=0.5):
+        ret = og.my_app.yolo_detect(frame, threshold=threshold, label=0)
         return ret
 
     def _find_fishing_level(self):
