@@ -39,8 +39,8 @@ config = {
         'exe': ['Star.exe', 'BPSR.exe', 'BPSR_STEAM.exe', 'StarTW.exe'],
         # 'hwnd_class': 'UnrealWindow', #增加重名检查准确度
         'interaction': 'Pynput',
-        'can_bit_blt': True,  # default false, opengl games does not support bit_blt
-        'bit_blt_render_full': True,
+        'can_bit_blt': False,  # default false, opengl games does not support bit_blt
+        'bit_blt_render_full': False,
         'check_hdr': True, #当用户开启AutoHDR时候提示用户, 但不禁止使用
         'force_no_hdr': False, #True=当用户开启AutoHDR时候禁止使用
         'require_bg': True # 要求使用后台截图
