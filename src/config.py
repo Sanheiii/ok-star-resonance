@@ -28,7 +28,7 @@ config = {
     'gui_icon': 'icons/icon.png',
     'wait_until_before_delay': 0,
     'wait_until_check_delay': 0,
-    'wait_until_settle_time': 0.2,
+    'wait_until_settle_time': 0,
     'ocr': {
         'lib': 'onnxocr',
         'params': {
@@ -39,8 +39,7 @@ config = {
         'exe': ['Star.exe', 'BPSR.exe', 'BPSR_STEAM.exe', 'StarTW.exe'],
         # 'hwnd_class': 'UnrealWindow', #增加重名检查准确度
         'interaction': 'Pynput',
-        'can_bit_blt': True,  # default false, opengl games does not support bit_blt
-        'bit_blt_render_full': True,
+        'capture_method': ['WGC', 'BitBlt_RenderFull'],  # Windows版本支持的话, 优先使用WGC, 否则使用BitBlt_Full
         'check_hdr': True, #当用户开启AutoHDR时候提示用户, 但不禁止使用
         'force_no_hdr': False, #True=当用户开启AutoHDR时候禁止使用
         'require_bg': True # 要求使用后台截图

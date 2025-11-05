@@ -62,6 +62,11 @@ class FishingTask(SRTriggerTask):
             }
         }
 
+        self.run_count = 0
+        self.yolo_count = 0
+        self.last_stat_time = time.time()
+        self.stat_lock = threading.Lock()
+
     def _splash_finder_worker(self, frame):
         """
         异步查找水花的任务。
@@ -76,6 +81,8 @@ class FishingTask(SRTriggerTask):
         钓鱼任务的主执行循环。
         根据当前的游戏状态调用对应的处理函数。
         """
+        # self._print_stats()
+
         if self._handle_minigame():
             return
         if self._handle_interruption_notice():
@@ -145,7 +152,10 @@ class FishingTask(SRTriggerTask):
         # 如果“鱼线张力”文本可见，则需要收线。
         if self.find_one("box_fishing_icon", box=self.box_of_screen(0.33, 0.80, 0.37, 0.87)):
             if self.config.get('Always Rapid Click') or self.find_one("box_stop_pull", box=self.box_of_screen(0.50, 0.75, 0.70, 0.92), threshold=0.5):
-                self.my_mouse_switch(0.5, 0.5)
+                now = time.time()
+                if self.last_switch_time is None or now - self.last_switch_time >= 0.05:
+                    self.my_mouse_switch(0.5, 0.5)
+                    self.last_switch_time = now
             else:
                 self.my_mouse_down(0.5, 0.5)
             # 获取鱼的实际位置
@@ -283,6 +293,10 @@ class FishingTask(SRTriggerTask):
 
     def find_splash(self, frame, threshold=0.5):
         ret = og.my_app.yolo_detect(frame, threshold=threshold, label=0)
+
+        with self.stat_lock:
+            self.yolo_count += 1
+
         return ret
 
     def _find_fishing_level(self):
@@ -308,3 +322,16 @@ class FishingTask(SRTriggerTask):
         self.interrupted_message_sent = False
         self.pushdeer = None
         self.log_info('real function executed')
+
+    def _print_stats(self):
+        now = time.time()
+        with self.stat_lock:
+            self.run_count += 1
+            elapsed = now - self.last_stat_time
+            if elapsed >= 1.0:
+                run_rate = self.run_count / elapsed
+                yolo_rate = self.yolo_count / elapsed
+                self.log_info(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 每秒运行次数={run_rate:.2f}, 水花识别次数={yolo_rate:.2f}")
+                self.run_count = 0
+                self.yolo_count = 0
+                self.last_stat_time = now
