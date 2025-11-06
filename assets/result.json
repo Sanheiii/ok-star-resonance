@@ -1,179 +1,179 @@
 {
-  "images": [
-    {
-      "width": 1920,
-      "height": 1080,
-      "id": 0,
-      "file_name": "images/0.png"
-    },
-    {
-      "width": 1920,
-      "height": 1080,
-      "id": 1,
-      "file_name": "images/1.png"
-    },
-    {
-      "width": 1920,
-      "height": 1080,
-      "id": 2,
-      "file_name": "images/2.png"
-    },
-    {
-      "width": 1920,
-      "height": 1080,
-      "id": 3,
-      "file_name": "images/3.png"
-    },
-    {
-      "width": 1920,
-      "height": 1080,
-      "id": 4,
-      "file_name": "images/4.png"
+    "images": [
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 0,
+            "file_name": "images/0.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 1,
+            "file_name": "images/1.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 2,
+            "file_name": "images/2.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 3,
+            "file_name": "images/3.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 4,
+            "file_name": "images/4.png"
+        }
+    ],
+    "categories": [
+        {
+            "id": 0,
+            "name": "box_boss_hp_end"
+        },
+        {
+            "id": 1,
+            "name": "box_boss_hp_start"
+        },
+        {
+            "id": 2,
+            "name": "box_fishing_icon"
+        },
+        {
+            "id": 3,
+            "name": "box_fishing_level"
+        },
+        {
+            "id": 4,
+            "name": "box_stop_pull"
+        },
+        {
+            "id": 5,
+            "name": "hint_fishing_click"
+        },
+        {
+            "id": 6,
+            "name": "box_fishing_level_eng"
+        }
+    ],
+    "annotations": [
+        {
+            "id": 0,
+            "image_id": 0,
+            "category_id": 5,
+            "segmentation": [],
+            "bbox": [
+                932.101993662272,
+                441.15445414490716,
+                47.89954709365241,
+                136.55967254704558
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 6541.1464662609615
+        },
+        {
+            "id": 1,
+            "image_id": 1,
+            "category_id": 3,
+            "segmentation": [],
+            "bbox": [
+                1104.0084509785002,
+                990.9605852486264,
+                38.745184661685606,
+                21.98044129845623
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 851.6362570540272
+        },
+        {
+            "id": 2,
+            "image_id": 2,
+            "category_id": 2,
+            "segmentation": [],
+            "bbox": [
+                656.4443867241313,
+                878.0436404661662,
+                37.68563646803591,
+                41.55082995193706
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 1565.869472513878
+        },
+        {
+            "id": 3,
+            "image_id": 2,
+            "category_id": 4,
+            "segmentation": [],
+            "bbox": [
+                1031.3681546625403,
+                923.4596639020042,
+                130.45028008166287,
+                28.988951129258496
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 3781.616794085408
+        },
+        {
+            "id": 4,
+            "image_id": 3,
+            "category_id": 1,
+            "segmentation": [],
+            "bbox": [
+                737.1030039018298,
+                50.93346262915782,
+                34.727360883516546,
+                10.10250498429576
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 350.8333364171635
+        },
+        {
+            "id": 5,
+            "image_id": 3,
+            "category_id": 0,
+            "segmentation": [],
+            "bbox": [
+                1154.2522722117094,
+                50.512524921478835,
+                29.255170683689677,
+                10.94438039965376
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 320.1797166190986
+        },
+        {
+            "id": 6,
+            "image_id": 4,
+            "category_id": 6,
+            "segmentation": [],
+            "bbox": [
+                1104.436708836841,
+                991.7178996346511,
+                46.07271606069876,
+                19.78313189629268
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 911.4626186492457
+        }
+    ],
+    "info": {
+        "year": 2025,
+        "version": "1.0",
+        "description": "",
+        "contributor": "Label Studio",
+        "url": "",
+        "date_created": "2025-09-21 20:09:49.881421"
     }
-  ],
-  "categories": [
-    {
-      "id": 0,
-      "name": "box_boss_hp_end"
-    },
-    {
-      "id": 1,
-      "name": "box_boss_hp_start"
-    },
-    {
-      "id": 2,
-      "name": "box_fishing_icon"
-    },
-    {
-      "id": 3,
-      "name": "box_fishing_level"
-    },
-    {
-      "id": 4,
-      "name": "box_stop_pull"
-    },
-    {
-      "id": 5,
-      "name": "hint_fishing_click"
-    },
-    {
-      "id": 6,
-      "name": "box_fishing_level_eng"
-    }
-  ],
-  "annotations": [
-    {
-      "id": 0,
-      "image_id": 0,
-      "category_id": 5,
-      "segmentation": [],
-      "bbox": [
-        932.101993662272,
-        441.15445414490716,
-        47.89954709365241,
-        136.55967254704558
-      ],
-      "ignore": 0,
-      "iscrowd": 0,
-      "area": 6541.1464662609615
-    },
-    {
-      "id": 1,
-      "image_id": 1,
-      "category_id": 3,
-      "segmentation": [],
-      "bbox": [
-        1104.0084509785002,
-        990.9605852486264,
-        38.745184661685606,
-        21.98044129845623
-      ],
-      "ignore": 0,
-      "iscrowd": 0,
-      "area": 851.6362570540272
-    },
-    {
-      "id": 2,
-      "image_id": 2,
-      "category_id": 2,
-      "segmentation": [],
-      "bbox": [
-        656.4443867241313,
-        878.0436404661662,
-        37.68563646803591,
-        41.55082995193706
-      ],
-      "ignore": 0,
-      "iscrowd": 0,
-      "area": 1565.869472513878
-    },
-    {
-      "id": 3,
-      "image_id": 2,
-      "category_id": 4,
-      "segmentation": [],
-      "bbox": [
-        1031.3681546625403,
-        923.4596639020042,
-        130.45028008166287,
-        28.988951129258496
-      ],
-      "ignore": 0,
-      "iscrowd": 0,
-      "area": 3781.616794085408
-    },
-    {
-      "id": 4,
-      "image_id": 3,
-      "category_id": 1,
-      "segmentation": [],
-      "bbox": [
-        737.1030039018298,
-        50.93346262915782,
-        34.727360883516546,
-        10.10250498429576
-      ],
-      "ignore": 0,
-      "iscrowd": 0,
-      "area": 350.8333364171635
-    },
-    {
-      "id": 5,
-      "image_id": 3,
-      "category_id": 0,
-      "segmentation": [],
-      "bbox": [
-        1154.2522722117094,
-        50.512524921478835,
-        29.255170683689677,
-        10.94438039965376
-      ],
-      "ignore": 0,
-      "iscrowd": 0,
-      "area": 320.1797166190986
-    },
-    {
-      "id": 6,
-      "image_id": 4,
-      "category_id": 6,
-      "segmentation": [],
-      "bbox": [
-        1104.436708836841,
-        991.7178996346511,
-        46.07271606069876,
-        19.78313189629268
-      ],
-      "ignore": 0,
-      "iscrowd": 0,
-      "area": 911.4626186492457
-    }
-  ],
-  "info": {
-    "year": 2025,
-    "version": "1.0",
-    "description": "",
-    "contributor": "Label Studio",
-    "url": "",
-    "date_created": "2025-09-21 20:09:49.881421"
-  }
 }
