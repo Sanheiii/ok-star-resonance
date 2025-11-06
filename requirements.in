@@ -1,5 +1,6 @@
-ok-script
-onnxocr-ppocrv4==0.0.5
+ok-script==1.0.6
+onnxocr-ppocrv5==0.0.2
+onnxruntime
 openvino
 opencv-python
 pynput

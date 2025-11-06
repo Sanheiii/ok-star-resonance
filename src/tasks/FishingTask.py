@@ -52,7 +52,7 @@ class FishingTask(SRTriggerTask):
             },
             'zht': {
                 'pole': re.compile('添加魚竿'),
-                'continue_fishing': re.compile('續[钓釣]魚'),
+                'continue_fishing': re.compile('繼續釣魚'),
                 'use': re.compile('使用'),
             },
             'en': {
