@@ -39,7 +39,7 @@ class GatherTask(SRTriggerTask):
             pattern1 = re.compile('Focused|Normal')
             pattern2_str = 'Focused'
 
-        boxes = self.ocr(0.75, 0.5, 0.84, 0.68, match=pattern1)
+        boxes = self.ocr(0.75, 0.5, 0.90, 0.68, match=pattern1)
 
         if not boxes:
             self.run_interval = 1
