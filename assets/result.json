@@ -29,6 +29,18 @@
             "height": 1080,
             "id": 4,
             "file_name": "images/4.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 5,
+            "file_name": "images/5.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 6,
+            "file_name": "images/6.png"
         }
     ],
     "categories": [
@@ -59,6 +71,14 @@
         {
             "id": 6,
             "name": "box_fishing_level_eng"
+        },
+        {
+            "id": 7,
+            "name": "hint_fishing_left"
+        },
+        {
+            "id": 8,
+            "name": "hint_fishing_right"
         }
     ],
     "annotations": [
@@ -166,6 +186,36 @@
             "ignore": 0,
             "iscrowd": 0,
             "area": 911.4626186492457
+        },
+        {
+            "id": 7,
+            "image_id": 5,
+            "category_id": 7,
+            "segmentation": [],
+            "bbox": [
+                810.4112161065055,
+                511.49092683644113,
+                75.45133412854224,
+                58.35974977010779
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 4403.320979562519
+        },
+        {
+            "id": 8,
+            "image_id": 6,
+            "category_id": 8,
+            "segmentation": [],
+            "bbox": [
+                1039.1253721072787,
+                512.5329122302738,
+                74.08553948898259,
+                56.95010858676928
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 4219.179518606942
         }
     ],
     "info": {

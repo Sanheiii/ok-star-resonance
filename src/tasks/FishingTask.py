@@ -158,6 +158,13 @@ class FishingTask(SRTriggerTask):
                     self.last_switch_time = now
             else:
                 self.my_mouse_down(0.5, 0.5)
+
+            # 尝试寻找钓鱼方向的提示
+            hint_left = self.find_one("hint_fishing_left", box=self.box_of_screen(0.32, 0.44, 0.50, 0.55),
+                                      threshold=0.7)
+            hint_right = self.find_one("hint_fishing_right", box=self.box_of_screen(0.50, 0.44, 0.68, 0.55),
+                                       threshold=0.7)
+
             # 获取鱼的实际位置
             if self._splash_finder_thread is None or not self._splash_finder_thread.is_alive():
                 self._splash_finder_thread = threading.Thread(target=self._splash_finder_worker, args=(self.frame,))
@@ -165,7 +172,7 @@ class FishingTask(SRTriggerTask):
             fish_pos_for_minigame = 0
             with self._fish_pos_lock:
                 fish_pos_for_minigame = self.fish_pos_from_game
-            self._play_the_fish(fish_pos_for_minigame)
+            self._play_the_fish(fish_pos_for_minigame, hint_left, hint_right)
             return True
         elif self.last_update_time:
             # 如果小游戏未激活，确保松开鼠标和按键。
@@ -216,13 +223,26 @@ class FishingTask(SRTriggerTask):
             raise Exception('未设置正确的PushDeer参数')
 
 
-    def _play_the_fish(self, fish_pos: float):
+    def _play_the_fish(self, fish_pos: float, hint_left, hint_right):
         delta_time = self._update_time()
-
         normalized_fish_pos = min(max(fish_pos / 0.7, -1.3), 1.3)
 
         self._update_buoy_position(delta_time)
-        self._update_key_presses(normalized_fish_pos)
+
+        # 当具有提示时将上一次检测到鱼的位置向提示方向移动
+        if hint_left and self.pos - normalized_fish_pos < 0.2:
+            fish_pos = max(-1.3, self.pos - 0.2) * 0.7
+        elif hint_right and normalized_fish_pos - self.pos < 0.2:
+            fish_pos = min(1.3, self.pos + 0.2) * 0.7
+
+        # 当具有提示时强制让鱼竿向目标方向移动
+        if hint_right or hint_left:
+            with self._fish_pos_lock:
+                self.fish_pos_from_game = fish_pos
+            self._update_key_presses_by_hint(hint_left)
+        # 没有提示时让鱼竿位置拟合上一次发现鱼的位置
+        else:
+            self._update_key_presses(normalized_fish_pos)
 
     def _update_time(self) -> float:
         """计算并返回自上次更新以来的时间差（delta_time）。"""
@@ -247,6 +267,26 @@ class FishingTask(SRTriggerTask):
                 self.send_key_down('a')
                 self.key_a_pressed = True
         else: 
+            # 鱼在竿右边，竿在屏幕左边松开A键
+            if self.pos < 0 and self.key_a_pressed:
+                self.send_key_up('a')
+                self.key_a_pressed = False
+            # 鱼在竿右边，竿在屏幕右边按下D键
+            if self.pos >= 0 and not self.key_d_pressed:
+                self.send_key_down('d')
+                self.key_d_pressed = True
+
+    def _update_key_presses_by_hint(self, hint_left: bool):
+        if hint_left:
+            # 鱼在竿左边，竿在屏幕右边松开D键
+            if self.pos > 0 and self.key_d_pressed:
+                self.send_key_up('d')
+                self.key_d_pressed = False
+            # 鱼在竿左边，竿在屏幕左边按下A键
+            if self.pos <= 0 and not self.key_a_pressed:
+                self.send_key_down('a')
+                self.key_a_pressed = True
+        else:
             # 鱼在竿右边，竿在屏幕左边松开A键
             if self.pos < 0 and self.key_a_pressed:
                 self.send_key_up('a')
