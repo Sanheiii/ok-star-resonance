@@ -37,8 +37,10 @@ class SRTriggerTask(TriggerTask):
         lang = self.get_global_config('Game Settings').get('Game Language')
         if lang == '简体中文':
             return 'zhs'
-        if lang == '繁體中文':
+        elif lang == '繁體中文':
             return 'zht'
+        elif lang == '日本語':
+            return 'jp'
         else:
             return 'en'
     

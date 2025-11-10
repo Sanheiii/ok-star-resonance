@@ -14,7 +14,7 @@ key_config_option = ConfigOption(
     config_type={
         "Game Language": {
             "type": "drop_down",
-            "options": ["简体中文", "繁體中文", "English"],
+            "options": ["简体中文", "繁體中文", "English", "日本語"],
         }
     },
 )
@@ -36,7 +36,7 @@ config = {
         }
     },
     'windows': {  # required  when supporting windows game
-        'exe': ['Star.exe', 'BPSR.exe', 'BPSR_STEAM.exe', 'StarTW.exe'],
+        'exe': ['Star.exe', 'BPSR.exe', 'BPSR_STEAM.exe', 'StarTW.exe', 'StarASIA.exe'],
         # 'hwnd_class': 'UnrealWindow', #增加重名检查准确度
         'interaction': 'Pynput',
         'capture_method': ['WGC', 'BitBlt_RenderFull'],  # Windows版本支持的话, 优先使用WGC, 否则使用BitBlt_Full

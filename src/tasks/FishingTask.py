@@ -59,6 +59,11 @@ class FishingTask(SRTriggerTask):
                 'pole': re.compile('pole'),
                 'continue_fishing': re.compile('Continue fishing'),
                 'use': re.compile('Use'),
+            },
+            'jp': {
+                'pole': re.compile('pole'),
+                'continue_fishing': re.compile('釣りを続ける'),
+                'use': re.compile('使用'),
             }
         }
 
@@ -71,7 +76,7 @@ class FishingTask(SRTriggerTask):
         """
         异步查找水花的任务。
         """
-        splash_box = self.find_splash(frame)
+        splash_box = self._find_splash(frame)
         if splash_box:
             with self._fish_pos_lock:
                 self.fish_pos_from_game = splash_box[0].center()[0] / (self.width / 2) - 1 + 0.04
@@ -151,7 +156,7 @@ class FishingTask(SRTriggerTask):
         """管理收线和溜鱼"""
         # 如果“鱼线张力”文本可见，则需要收线。
         if self.find_one("box_fishing_icon", box=self.box_of_screen(0.33, 0.80, 0.37, 0.87)):
-            if self.config.get('Always Rapid Click') or self.find_one("box_stop_pull", box=self.box_of_screen(0.50, 0.75, 0.70, 0.92), threshold=0.5):
+            if self.config.get('Always Rapid Click') or self._find_stop_pull():
                 now = time.time()
                 if self.last_switch_time is None or now - self.last_switch_time >= 0.05:
                     self.my_mouse_switch(0.5, 0.5)
@@ -331,7 +336,7 @@ class FishingTask(SRTriggerTask):
         self.last_update_time = None
         self.fish_pos_from_game = 0
 
-    def find_splash(self, frame, threshold=0.5):
+    def _find_splash(self, frame, threshold=0.5):
         ret = og.my_app.yolo_detect(frame, threshold=threshold, label=0)
 
         with self.stat_lock:
@@ -340,10 +345,22 @@ class FishingTask(SRTriggerTask):
         return ret
 
     def _find_fishing_level(self):
-        if self.get_game_language() == 'zhs' or self.get_game_language() == 'zht':
+        language = self.get_game_language()
+        if language == 'zhs' or language == 'zht':
             return self.find_one("box_fishing_level", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
+        elif language == 'jp':
+            return self.find_one("box_fishing_level_jp", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
         else:
-            return self.find_one("box_fishing_level_eng", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
+            return self.find_one("box_fishing_level_en", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
+
+    def _find_stop_pull(self):
+        language = self.get_game_language()
+        if language == 'zhs' or language == 'zht':
+            return self.find_one("box_stop_pull", box=self.box_of_screen(0.50, 0.75, 0.70, 0.92), threshold=0.5)
+        elif language == 'jp':
+            return self.find_one("box_stop_pull_jp", box=self.box_of_screen(0.45, 0.75, 0.70, 0.92), threshold=0.5)
+        else:
+            return self.find_one("box_stop_pull_en", box=self.box_of_screen(0.41, 0.75, 0.60, 0.92), threshold=0.5)
 
     def _match_continue_fishing(self):
         lang = self.get_game_language()

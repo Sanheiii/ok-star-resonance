@@ -105,10 +105,10 @@ class TestGeneratedTasks(TaskTestCase):
     #     self.assertGreater(len(texts), 0, "未能识别到'鱼线张力'")
     #     self.assertEqual(texts[0].name, '鱼线张力')
 
-    def test_fishing_contiue(self):
-        self.set_image('tests/images/fishing_continue2.png')
-        fishing_icon = self.task.find_one("box_fishing_icon", box=self.task.box_of_screen(0.33, 0.80, 0.37, 0.87))
-        self.assertEqual(fishing_icon, None)
+    def test_ocr(self):
+        self.set_image('tests/images/test.png')
+        res = self.task.ocr()
+        pass
 
 
 

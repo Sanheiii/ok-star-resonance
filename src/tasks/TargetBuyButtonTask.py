@@ -11,8 +11,8 @@ class TargetBuyButtonTask(SRTriggerTask):
         self.trigger_count = 0
 
     def run(self):
-        if box:=self.ocr(0.92, 0.90, 0.96, 0.94, match='购买'):
-            target = box[0].center()
+        if box:=self.find_one("box_buy", box=self.box_of_screen(0.90, 0.90, 0.985, 0.95)):
+            target = box.center()
             self.move(target[0], target[1])
             self.disable()
         return

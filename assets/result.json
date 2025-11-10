@@ -22,25 +22,49 @@
             "width": 1920,
             "height": 1080,
             "id": 3,
-            "file_name": "images/3.png"
-        },
-        {
-            "width": 1920,
-            "height": 1080,
-            "id": 4,
-            "file_name": "images/4.png"
-        },
-        {
-            "width": 1920,
-            "height": 1080,
-            "id": 5,
             "file_name": "images/5.png"
         },
         {
             "width": 1920,
             "height": 1080,
-            "id": 6,
+            "id": 4,
             "file_name": "images/6.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 5,
+            "file_name": "images/7.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 6,
+            "file_name": "images/4.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 7,
+            "file_name": "images/8.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 8,
+            "file_name": "images/9.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 9,
+            "file_name": "images/10.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 10,
+            "file_name": "images/3.png"
         }
     ],
     "categories": [
@@ -54,30 +78,46 @@
         },
         {
             "id": 2,
-            "name": "box_fishing_icon"
+            "name": "box_buy"
         },
         {
             "id": 3,
-            "name": "box_fishing_level"
+            "name": "box_fishing_icon"
         },
         {
             "id": 4,
-            "name": "box_stop_pull"
+            "name": "box_fishing_level"
         },
         {
             "id": 5,
-            "name": "hint_fishing_click"
+            "name": "box_fishing_level_en"
         },
         {
             "id": 6,
-            "name": "box_fishing_level_eng"
+            "name": "box_fishing_level_jp"
         },
         {
             "id": 7,
-            "name": "hint_fishing_left"
+            "name": "box_stop_pull"
         },
         {
             "id": 8,
+            "name": "box_stop_pull_en"
+        },
+        {
+            "id": 9,
+            "name": "box_stop_pull_jp"
+        },
+        {
+            "id": 10,
+            "name": "hint_fishing_click"
+        },
+        {
+            "id": 11,
+            "name": "hint_fishing_left"
+        },
+        {
+            "id": 12,
             "name": "hint_fishing_right"
         }
     ],
@@ -85,7 +125,7 @@
         {
             "id": 0,
             "image_id": 0,
-            "category_id": 5,
+            "category_id": 10,
             "segmentation": [],
             "bbox": [
                 932.101993662272,
@@ -100,7 +140,7 @@
         {
             "id": 1,
             "image_id": 1,
-            "category_id": 3,
+            "category_id": 4,
             "segmentation": [],
             "bbox": [
                 1104.0084509785002,
@@ -115,7 +155,7 @@
         {
             "id": 2,
             "image_id": 2,
-            "category_id": 2,
+            "category_id": 3,
             "segmentation": [],
             "bbox": [
                 656.4443867241313,
@@ -130,7 +170,7 @@
         {
             "id": 3,
             "image_id": 2,
-            "category_id": 4,
+            "category_id": 7,
             "segmentation": [],
             "bbox": [
                 1031.3681546625403,
@@ -145,52 +185,7 @@
         {
             "id": 4,
             "image_id": 3,
-            "category_id": 1,
-            "segmentation": [],
-            "bbox": [
-                737.1030039018298,
-                50.93346262915782,
-                34.727360883516546,
-                10.10250498429576
-            ],
-            "ignore": 0,
-            "iscrowd": 0,
-            "area": 350.8333364171635
-        },
-        {
-            "id": 5,
-            "image_id": 3,
-            "category_id": 0,
-            "segmentation": [],
-            "bbox": [
-                1154.2522722117094,
-                50.512524921478835,
-                29.255170683689677,
-                10.94438039965376
-            ],
-            "ignore": 0,
-            "iscrowd": 0,
-            "area": 320.1797166190986
-        },
-        {
-            "id": 6,
-            "image_id": 4,
-            "category_id": 6,
-            "segmentation": [],
-            "bbox": [
-                1104.436708836841,
-                991.7178996346511,
-                46.07271606069876,
-                19.78313189629268
-            ],
-            "ignore": 0,
-            "iscrowd": 0,
-            "area": 911.4626186492457
-        },
-        {
-            "id": 7,
-            "image_id": 5,
-            "category_id": 7,
+            "category_id": 11,
             "segmentation": [],
             "bbox": [
                 810.4112161065055,
@@ -203,9 +198,9 @@
             "area": 4403.320979562519
         },
         {
-            "id": 8,
-            "image_id": 6,
-            "category_id": 8,
+            "id": 5,
+            "image_id": 4,
+            "category_id": 12,
             "segmentation": [],
             "bbox": [
                 1039.1253721072787,
@@ -216,6 +211,111 @@
             "ignore": 0,
             "iscrowd": 0,
             "area": 4219.179518606942
+        },
+        {
+            "id": 6,
+            "image_id": 5,
+            "category_id": 2,
+            "segmentation": [],
+            "bbox": [
+                1741.0526315789473,
+                974.7368421052632,
+                141.05263157894743,
+                44.210526315789345
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 6236.011080332394
+        },
+        {
+            "id": 7,
+            "image_id": 6,
+            "category_id": 5,
+            "segmentation": [],
+            "bbox": [
+                1104.139633581572,
+                992.1249744840911,
+                45.61451706169305,
+                18.782448201873684
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 856.7523039647331
+        },
+        {
+            "id": 8,
+            "image_id": 7,
+            "category_id": 6,
+            "segmentation": [],
+            "bbox": [
+                1102.9216588958532,
+                987.6806447584949,
+                49.1060400220771,
+                25.53514081148007
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 1253.9296466579146
+        },
+        {
+            "id": 9,
+            "image_id": 8,
+            "category_id": 9,
+            "segmentation": [],
+            "bbox": [
+                886.1747679166724,
+                928.2800310745591,
+                345.6912526644111,
+                21.193653135958993
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 7326.460501104689
+        },
+        {
+            "id": 10,
+            "image_id": 9,
+            "category_id": 8,
+            "segmentation": [],
+            "bbox": [
+                820.9785734047674,
+                932.9471903149346,
+                281.63502973509026,
+                16.823331422228904
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 4738.039445342715
+        },
+        {
+            "id": 11,
+            "image_id": 10,
+            "category_id": 1,
+            "segmentation": [],
+            "bbox": [
+                737.131078477557,
+                51.121857355783476,
+                34.44284288692033,
+                9.62772379909981
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 331.6061781710585
+        },
+        {
+            "id": 12,
+            "image_id": 10,
+            "category_id": 0,
+            "segmentation": [],
+            "bbox": [
+                1154.1064401991332,
+                50.98625561213418,
+                29.425578371896428,
+                9.898927286398402
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 291.28166066362024
         }
     ],
     "info": {
@@ -224,6 +324,6 @@
         "description": "",
         "contributor": "Label Studio",
         "url": "",
-        "date_created": "2025-09-21 20:09:49.881421"
+        "date_created": "2025-11-11 00:39:17.512577"
     }
 }
