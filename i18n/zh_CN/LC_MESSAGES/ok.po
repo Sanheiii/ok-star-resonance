@@ -44,3 +44,9 @@ msgstr "自动采集"
 
 msgid "Auto Fish"
 msgstr "自动钓鱼"
+
+msgid "Auto-claim Monthly Card"
+msgstr "自动领取月卡"
+
+msgid "Automatically claims the monthly card when it interface pops up"
+msgstr "弹出月卡界面后自动领取月卡"

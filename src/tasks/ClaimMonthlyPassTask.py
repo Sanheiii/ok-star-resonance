@@ -7,8 +7,8 @@ class ClaimMonthlyPassTask(SRTriggerTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.name = "自动领取月卡"
-        self.description = "弹出月卡界面后自动领取月卡"
+        self.name = "Auto-claim Monthly Card"
+        self.description = "Automatically claims the monthly card when it interface pops up"
         self.trigger_count = 0
         self.last_check_time = None
         self.regex_map = {
@@ -27,6 +27,6 @@ class ClaimMonthlyPassTask(SRTriggerTask):
         now = time.time()
         if self.last_check_time is None or now - self.last_check_time > 60:
             self.last_check_time = time.time()
-            if box:=self.ocr(0.44, 0.94, 0.56, 1, match=self.get_regex('close')):
+            if box:=self.ocr(0.40, 0.94, 0.60, 1, match=self.get_regex('close')):
                 self.click_box(box)
         return
