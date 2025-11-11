@@ -61,7 +61,7 @@ class FishingTask(SRTriggerTask):
                 'use': re.compile('Use'),
             },
             'jp': {
-                'pole': re.compile('pole'),
+                'pole': re.compile('釣り竿追加'),
                 'continue_fishing': re.compile('釣りを続ける'),
                 'use': re.compile('使用'),
             }
