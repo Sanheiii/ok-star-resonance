@@ -3,7 +3,7 @@ import time
 
 from src.tasks.SRTriggerTask import SRTriggerTask
 
-class PickPassTask(SRTriggerTask):
+class ClaimMonthlyPassTask(SRTriggerTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,6 +17,9 @@ class PickPassTask(SRTriggerTask):
             },
             'zht': {
                 'close': re.compile('點擊空白處關閉'),
+            },
+            'en': {
+                'close': re.compile('Click anywhere to close'),
             }
         }
 

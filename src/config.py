@@ -79,7 +79,7 @@ config = {
     ],
     'trigger_tasks':[
         ["src.tasks.FishingTask", "FishingTask"],
-        ["src.tasks.PickPassTask", "PickPassTask"],
+        ["src.tasks.ClaimMonthlyPassTask", "ClaimMonthlyPassTask"],
         ["src.tasks.GatherTask", "GatherTask"],
         ["src.tasks.TargetBuyButtonTask", "TargetBuyButtonTask"]
     ]
