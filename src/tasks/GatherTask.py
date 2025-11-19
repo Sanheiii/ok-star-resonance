@@ -34,7 +34,7 @@ class GatherTask(SRTriggerTask):
             pattern2_str = '专注'
         elif lang == 'zht':
             pattern1 = re.compile('採集')
-            pattern2_str = '專注'
+            pattern2_str = '專注|専注'
         elif lang == 'jp':
             pattern1 = re.compile('採取')
             pattern2_str = 'フォーカス'
