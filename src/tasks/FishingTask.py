@@ -366,7 +366,9 @@ class FishingTask(SRTriggerTask):
 
     def _match_continue_fishing(self):
         lang = self.get_game_language()
-        if lang == 'zhs' or lang == 'zht':
+        if lang == 'zhs':
+            return self.find_one("box_continue_fishing", box=self.box_of_screen(0.79, 0.88, 0.87, 0.93))
+        elif lang == 'zht':
             return self.ocr(0.79, 0.88, 0.87, 0.93, match=self.get_regex('continue_fishing'))
         else:
             return self.ocr(0.76, 0.88, 0.90, 0.93, match=self.get_regex('continue_fishing'))
