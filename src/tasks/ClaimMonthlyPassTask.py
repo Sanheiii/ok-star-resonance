@@ -20,6 +20,9 @@ class ClaimMonthlyPassTask(SRTriggerTask):
             },
             'en': {
                 'close': re.compile('Click anywhere to close'),
+            },
+            'jp': {
+                'close': re.compile('空白をクリックして閉じる'),
             }
         }
 

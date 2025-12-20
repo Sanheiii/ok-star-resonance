@@ -27,6 +27,9 @@ msgstr "采集按键"
 msgid "Switch Pole Key"
 msgstr "切换鱼竿按键"
 
+msgid "Disable Yolo Detection"
+msgstr "禁用Yolo识别"
+
 msgid "Auto-click when the button appears. Please adjust angle for clear text."
 msgstr "自动点击屏幕上出现的采集按钮，注意调整角度使按钮上的文字清晰可见"
 
@@ -50,3 +53,9 @@ msgstr "自动领取月卡"
 
 msgid "Automatically claims the monthly card when it interface pops up"
 msgstr "弹出月卡界面后自动领取月卡"
+
+msgid "Auto Aim Purchase"
+msgstr "自动将鼠标指向交易行购买按钮"
+
+msgid "Auto disable after run"
+msgstr "运行后会自动关闭"

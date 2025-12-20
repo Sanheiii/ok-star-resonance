@@ -17,6 +17,7 @@ class FishingTask(SRTriggerTask):
         
         self.default_config.update({
             'Always Rapid Click': False,
+            'Disable Yolo Detect': False,
             'Switch Pole Key': 'm',
             'Fishing Interruption Notice': False,
             'PushDeer Server': 'Put your server url here if not using official server',
@@ -171,9 +172,10 @@ class FishingTask(SRTriggerTask):
                                        threshold=0.7)
 
             # 获取鱼的实际位置
-            if self._splash_finder_thread is None or not self._splash_finder_thread.is_alive():
-                self._splash_finder_thread = threading.Thread(target=self._splash_finder_worker, args=(self.frame,))
-                self._splash_finder_thread.start()
+            if not self.config.get('Disable Yolo Detect'):
+                if self._splash_finder_thread is None or not self._splash_finder_thread.is_alive():
+                    self._splash_finder_thread = threading.Thread(target=self._splash_finder_worker, args=(self.frame,))
+                    self._splash_finder_thread.start()
             fish_pos_for_minigame = 0
             with self._fish_pos_lock:
                 fish_pos_for_minigame = self.fish_pos_from_game
