@@ -81,6 +81,7 @@ config = {
         ["src.tasks.FishingTask", "FishingTask"],
         ["src.tasks.ClaimMonthlyPassTask", "ClaimMonthlyPassTask"],
         ["src.tasks.GatherTask", "GatherTask"],
-        ["src.tasks.AimPurchaseButtonTask", "AimPurchaseButtonTask"]
+        ["src.tasks.AimPurchaseButtonTask", "AimPurchaseButtonTask"],
+        ["src.tasks.AutoSkillTask", "AutoSkillTask"]
     ]
 }
