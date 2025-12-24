@@ -7,9 +7,8 @@ class AutoSkillTask(SRTriggerTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "Auto Skill Spammer"
-        self.description = "Auto-cast skills at set intervals."
+        self.description = "Auto-cast skills sequentially."
 
-        # 初始化配置，用户可以在UI中进行勾选
         self.default_config.update({
             'Spam Interval (s)': 0.1,
             'Enable Basic Attack': True,
@@ -24,6 +23,7 @@ class AutoSkillTask(SRTriggerTask):
         })
 
         self.last_action_time = 0
+        self.current_index = 0
 
         self.key_map = [
             ('Enable Skill 1', '1'),
@@ -35,20 +35,36 @@ class AutoSkillTask(SRTriggerTask):
             ('Enable Imagine Z', 'z'),
             ('Enable Imagine X', 'x'),
         ]
+        self.key_map.reverse()
 
     def run(self):
         now = time.time()
         interval = self.config.get('Spam Interval (s)')
 
-        if now - self.last_action_time >= interval:
-            self._spam_all_skills()
-            self.last_action_time = now
-
-    def _spam_all_skills(self):
+        active_actions = []
         if self.config.get('Enable Basic Attack'):
-            self.click(0.5, 0.5)
+            active_actions.append(('click', None))
 
         for config_key, key_char in self.key_map:
             if self.config.get(config_key):
-                self.send_key(key_char)
-                # self.sleep(0.01)
+                active_actions.append(('key', key_char))
+
+        if not active_actions:
+            return
+
+        if self.current_index == 0:
+            if now - self.last_action_time < interval:
+                return
+
+        action_type, action_value = active_actions[self.current_index]
+
+        if action_type == 'click':
+            self.click(0.5, 0.5)
+        elif action_type == 'key':
+            self.send_key(action_value)
+
+        self.current_index += 1
+
+        if self.current_index >= len(active_actions):
+            self.current_index = 0
+            self.last_action_time = time.time()
