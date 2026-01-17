@@ -2,6 +2,7 @@ from ok import BaseTask
 
 from src.tasks.AutoPartyTask import AutoPartyTask
 from src.tasks.AutoReviveTask import AutoReviveTask
+from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
 
 class GuildHuntAssistTask(BaseTask):
 
@@ -58,3 +59,7 @@ class GuildHuntAssistTask(BaseTask):
             # 处理自动入队和自动复活
             self.run_task_by_class(AutoPartyTask)
             self.run_task_by_class(AutoReviveTask)
+            # 如果触发任务中勾了自动领取月卡则检查月卡
+            claim_monthly_pass_task = self.get_task_by_class(ClaimMonthlyPassTask)
+            if claim_monthly_pass_task.enabled:
+                claim_monthly_pass_task.run()
