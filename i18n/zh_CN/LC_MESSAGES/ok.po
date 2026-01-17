@@ -57,5 +57,77 @@ msgstr "弹出月卡界面后自动领取月卡"
 msgid "Auto Aim Purchase"
 msgstr "自动将鼠标指向交易行购买按钮"
 
-msgid "Auto disable after run"
+msgid "Auto-disable after run"
 msgstr "运行后会自动关闭"
+
+msgid "Auto Skill Spammer"
+msgstr "自动连点技能"
+
+msgid "Auto-cast skills sequentially."
+msgstr "按顺序连点技能"
+
+msgid  "Spam Interval (s)"
+msgstr "连点间隔（秒）"
+
+msgid  "Enable Basic Attack"
+msgstr "启用普通攻击"
+
+msgid  "Enable Skill 1"
+msgstr "启用特殊攻击"
+
+msgid  "Enable Skill 2"
+msgstr "启用技能2"
+
+msgid  "Enable Skill 3"
+msgstr "启用技能3"
+
+msgid  "Enable Skill 4"
+msgstr "启用技能4"
+
+msgid  "Enable Skill 5"
+msgstr "启用技能5"
+
+msgid  "Enable Ult"
+msgstr "启用终极技能"
+
+msgid  "Enable Imagine Z"
+msgstr "启用战斗幻想Z"
+
+msgid  "Enable Imagine X"
+msgstr "启用战斗幻想X"
+
+msgid  "Auto Revive"
+msgstr "自动复活"
+
+msgid  "Automatically interacts with the revive prompt."
+msgstr "自动点击复活提示"
+
+msgid  "Allow Respawn to Base"
+msgstr "允许复活点复活"
+
+msgid  "Use Revive Bean"
+msgstr "使用复活糖豆"
+
+msgid  "Party Auto-Acceptor"
+msgstr "自动组队"
+
+msgid  "Automates the acceptance party requests and invitations."
+msgstr "自动接受组队邀请和入队申请"
+
+msgid  "Auto-Confirm Mission Entry"
+msgstr "自动确认进入"
+
+msgid  "Automatically clicks the confirmation button when a mission or dungeon entry prompt appears."
+msgstr "弹出确认进入副本时自动点击确认按钮"
+
+msgid  "Auto Guild Hunt"
+msgstr "自动协会狩猎"
+
+msgid  "Auto-accept invites and assist in Guild Hunts."
+msgstr "自动接受其他玩家的邀请并帮助他协会狩猎 "
+
+msgid  "Entry Count"
+msgstr "进入次数"
+
+msgid  "I'm Tank"
+msgstr "我是T"
