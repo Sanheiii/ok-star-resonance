@@ -21,15 +21,14 @@ class GuildHuntAssistTask(BaseTask):
             # 检测队友退出队伍自动退队
             if self.find_one('box_teammate_left', box=self.box_of_screen(0.46, 0.18, 0.63, 0.30)):
                 self.send_key('i')
-                self.sleep(1)
-                self.click(0.91,0.91)
-                self.sleep(0.5)
-                self.click(0.91,0.91)
-                self.sleep(0.5)
-                self.click(0.62,0.74)
-                self.sleep(0.5)
-                self.send_key('esc')
-                self.sleep(3)
+                box=self.wait_feature('box_leave_party',box=self.box_of_screen(0.89, 0.88, 0.95, 0.95))
+                if box:
+                    self.click(box)
+                    self.sleep(3)
+                    self.click(0.62,0.74)
+                    self.sleep(0.5)
+                    self.send_key('esc')
+                    self.sleep(3)
 
             # 确认进入副本
             if self.find_one('box_msg_confirm_mission', box=self.box_of_screen(0.40, 0.77, 0.60, 0.81)):
