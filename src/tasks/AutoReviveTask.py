@@ -46,5 +46,8 @@ class AutoReviveTask(SRTriggerTask):
         else:
             self.last_detected_box = None
 
-        if self.config.get('Use Revive Bean'):
-            pass
+        if self.find_one('box_msg_use_bean'):
+            if self.config.get('Use Revive Bean'):
+                self.click(0.37, 0.62)
+            else:
+                self.click(0.37, 0.74)
