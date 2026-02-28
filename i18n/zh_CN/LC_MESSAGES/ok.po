@@ -131,3 +131,6 @@ msgstr "进入次数"
 
 msgid  "I'm Tank"
 msgstr "我是T"
+
+msgid  "Combat Wait Time"
+msgstr "开战延时"

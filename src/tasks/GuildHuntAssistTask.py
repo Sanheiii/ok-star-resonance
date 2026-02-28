@@ -11,7 +11,8 @@ class GuildHuntAssistTask(BaseTask):
         self.name = "Auto Guild Hunt"
         self.description = "Auto-accept invites and assist in Guild Hunts."
         self.default_config.update({
-            'I\'m Tank': False
+            'I\'m Tank': False,
+            "Combat Wait Time": 5
         })
         self.executed = False
 
@@ -48,7 +49,8 @@ class GuildHuntAssistTask(BaseTask):
                     self.send_key('h')
                 else:
                     # 不是T
-                    self.sleep(10)
+                    wait_time = self.config.get("Combat Wait Time", 5)
+                    self.sleep(wait_time)
                     self.send_key_down('w')
                     self.sleep(2)
                     self.send_key_up('w')
