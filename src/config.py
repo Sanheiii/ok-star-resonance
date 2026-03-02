@@ -36,7 +36,7 @@ config = {
         }
     },
     'windows': {  # required  when supporting windows game
-        'exe': ['Star.exe', 'BPSR.exe', 'BPSR_STEAM.exe', 'StarTW.exe', 'StarASIA.exe', 'StarSEA.exe', 'StarSEA_STEAM.exe'],
+        'exe': ['Star.exe', 'BPSR.exe', 'BPSR_STEAM.exe', 'StarTW.exe', 'StarASIA.exe', 'StarSEA.exe', 'StarSEA_STEAM.exe', 'StarASIA_STEAM.exe'],
         # 'hwnd_class': 'UnrealWindow', #增加重名检查准确度
         'interaction': 'Pynput',
         'capture_method': ['WGC', 'BitBlt_RenderFull'],  # Windows版本支持的话, 优先使用WGC, 否则使用BitBlt_Full
