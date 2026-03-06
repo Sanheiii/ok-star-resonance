@@ -16,6 +16,8 @@ humanfriendly==10.0
     # via coloredlogs
 idna==3.10
     # via requests
+mido==1.3.3
+    # via -r requirements.in
 mouse==0.7.1
     # via ok-script
 mpmath==1.3.0
@@ -26,7 +28,7 @@ numpy==2.2.6
     #   opencv-python
     #   openvino
     #   shapely
-ok-script==1.0.26
+ok-script==1.0.68
     # via -r requirements.in
 onnxocr-ppocrv5==0.0.2
     # via -r requirements.in
@@ -40,6 +42,7 @@ openvino-telemetry==2025.2.0
     # via openvino
 packaging==25.0
     # via
+    #   mido
     #   onnxruntime
     #   openvino
 pillow==11.3.0

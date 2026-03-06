@@ -134,3 +134,18 @@ msgstr "我是T"
 
 msgid  "Combat Wait Time"
 msgstr "开战延时"
+
+msgid  "MIDI Player"
+msgstr "MIDI播放器"
+
+msgid  "Plays MIDI files using in-game instruments."
+msgstr "使用游戏内乐器演奏MIDI文件"
+
+msgid  "MIDI File"
+msgstr "MIDI文件"
+
+msgid  "No MIDI files found."
+msgstr "没有MIDI文件"
+
+msgid  "Drop .mid files into ./midi/ and restart."
+msgstr "将.mid文件放在安装目录下的midi文件夹，重启程序刷新。"

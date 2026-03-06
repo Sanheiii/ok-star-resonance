@@ -1,7 +1,8 @@
-ok-script==1.0.26
+ok-script==1.0.68
 onnxocr-ppocrv5==0.0.2
 onnxruntime
 openvino
 opencv-python
 pynput
 pypushdeer
+mido

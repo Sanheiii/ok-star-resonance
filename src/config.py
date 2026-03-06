@@ -77,6 +77,7 @@ config = {
     'onetime_tasks': [  # tasks to execute
         ["ok", "DiagnosisTask"],
         ["src.tasks.GuildHuntAssistTask", "GuildHuntAssistTask"],
+        ["src.tasks.MidiPlayerTask", "MidiPlayerTask"],
     ],
     'trigger_tasks':[
         ["src.tasks.FishingTask", "FishingTask"],
