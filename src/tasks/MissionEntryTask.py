@@ -11,5 +11,24 @@ class MissionEntryTask(SRTriggerTask):
         self.trigger_interval = 0.2
 
     def run(self):
-        if self.find_one('box_msg_confirm_mission', box=self.box_of_screen(0.40, 0.77, 0.60, 0.81)):
-            self.click(0.9,0.91)
+        if self._find_msg() and (box:=self._find_confirm()):
+            self.click(box)
+        return
+
+    def _find_msg(self):
+        language = self.get_game_language()
+        if language == 'zhs' or language == 'zht':
+            return self.find_one("box_msg_confirm_mission", box=self.box_of_screen(0.38, 0.77, 0.62, 0.82))
+        elif language == 'en':
+            return self.find_one("box_msg_confirm_mission_en", box=self.box_of_screen(0.38, 0.77, 0.62, 0.82))
+        else:
+            return None
+
+    def _find_confirm(self):
+        language = self.get_game_language()
+        if language == 'zhs' or language == 'zht':
+            return self.find_one("box_confirm", box=self.box_of_screen(0.83, 0.89, 0.98, 0.94))
+        elif language == 'en':
+            return self.find_one("box_confirm_en", box=self.box_of_screen(0.83, 0.89, 0.98, 0.94))
+        else:
+            return None
