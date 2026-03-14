@@ -1,5 +1,5 @@
 ok-script==1.0.75
-onnxocr-ppocrv5==0.0.2
+onnxocr-ppocrv5==0.0.14
 onnxruntime
 openvino
 opencv-python

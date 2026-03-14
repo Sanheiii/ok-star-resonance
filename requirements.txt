@@ -30,7 +30,7 @@ numpy==2.2.6
     #   shapely
 ok-script==1.0.75
     # via -r requirements.in
-onnxocr-ppocrv5==0.0.2
+onnxocr-ppocrv5==0.0.14
     # via -r requirements.in
 onnxruntime==1.23.2
     # via -r requirements.in
