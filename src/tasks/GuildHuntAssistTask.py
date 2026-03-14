@@ -3,6 +3,7 @@ from ok import BaseTask
 from src.tasks.AutoPartyTask import AutoPartyTask
 from src.tasks.AutoReviveTask import AutoReviveTask
 from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
+from src.tasks.MissionEntryTask import MissionEntryTask
 
 class GuildHuntAssistTask(BaseTask):
 
@@ -30,9 +31,8 @@ class GuildHuntAssistTask(BaseTask):
                 self.sleep(3)
 
             # 确认进入副本
-            if self.find_one('box_msg_confirm_mission', box=self.box_of_screen(0.40, 0.77, 0.60, 0.81)):
+            if self.find_one('box_loading', box=self.box_of_screen(0, 0.76, 0.09, 0.82)):
                 # 刷新状态，允许进行操作
-                self.click(0.9,0.91)
                 self.executed = False
 
             # 检测到在副本内
@@ -41,6 +41,7 @@ class GuildHuntAssistTask(BaseTask):
                 self.info['Entry Count'] += 1
                 if self.config.get('I\'m Tank'):
                     # 是T
+                    self.sleep(0.5)
                     self.send_key('e')
                     self.sleep(1)
                     self.send_key('z')
@@ -55,10 +56,19 @@ class GuildHuntAssistTask(BaseTask):
                     self.send_key('h')
                 self.executed = True
 
+            # 点击下一步
+            if box:=self.find_one('box_next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92)):
+                self.click(box)
+            # 点击离开
+            if box:=self.find_one('box_exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97)):
+                self.click(box)
+                self.sleep(1)
+
             self.next_frame()
             # 处理自动入队和自动复活
             self.run_task_by_class(AutoPartyTask)
             self.run_task_by_class(AutoReviveTask)
+            self.run_task_by_class(MissionEntryTask)
             # 如果触发任务中勾了自动领取月卡则检查月卡
             claim_monthly_pass_task = self.get_task_by_class(ClaimMonthlyPassTask)
             if claim_monthly_pass_task.enabled:
