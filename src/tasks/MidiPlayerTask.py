@@ -2,8 +2,11 @@
 import time
 import mido
 
-from ok import BaseTask
-
+from PySide6.QtGui import QFontMetrics
+from qfluentwidgets import FluentIcon
+from ok import BaseTask, og
+from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
+from ok.util.collection import find_index_in_list
 
 class MidiPlayerTask(BaseTask):
 
@@ -11,6 +14,7 @@ class MidiPlayerTask(BaseTask):
         super().__init__(*args, **kwargs)
         self.name = "MIDI Player"
         self.description = "Plays MIDI files using in-game instruments."
+        self.midi_list = None
 
         self.pitch_to_key = {
             # C3 - B3: 48-59
@@ -26,19 +30,69 @@ class MidiPlayerTask(BaseTask):
             78: 'p', 79: 't', 80: '[', 81: 'y', 82: ']', 83: 'u',
         }
 
-        midi_dir = './midi/'
-        if not os.path.exists(midi_dir):
-            os.makedirs(midi_dir)
-
-        self.midi_list = [f for f in os.listdir(midi_dir) if f.lower().endswith(('.mid', '.midi'))]
-        if not self.midi_list:
-            self.midi_list = ['No MIDI files found.']
-
-        self.default_config.update({'MIDI File': self.midi_list[0]})
-        self.config_description.update({'MIDI File': 'Drop .mid files into ./midi/ and restart.'})
-        self.config_type['MIDI File'] = {'type': "drop_down", 'options': self.midi_list}
+        self.midi_dir = './midi/'
+        if not os.path.exists(self.midi_dir):
+            os.makedirs(self.midi_dir)
 
         self.load_config()
+        self.refresh_midi_list()
+
+        self.default_config.update({'Locate MIDI Folder': 'Action'})
+        self.default_config.update({'Reload MIDI List': 'Action'})
+        self.config_type['Locate MIDI Folder'] = {'type': "button", 'icon': FluentIcon.FOLDER, 'text': 'Locate', 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))}
+        self.config_type['Reload MIDI List'] = {'type': "button", 'icon': FluentIcon.SYNC, 'text': 'Reload', 'callback': self.reload_options}
+
+    def refresh_midi_list(self):
+        files = [f for f in os.listdir(self.midi_dir) if f.lower().endswith(('.mid', '.midi'))]
+        self.midi_list = files if files else ['No MIDI files found.']
+
+        if 'MIDI File' in self.config_type:
+            self.config_type['MIDI File']['options'] = self.midi_list
+        else:
+            self.config_type['MIDI File'] = {'type': "drop_down", 'options': self.midi_list}
+        self.default_config.update({'MIDI File': self.midi_list[0]})
+        # 如果之前的默认Midi文件已被删除则重置选择
+        current_midi = self.config.get('MIDI File')
+        if current_midi and current_midi not in self.midi_list:
+            self.config.pop('MIDI File', None)
+        self.load_config()
+
+    def reload_options(self):
+        self.refresh_midi_list()
+        v_box_layout = og.app.main_window.onetime_tab.vBoxLayout
+        for i in range(v_box_layout.count()):
+            widget = v_box_layout.itemAt(i).widget()
+            if widget and hasattr(widget, 'task') and widget.task is self:
+                for config_widget in widget.config_widgets:
+                    if isinstance(config_widget, LabelAndDropDown):
+                        key = config_widget.key
+                        options = self.config_type.get(key, {}).get('options', [])
+                        # 清理旧的选项数据
+                        config_widget.tr_dict.clear()
+                        config_widget.tr_options.clear()
+                        config_widget.combo_box.clear()
+                        # 更新 tr_dict，tr_options
+                        for option in options:
+                            tr = og.app.tr(option)
+                            config_widget.tr_options.append(tr)
+                            config_widget.tr_dict[tr] = option
+                        # 更新 combo_box 的项目
+                        config_widget.combo_box.addItems(config_widget.tr_options)
+                        # 重新计算控件宽度
+                        fm = QFontMetrics(config_widget.combo_box.font())
+                        max_width = 0
+                        for option in config_widget.tr_options:
+                            max_width = max(max_width, fm.horizontalAdvance(option))
+                        config_widget.combo_box.setFixedWidth(max_width + 50)
+                        # 如果当前配置文件记录的选项被删除了，重置为第一个选项
+                        current_val = self.config.get(key)
+                        index = find_index_in_list(options, current_val, -1)
+                        if index == -1 and options:
+                            index = 0
+                            self.config[key] = options[0]
+                        config_widget.combo_box.setCurrentIndex(index)
+                        widget.update_config()
+                break
 
     def tap_key(self, key):
         """模拟短按按键"""
@@ -99,11 +153,9 @@ class MidiPlayerTask(BaseTask):
 
         for p, o in candidates:
             forward_notes = 0
-            checked = 0
             for j in range(start_idx + 1, len(events)):
                 evt_time, evt_msg = events[j]
                 if evt_msg.type == 'note_on' and evt_msg.velocity > 0:
-                    checked += 1
                     if self.is_in_range(evt_msg.note, p, o):
                         forward_notes += 1
                     else:
@@ -127,24 +179,36 @@ class MidiPlayerTask(BaseTask):
             mid = mido.MidiFile(file_path)
             self.log_info(f"开始播放: {midi_file_name}")
 
-            # 预处理：将所有音符提取并赋予全局绝对时间
+            # 预处理：提取音符和控制信息
             events = []
             abs_time = 0.0
             for msg in mid:
                 abs_time += msg.time
-                if msg.type in ('note_on', 'note_off'):
+                if msg.type in ('note_on', 'note_off', 'control_change'):
                     events.append((abs_time, msg))
 
             # 初始化游戏内部钢琴状态
             self.current_page = 1  # 默认在中间页面: 1 (对应 C3~B5)
             self.current_octave = 0  # 默认无修饰键: 0 (正常), 1 (Shift), -1 (Ctrl)
             playing_notes = {}  # 记录当前按下的键，方便正确释放
+            is_pedal_on = False  # 记录当前踏板状态
 
             start_time = time.time()
 
             for i, (msg_time, msg) in enumerate(events):
                 if not self.running:
                     break
+
+                # 处理延音踏板 (Control Change 64)
+                if msg.type == 'control_change' and msg.control == 64:
+                    # MIDI 标准：value >= 64 为踩下，< 64 为松开
+                    if msg.value >= 64 and not is_pedal_on:
+                        self.tap_key('space')
+                        is_pedal_on = True
+                    elif msg.value < 64 and is_pedal_on:
+                        self.tap_key('space')
+                        is_pedal_on = False
+                    continue # 踏板事件不涉及音域检查，直接跳到下一个
 
                 is_note_on = msg.type == 'note_on' and msg.velocity > 0
 
@@ -171,15 +235,19 @@ class MidiPlayerTask(BaseTask):
                     if key:
                         self.send_key_down(key)
                         playing_notes[msg.note] = key
-                else:
-                    # note_off 或 velocity == 0
+                elif msg.type in ('note_off', 'note_on'): # note_off 或 velocity == 0
                     key = playing_notes.get(msg.note)
                     if key:
                         self.send_key_up(key)
                         del playing_notes[msg.note]
 
-            # 演奏结束后，清理修饰键状态恢复到正常 (页面1，八度0)
+            # 演奏结束后清理，清理修饰键状态，松开空格
+            if is_pedal_on:
+                self.tap_key('space')
             self.switch_state(1, 0)
 
         except Exception as e:
+            if locals().get('is_pedal_on'):
+                self.tap_key('space')
+            self.switch_state(1, 0)
             self.log_error(f"播放出错: {e}", notify=True)
