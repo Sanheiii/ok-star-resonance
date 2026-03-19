@@ -147,14 +147,8 @@ msgstr "MIDI 文件"
 msgid  "No MIDI files found."
 msgstr "没有 MIDI 文件"
 
-msgid "Locate MIDI Folder"
-msgstr "定位 MIDI 目录"
-
-msgid "Reload MIDI List"
-msgstr "刷新 MIDI 列表"
+msgid "MIDI Folder"
+msgstr "MIDI 目录"
 
 msgid "Locate"
 msgstr "定位"
-
-msgid "Reload"
-msgstr "刷新"

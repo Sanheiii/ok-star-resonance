@@ -42,8 +42,7 @@ class MidiPlayerTask(BaseTask):
         self.load_config()
         self.refresh_midi_list()
 
-        self.default_config.update({'Locate MIDI Folder': 'Action'})
-        self.config_type['Locate MIDI Folder'] = {'type': "button", 'icon': FluentIcon.FOLDER, 'text': 'Locate', 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))}
+        self.config_type['MIDI Folder'] = {'type': "button", 'icon': FluentIcon.FOLDER, 'text': 'Locate', 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))}
 
         # 启动后台守护线程监听文件夹变动
         self.monitor_thread = threading.Thread(target=self._monitor_directory, daemon=True)
