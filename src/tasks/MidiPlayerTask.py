@@ -1,12 +1,17 @@
 ﻿import os
+import threading
 import time
 import mido
+import win32con
+import win32file
 
 from PySide6.QtGui import QFontMetrics
 from qfluentwidgets import FluentIcon
 from ok import BaseTask, og
 from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
 from ok.util.collection import find_index_in_list
+
+FILE_LIST_DIRECTORY = 0x0001
 
 class MidiPlayerTask(BaseTask):
 
@@ -38,9 +43,44 @@ class MidiPlayerTask(BaseTask):
         self.refresh_midi_list()
 
         self.default_config.update({'Locate MIDI Folder': 'Action'})
-        self.default_config.update({'Reload MIDI List': 'Action'})
         self.config_type['Locate MIDI Folder'] = {'type': "button", 'icon': FluentIcon.FOLDER, 'text': 'Locate', 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))}
-        self.config_type['Reload MIDI List'] = {'type': "button", 'icon': FluentIcon.SYNC, 'text': 'Reload', 'callback': self.reload_options}
+
+        # 启动后台守护线程监听文件夹变动
+        self.monitor_thread = threading.Thread(target=self._monitor_directory, daemon=True)
+        self.monitor_thread.start()
+
+    def _monitor_directory(self):
+        """在后台线程中阻塞监听文件夹"""
+        h_dir = win32file.CreateFile(
+            self.midi_dir,
+            FILE_LIST_DIRECTORY,
+            win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
+            None,
+            win32con.OPEN_EXISTING,
+            win32con.FILE_FLAG_BACKUP_SEMANTICS,
+            None
+        )
+
+        while True:
+            try:
+                # 阻塞等待文件增删改名
+                results = win32file.ReadDirectoryChangesW(
+                    h_dir,
+                    1024,
+                    False,  # 不需要递归子文件夹
+                    win32con.FILE_NOTIFY_CHANGE_FILE_NAME | win32con.FILE_NOTIFY_CHANGE_DIR_NAME,
+                    None,
+                    None
+                )
+                if results:
+                    print(results)
+                    # 稍微等待一下，防止系统还在进行 I/O 操作（比如大文件还没拷贝完）
+                    time.sleep(0.5)
+                    self.reload_options()
+            except Exception as e:
+                if hasattr(self, 'log_error'):
+                    self.log_error(f"监听文件夹停止: {e}")
+                break
 
     def refresh_midi_list(self):
         files = [f for f in os.listdir(self.midi_dir) if f.lower().endswith(('.mid', '.midi'))]
