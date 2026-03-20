@@ -348,15 +348,14 @@ class MidiPlayerTask(BaseTask):
                     frame: ndarray = self.frame
                     if frame is None:
                         continue
-                    # 计算并转换坐标为整数（像素索引）
+                    # 计算并转换坐标为整数
                     x1, x2 = int(self.width_of_screen(0.02)), int(self.width_of_screen(0.07))
                     y1, y2 = int(self.height_of_screen(0.22)), int(self.height_of_screen(0.24))
 
-                    # 截取目标区域 (注意 numpy 数组切片是 [y, x])
+                    # 截取目标区域
                     roi = frame[y1:y2, x1:x2]
 
-                    target_color = [91, 91, 222]
-                    # roi[..., :3] 用于兼容可能存在的 Alpha 通道 (RGBA)
+                    target_color = [93, 93, 218]
                     if np.any(np.all(np.abs(roi - target_color) < 2, axis=-1)):
                         break
 
