@@ -6,12 +6,51 @@ import win32con
 import win32file
 
 from PySide6.QtGui import QFontMetrics
-from qfluentwidgets import FluentIcon
+from PySide6.QtWidgets import QVBoxLayout, QWidget
+from qfluentwidgets import MessageBoxBase, SubtitleLabel, CheckBox, SmoothScrollArea, FluentIcon
+
 from ok import BaseTask, og
 from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
 from ok.util.collection import find_index_in_list
 
 FILE_LIST_DIRECTORY = 0x0001
+
+
+class TrackSelectionDialog(MessageBoxBase):
+    def __init__(self, tracks, selected_indices, parent=None):
+        super().__init__(parent)
+        self.titleLabel = SubtitleLabel(og.app.tr("Track Selection"), self)
+        self.viewLayout.addWidget(self.titleLabel)
+        self.scroll_area = SmoothScrollArea(self)
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+
+        self.scroll_widget = QWidget()
+        self.scroll_layout = QVBoxLayout(self.scroll_widget)
+        self.scroll_widget.setStyleSheet("QWidget { background: transparent; }")
+
+        self.checkboxes = []
+        for i, track in enumerate(tracks):
+            # 提取音轨名称
+            track_name = f"Track {i}"
+            for msg in track:
+                if msg.type == 'track_name':
+                    track_name = f"Track {i}: {msg.name}"
+                    break
+            cb = CheckBox(track_name)
+            # 如果之前没有选过，则默认全选
+            cb.setChecked(selected_indices is None or i in selected_indices)
+            self.scroll_layout.addWidget(cb)
+            self.checkboxes.append((i, cb))
+        self.scroll_layout.addStretch()
+        self.scroll_area.setWidget(self.scroll_widget)
+        self.viewLayout.addWidget(self.scroll_area)
+        self.yesButton.setText(og.app.tr("OK"))
+        self.cancelButton.setText(og.app.tr("Cancel"))
+        self.widget.setMinimumSize(350, 450)
+
+    def get_selected_tracks(self):
+        return [i for i, cb in self.checkboxes if cb.isChecked()]
 
 class MidiPlayerTask(BaseTask):
 
@@ -40,18 +79,52 @@ class MidiPlayerTask(BaseTask):
             os.makedirs(self.midi_dir)
 
         self.default_config.update({'MIDI File': ''})
+        self.default_config.update({'_track_selections': {}})
         self.load_config()
         self.refresh_midi_list()
 
-        # self.default_config.update({'MIDI Folder': 'Action'})
+        self.config_type['Tracks'] = {'type': "button", 'buttons': [
+            {'icon': FluentIcon.MENU, 'text': 'Select', 'callback': self.open_track_selector},
+        ]}
         self.config_type['MIDI Folder'] = {'type': "button", 'buttons': [
             {'icon': FluentIcon.FOLDER, 'text': 'Locate', 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))},
-            {'type': "button", 'icon': FluentIcon.SYNC, 'text': 'Reload', 'callback': self.reload_options},
+            {'icon': FluentIcon.SYNC, 'text': 'Reload', 'callback': self.reload_options},
         ]}
 
         # 启动后台守护线程监听文件夹变动
         # self.monitor_thread = threading.Thread(target=self._monitor_directory, daemon=True)
         # self.monitor_thread.start()
+
+    def open_track_selector(self):
+        midi_file_name = self.config.get('MIDI File')
+        if not midi_file_name or midi_file_name == 'No MIDI files found.':
+            if hasattr(self, 'log_error'):
+                self.log_error("请先选择一个有效的 MIDI 文件。")
+            return
+
+        file_path = os.path.join(self.midi_dir, midi_file_name)
+        if not os.path.exists(file_path):
+            return
+
+        try:
+            mid = mido.MidiFile(file_path)
+        except Exception as e:
+            if hasattr(self, 'log_error'):
+                self.log_error(f"无法读取 MIDI 文件: {e}")
+            return
+
+        # 获取该首歌曲的历史选中记录
+        selections = self.config.get('_track_selections', {})
+        current_selection = selections.get(midi_file_name)
+
+        # 调起弹窗
+        dialog = TrackSelectionDialog(mid.tracks, current_selection, parent=og.app.main_window)
+        if dialog.exec():
+            selected = dialog.get_selected_tracks()
+            selections[midi_file_name] = selected
+            self.config['_track_selections'] = selections
+            self.log_info(f"已为 {midi_file_name} 选择 {len(selected)} 个音轨。")
+            self.config.save_file()
 
     def _monitor_directory(self):
         """在后台线程中阻塞监听文件夹"""
@@ -99,6 +172,16 @@ class MidiPlayerTask(BaseTask):
         current_midi = self.config.get('MIDI File')
         if current_midi is not None and current_midi not in self.midi_list:
             self.config.pop('MIDI File', None)
+
+        # 如果某个MIDI文件已不存在，删除音轨选择中对应的记录
+        selections = self.config.get('_track_selections', {})
+        missing_files = [midi_name for midi_name in selections.keys() if midi_name not in files]
+        if missing_files:
+            for midi_name in missing_files:
+                selections.pop(midi_name, None)
+            self.config['_track_selections'] = selections
+            self.config.save_file()
+
         self.load_config()
 
     def reload_options(self):
@@ -224,6 +307,14 @@ class MidiPlayerTask(BaseTask):
         try:
             mid = mido.MidiFile(file_path)
             self.log_info(f"开始播放: {midi_file_name}")
+            # 过滤未选中的音轨
+            selections = self.config.get('_track_selections', {})
+            current_selection = selections.get(midi_file_name)
+            if current_selection is not None:
+                for i, track in enumerate(mid.tracks):
+                    if i not in current_selection:
+                        # 清空未选音轨中的发声及控制消息
+                        track[:] = [msg for msg in track if msg.is_meta]
 
             # 预处理：提取音符和控制信息
             events = []

@@ -155,3 +155,18 @@ msgstr "定位"
 
 msgid "Reload"
 msgstr "刷新"
+
+msgid "Tracks"
+msgstr "音轨"
+
+msgid "Select"
+msgstr "选择"
+
+msgid "Track Selection"
+msgstr "音轨选择"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "OK"
+msgstr "确定"
