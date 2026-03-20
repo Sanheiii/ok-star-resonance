@@ -23,8 +23,7 @@ jobs:
         id: build-app
         uses: ok-oldking/pyappify-action@master
         with:
-          version: 'v1.0.33'
-          use_release: https://api.github.com/repos/Sanheiii/ok-star-resonance/releases/tags/v0.0.23
+          version: 'v1.0.42'
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
