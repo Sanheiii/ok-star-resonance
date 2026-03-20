@@ -20,8 +20,8 @@ class FishingTask(SRTriggerTask):
             'Disable Yolo Detect': False,
             'Switch Pole Key': 'm',
             'Fishing Interruption Notice': False,
-            'PushDeer Server': 'Put your server url here if not using official server',
-            'PushDeer ApiKey': 'Get from your PushDeer app'
+            'PushDeer Server': og.app.tr('Put your server url here if not using official server'),
+            'PushDeer ApiKey': og.app.tr('Get from your PushDeer app')
         })
         
         self.trigger_count = 0

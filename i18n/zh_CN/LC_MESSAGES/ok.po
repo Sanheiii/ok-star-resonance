@@ -170,3 +170,18 @@ msgstr "取消"
 
 msgid "OK"
 msgstr "确定"
+
+msgid "Disable Yolo Detect"
+msgstr "禁用 Yolo 目标检测"
+
+msgid "Fishing Interruption Notice"
+msgstr "钓鱼中断通知"
+
+msgid "PushDeer Server"
+msgstr "PushDeer 服务器"
+
+msgid "Put your server url here if not using official server"
+msgstr "如果不使用官方服务器，在此处填写你的服务器 URL"
+
+msgid "Get from your PushDeer app"
+msgstr "从你的 PushDeer APP 获取"
