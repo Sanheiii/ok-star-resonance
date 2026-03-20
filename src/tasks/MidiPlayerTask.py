@@ -42,11 +42,15 @@ class MidiPlayerTask(BaseTask):
         self.load_config()
         self.refresh_midi_list()
 
-        self.config_type['MIDI Folder'] = {'type': "button", 'icon': FluentIcon.FOLDER, 'text': 'Locate', 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))}
+        self.default_config.update({'MIDI Folder': 'Action'})
+        self.config_type['MIDI Folder'] = {'type': "button", 'buttons': [
+            {'icon': FluentIcon.FOLDER, 'text': 'Locate', 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))},
+            {'type': "button", 'icon': FluentIcon.SYNC, 'text': 'Reload', 'callback': self.reload_options},
+        ]}
 
         # 启动后台守护线程监听文件夹变动
-        self.monitor_thread = threading.Thread(target=self._monitor_directory, daemon=True)
-        self.monitor_thread.start()
+        # self.monitor_thread = threading.Thread(target=self._monitor_directory, daemon=True)
+        # self.monitor_thread.start()
 
     def _monitor_directory(self):
         """在后台线程中阻塞监听文件夹"""
@@ -97,13 +101,13 @@ class MidiPlayerTask(BaseTask):
         self.load_config()
 
     def reload_options(self):
-        self.refresh_midi_list()
         v_box_layout = og.app.main_window.onetime_tab.vBoxLayout
         for i in range(v_box_layout.count()):
             widget = v_box_layout.itemAt(i).widget()
             if widget and hasattr(widget, 'task') and widget.task is self:
                 for config_widget in widget.config_widgets:
                     if isinstance(config_widget, LabelAndDropDown):
+                        config_widget.config = self.config
                         key = config_widget.key
                         options = self.config_type.get(key, {}).get('options', [])
                         # 清理旧的选项数据
@@ -115,6 +119,8 @@ class MidiPlayerTask(BaseTask):
                             tr = og.app.tr(option)
                             config_widget.tr_options.append(tr)
                             config_widget.tr_dict[tr] = option
+
+                        current_val = self.config.get(key)
                         # 更新 combo_box 的项目
                         config_widget.combo_box.addItems(config_widget.tr_options)
                         # 重新计算控件宽度
@@ -124,7 +130,6 @@ class MidiPlayerTask(BaseTask):
                             max_width = max(max_width, fm.horizontalAdvance(option))
                         config_widget.combo_box.setFixedWidth(max_width + 50)
                         # 如果当前配置文件记录的选项被删除了，重置为第一个选项
-                        current_val = self.config.get(key)
                         index = find_index_in_list(options, current_val, -1)
                         if index == -1 and options:
                             index = 0

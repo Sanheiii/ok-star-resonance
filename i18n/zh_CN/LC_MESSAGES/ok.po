@@ -152,3 +152,6 @@ msgstr "MIDI 目录"
 
 msgid "Locate"
 msgstr "定位"
+
+msgid "Reload"
+msgstr "刷新"
