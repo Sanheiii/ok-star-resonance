@@ -39,10 +39,11 @@ class MidiPlayerTask(BaseTask):
         if not os.path.exists(self.midi_dir):
             os.makedirs(self.midi_dir)
 
+        self.default_config.update({'MIDI File': ''})
         self.load_config()
         self.refresh_midi_list()
 
-        self.default_config.update({'MIDI Folder': 'Action'})
+        # self.default_config.update({'MIDI Folder': 'Action'})
         self.config_type['MIDI Folder'] = {'type': "button", 'buttons': [
             {'icon': FluentIcon.FOLDER, 'text': 'Locate', 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))},
             {'type': "button", 'icon': FluentIcon.SYNC, 'text': 'Reload', 'callback': self.reload_options},
@@ -96,11 +97,12 @@ class MidiPlayerTask(BaseTask):
         self.default_config.update({'MIDI File': self.midi_list[0]})
         # 如果之前的默认Midi文件已被删除则重置选择
         current_midi = self.config.get('MIDI File')
-        if current_midi and current_midi not in self.midi_list:
+        if current_midi is not None and current_midi not in self.midi_list:
             self.config.pop('MIDI File', None)
         self.load_config()
 
     def reload_options(self):
+        self.refresh_midi_list()
         v_box_layout = og.app.main_window.onetime_tab.vBoxLayout
         for i in range(v_box_layout.count()):
             widget = v_box_layout.itemAt(i).widget()
