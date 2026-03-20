@@ -2,11 +2,14 @@
 import threading
 import time
 import mido
+import numpy as np
 import win32con
 import win32file
 
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import QVBoxLayout, QWidget
+from numpy import ndarray
+from ok.task.exceptions import TaskDisabledException
 from qfluentwidgets import MessageBoxBase, SubtitleLabel, CheckBox, SmoothScrollArea, FluentIcon
 
 from ok import BaseTask, og
@@ -79,7 +82,11 @@ class MidiPlayerTask(BaseTask):
             os.makedirs(self.midi_dir)
 
         self.default_config.update({'MIDI File': ''})
+        self.default_config.update({'Mute Pedal': False})
+        self.default_config.update({'Ensemble Mode': False})
+        self.default_config.update({'Delay (ms)': 0})
         self.default_config.update({'_track_selections': {}})
+        self.config_description['Ensemble Mode'] = 'Start this task before clicking the in-game Ensemble Start'
         self.load_config()
         self.refresh_midi_list()
 
@@ -319,9 +326,13 @@ class MidiPlayerTask(BaseTask):
             # 预处理：提取音符和控制信息
             events = []
             abs_time = 0.0
+            allowed_types = {'note_on', 'note_off'}
+            # 如果忽视延音踏板则不关注control_change
+            if not self.config['Mute Pedal']:
+                allowed_types.add('control_change')
             for msg in mid:
                 abs_time += msg.time
-                if msg.type in ('note_on', 'note_off', 'control_change'):
+                if msg.type in allowed_types:
                     events.append((abs_time, msg))
 
             # 初始化游戏内部钢琴状态
@@ -329,6 +340,30 @@ class MidiPlayerTask(BaseTask):
             self.current_octave = 0  # 默认无修饰键: 0 (正常), 1 (Shift), -1 (Ctrl)
             playing_notes = {}  # 记录当前按下的键，方便正确释放
             is_pedal_on = False  # 记录当前踏板状态
+
+            # 合奏模式需要等待节拍器
+            if self.config['Ensemble Mode']:
+                while True:
+                    self.next_frame()
+                    frame: ndarray = self.frame
+                    if frame is None:
+                        continue
+                    # 计算并转换坐标为整数（像素索引）
+                    x1, x2 = int(self.width_of_screen(0.02)), int(self.width_of_screen(0.07))
+                    y1, y2 = int(self.height_of_screen(0.22)), int(self.height_of_screen(0.24))
+
+                    # 截取目标区域 (注意 numpy 数组切片是 [y, x])
+                    roi = frame[y1:y2, x1:x2]
+
+                    target_color = [91, 91, 222]
+                    # roi[..., :3] 用于兼容可能存在的 Alpha 通道 (RGBA)
+                    if np.any(np.all(np.abs(roi - target_color) < 2, axis=-1)):
+                        break
+
+            # 如果设定了延迟先等一下
+            delay = self.config['Delay (ms)']
+            if delay > 0:
+                self.sleep(delay/1000)
 
             start_time = time.time()
 
@@ -384,6 +419,8 @@ class MidiPlayerTask(BaseTask):
             self.switch_state(1, 0)
 
         except Exception as e:
+            if type(e) is TaskDisabledException:
+                return
             if locals().get('is_pedal_on'):
                 self.tap_key('space')
             self.switch_state(1, 0)

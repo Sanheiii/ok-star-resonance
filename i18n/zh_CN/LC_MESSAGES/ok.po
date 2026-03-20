@@ -185,3 +185,15 @@ msgstr "如果不使用官方服务器，在此处填写你的服务器 URL"
 
 msgid "Get from your PushDeer app"
 msgstr "从你的 PushDeer APP 获取"
+
+msgid "Ensemble Mode"
+msgstr "合奏模式"
+
+msgid "Start this task before clicking the in-game Ensemble Start"
+msgstr "首先运行任务，然后在游戏内合奏准备页面点击开始"
+
+msgid "Delay (ms)"
+msgstr "延迟（毫秒）"
+
+msgid "Mute Pedal"
+msgstr "忽略延音踏板"
