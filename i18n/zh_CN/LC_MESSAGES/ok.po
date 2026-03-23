@@ -197,3 +197,6 @@ msgstr "延迟（毫秒）"
 
 msgid "Mute Pedal"
 msgstr "忽略延音踏板"
+
+msgid "Opening Skill"
+msgstr "开场技能"

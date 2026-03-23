@@ -13,6 +13,7 @@ class GuildHuntAssistTask(BaseTask):
         self.description = "Auto-accept invites and assist in Guild Hunts."
         self.default_config.update({
             'I\'m Tank': False,
+            'Opening Skill': 'Z',
             "Combat Wait Time": 5
         })
         self.executed = False
@@ -31,7 +32,7 @@ class GuildHuntAssistTask(BaseTask):
                 self.sleep(3)
 
             # 确认进入副本
-            if self.find_one('box_loading', box=self.box_of_screen(0, 0.76, 0.09, 0.82)):
+            if self.find_one('box_loading', box=self.box_of_screen(0, 0.76, 0.09, 0.82), threshold=0.5):
                 # 刷新状态，允许进行操作
                 self.executed = False
 
@@ -44,7 +45,8 @@ class GuildHuntAssistTask(BaseTask):
                     self.sleep(0.5)
                     self.send_key('e')
                     self.sleep(1)
-                    self.send_key('z')
+                    self.send_key(self.config.get('Opening Skill'))
+                    self.sleep(0.5)
                     self.send_key('h')
                 else:
                     # 不是T
@@ -53,6 +55,9 @@ class GuildHuntAssistTask(BaseTask):
                     self.send_key_down('w')
                     self.sleep(2)
                     self.send_key_up('w')
+                    self.sleep(0.5)
+                    self.send_key(self.config.get('Opening Skill'))
+                    self.sleep(0.5)
                     self.send_key('h')
                 self.executed = True
 
