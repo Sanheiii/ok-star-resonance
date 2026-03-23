@@ -1,6 +1,7 @@
 import re
 import time
 
+from pynput import keyboard
 from src.tasks.SRTriggerTask import SRTriggerTask
 
 
@@ -18,6 +19,8 @@ class GatherTask(SRTriggerTask):
 
         self.last_run_time = 0
         self.run_interval = 0
+
+        self.controller = keyboard.Controller()
 
     def run(self):
         lang = self.get_game_language()
@@ -49,15 +52,14 @@ class GatherTask(SRTriggerTask):
             return
 
         sorted_boxes = sorted(boxes, key=lambda b: b.center()[1])
-
         for i, box in enumerate(sorted_boxes):
             self.sleep(0.5)
-            if ((self.config.get('Use Focus') and re.search(pattern2_str, box.name)) or (not self.config.get('Use Focus') and not re.search(pattern2_str, box.name))):
-                self.send_key_down('alt_l')
+            if (self.config.get('Use Focus') and re.search(pattern2_str, box.name)) or (not self.config.get('Use Focus') and not re.search(pattern2_str, box.name)):
+                self.controller.press(keyboard.Key.alt_l)
                 self.sleep(0.1)
                 self.click(box)
                 self.sleep(0.1)
-                self.send_key_up('alt_l')
+                self.controller.release(keyboard.Key.alt_l)
                 self.run_interval = 5.5
                 break
         return
