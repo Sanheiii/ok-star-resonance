@@ -152,14 +152,10 @@ class MidiPlayerTask(BaseTask):
         selections = self.config.get('_track_selections', {})
         selected_tracks = set(selections.get(midi_file_name, []))
 
-        # Get playable range from pitch_to_key
-        playable_min = min(self.pitch_to_key.keys())
-        playable_max = max(self.pitch_to_key.keys())
-
-        # Open visualizer dialog
+        # Open visualizer dialog with overall playable range (A0-C8)
         dialog = MidiVisualizerDialog(
             midi_path=file_path,
-            playable_range=(playable_min, playable_max),
+            playable_range=(self.OVERALL_MIN_PITCH, self.OVERALL_MAX_PITCH),
             selected_tracks=selected_tracks,
             parent=og.app.main_window
         )
@@ -269,12 +265,31 @@ class MidiPlayerTask(BaseTask):
         self.send_key_up(key)
         time.sleep(0.01)
 
+    # Playable range constants (A0=21 to C8=108)
+    OVERALL_MIN_PITCH = 21  # A0
+    OVERALL_MAX_PITCH = 108  # C8
+    # Keyboard range (3 octaves: C3-B5 = 48-83)
+    KEYBOARD_MIN = 48  # C3
+    KEYBOARD_MAX = 83  # B5
+
     def is_in_range(self, note, page, octave):
-        """判断音符是否在指定的 (页面, 八度) 状态内"""
-        # page: 0 (C0~B2), 1 (C3~B5), 2 (C6~B8)
-        # octave: -1 (降八度/Ctrl), 0 (正常), 1 (升八度/Shift)
+        """Check if a note is playable in the specified (page, octave) state.
+
+        The keyboard plays 3 octaves (Cx to Bx+2) at a time.
+        Page shifts by 3 octaves, octave modifier shifts by 1 octave.
+        Overall playable range is A0 (21) to C8 (108).
+        """
+        # First check overall playable bounds
+        if note < self.OVERALL_MIN_PITCH or note > self.OVERALL_MAX_PITCH:
+            return False
+
+        # Calculate base note for this state
         base_note = note - (page - 1) * 36 - octave * 12
-        return 48 <= base_note <= 83
+        return self.KEYBOARD_MIN <= base_note <= self.KEYBOARD_MAX
+
+    def is_note_playable(self, note):
+        """Check if a note is within overall playable range (A0-C8)."""
+        return self.OVERALL_MIN_PITCH <= note <= self.OVERALL_MAX_PITCH
 
     def get_key(self, note, page, octave):
         """根据当前状态计算目标键位"""

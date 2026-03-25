@@ -1,15 +1,40 @@
-import mido
-from mido import MidiFile, bpm2tempo
-from typing import List, Dict, Set, Tuple, Optional
-from dataclasses import dataclass
+# MIDI Piano Roll Visualizer Implementation Plan
 
-from PySide6.QtWidgets import QWidget, QSizePolicy, QHBoxLayout, QSlider
-from PySide6.QtCore import Qt, QTimer, Signal, QPointF, QElapsedTimer, QEvent
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPainterPath
-from qfluentwidgets import (MessageBoxBase, SubtitleLabel, BodyLabel,
-                            StrongBodyLabel, ToolButton, FluentIcon,
-                            SmoothScrollArea, CaptionLabel, isDarkTheme, themeColor)
-from ok import og
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** Add a full-featured MIDI piano roll visualization popup with playback animation, zoom/scroll, and note detail inspection.
+
+**Architecture:** Custom QWidget with QPainter for rendering, integrated into MidiPlayerTask via a new button. Uses existing qfluentwidgets components for UI consistency.
+
+**Tech Stack:** PySide6, qfluentwidgets, mido (already in dependencies)
+
+---
+
+## Task 1: Create Directory Structure and Data Classes
+
+**Files:**
+- Create: `src/gui/__init__.py`
+- Create: `src/gui/MidiVisualizerDialog.py`
+
+**Step 1: Create gui package directory**
+
+```bash
+mkdir -p src/gui
+```
+
+**Step 2: Create __init__.py**
+
+Create `src/gui/__init__.py`:
+```python
+# GUI components for ok-star-resonance
+```
+
+**Step 3: Add data classes to MidiVisualizerDialog.py**
+
+Add to `src/gui/MidiVisualizerDialog.py`:
+```python
+from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -28,25 +53,48 @@ class TempoEvent:
     """Stores tempo change information."""
     time: float  # Time in seconds when tempo changes
     bpm: float  # Tempo in beats per minute
+```
 
+**Step 4: Commit**
 
+```bash
+git add src/gui/__init__.py src/gui/MidiVisualizerDialog.py
+git commit -m "feat: add gui package and MIDI visualizer data classes"
+```
+
+---
+
+## Task 2: Create MIDI Parser Helper
+
+**Files:**
+- Modify: `src/gui/MidiVisualizerDialog.py`
+
+**Step 1: Add imports for MIDI parsing**
+
+Add to imports in `src/gui/MidiVisualizerDialog.py`:
+```python
+import mido
+from mido import MidiFile, bpm2tempo
+from typing import List, Dict, Set, Tuple
+```
+
+**Step 2: Add MidiParser class**
+
+Add after data classes in `src/gui/MidiVisualizerDialog.py`:
+```python
 class MidiParser:
     """Parses MIDI files into NoteData objects."""
 
-    # Overall playable range for the game (A0=21 to C8=108)
-    OVERALL_MIN = 21  # A0
-    OVERALL_MAX = 108  # C8
-    # Default display range (C3-B5, middle 3 octaves)
-    DEFAULT_MIN = 48  # C3
-    DEFAULT_MAX = 83  # B5
+    # Playable range for the game (C3=48 to B5=83)
+    PLAYABLE_MIN = 48
+    PLAYABLE_MAX = 83
 
     def __init__(self, playable_range: Tuple[int, int] = None):
-        # Use overall playable range for determining if a note can be played
-        self.playable_min = playable_range[0] if playable_range else self.OVERALL_MIN
-        self.playable_max = playable_range[1] if playable_range else self.OVERALL_MAX
+        self.playable_min = playable_range[0] if playable_range else self.PLAYABLE_MIN
+        self.playable_max = playable_range[1] if playable_range else self.PLAYABLE_MAX
 
     def is_playable(self, pitch: int) -> bool:
-        """Check if a note is within overall playable range (A0-C8)."""
+        """Check if a note is within playable range."""
         return self.playable_min <= pitch <= self.playable_max
 
     def parse(self, midi_file: MidiFile, selected_tracks: Set[int] = None) -> Tuple[List[NoteData], List[TempoEvent], float]:
@@ -64,8 +112,8 @@ class MidiParser:
 
         # Parse notes from all tracks
         for track_idx, track in enumerate(midi_file.tracks):
-            # Skip unselected tracks if selection is specified and non-empty
-            if selected_tracks and track_idx not in selected_tracks:
+            # Skip unselected tracks if selection is specified
+            if selected_tracks is not None and track_idx not in selected_tracks:
                 continue
 
             self._parse_track(track, track_idx, midi_file.ticks_per_beat, tempo_map, notes)
@@ -106,7 +154,7 @@ class MidiParser:
                      tempo_map: List[Tuple[int, int]], notes: List[NoteData]):
         """Parse a single track into notes."""
         abs_tick = 0
-        active_notes: Dict[int, Tuple[int, int, float]] = {}  # pitch -> (start_tick, velocity, start_time)
+        active_notes: Dict[int, Tuple[int, float]] = {}  # pitch -> (start_tick, velocity)
 
         for msg in track:
             abs_tick += msg.time
@@ -155,8 +203,35 @@ class MidiParser:
         time += (tick - last_tick) / ticks_per_beat * last_tempo / 1_000_000
 
         return time
+```
 
+**Step 3: Commit**
 
+```bash
+git add src/gui/MidiVisualizerDialog.py
+git commit -m "feat: add MidiParser for converting MIDI to NoteData"
+```
+
+---
+
+## Task 3: Create PianoRollWidget with Basic Structure
+
+**Files:**
+- Modify: `src/gui/MidiVisualizerDialog.py`
+
+**Step 1: Add PySide6 imports**
+
+Add to imports:
+```python
+from PySide6.QtWidgets import QWidget, QSizePolicy
+from PySide6.QtCore import Qt, QTimer, Signal, QPointF
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPainterPath
+```
+
+**Step 2: Add PianoRollWidget class**
+
+Add after MidiParser class:
+```python
 class PianoRollWidget(QWidget):
     """Custom widget for rendering piano roll visualization."""
 
@@ -174,9 +249,6 @@ class PianoRollWidget(QWidget):
     H_ZOOM_MAX = 200  # Max pixels per second
     V_ZOOM_MIN = 8  # Min pixels per note
     V_ZOOM_MAX = 24  # Max pixels per note
-
-    # Playback
-    PLAYHEAD_MARGIN = 50  # Pixels from edge to trigger auto-scroll
 
     # Note range to display
     MIN_PITCH = 0  # C0
@@ -214,19 +286,10 @@ class PianoRollWidget(QWidget):
         self.playback_timer.setInterval(33)  # ~30 FPS
         self.playback_timer.timeout.connect(self._on_playback_tick)
         self.playback_start_time = 0.0
-        self._elapsed_timer = QElapsedTimer()
-
-        # MIDI output for sound playback
-        self._midi_out = None
-        self._playing_midi_notes: Set[int] = set()  # Currently playing MIDI notes
 
         # Interaction state
         self.selected_note: Optional[NoteData] = None
         self.setMouseTracking(True)
-
-        # Content size for scroll calculations
-        self._content_width = 0
-        self._content_height = 0
 
         # Widget setup
         self.setMinimumSize(400, 300)
@@ -243,249 +306,31 @@ class PianoRollWidget(QWidget):
         self.total_duration = duration
         self.selected_tracks = selected_tracks or set()
         self._update_scroll_range()
-        self._scroll_to_playable_range()
         self.update()
-
-    def _scroll_to_playable_range(self):
-        """Scroll the view to show the playable range (C3-B5) centered vertically."""
-        # Center on C4 (pitch 60) which is in the middle of playable range
-        center_pitch = 60  # C4
-        # Calculate scroll position to center this pitch
-        target_y = (self.MAX_PITCH - center_pitch) * self.v_zoom
-        # Center it in the visible area
-        if self.height() > 0:
-            self.scroll_y = int(target_y - self.height() / 2 + self.TIME_RULER_HEIGHT)
-            self.scroll_y = max(0, self.scroll_y)
-
-        # Scroll horizontally to show the beginning of the piece
-        self.scroll_x = 0
 
     def set_playable_color(self, color: QColor):
         """Set the color for playable notes."""
         self.COLOR_PLAYABLE = color
+```
 
-    def _update_scroll_range(self):
-        """Update the scroll range based on content size."""
-        content_width = int(self.total_duration * self.h_zoom + self.KEYBOARD_WIDTH)
-        content_height = int((self.MAX_PITCH - self.MIN_PITCH + 1) * self.v_zoom + self.TIME_RULER_HEIGHT)
-        # Store for scroll calculations
-        self._content_width = content_width
-        self._content_height = content_height
+**Step 3: Commit**
 
-    def _on_playback_tick(self):
-        """Handle playback timer tick with MIDI sound."""
-        if not self.is_playing:
-            return
+```bash
+git add src/gui/MidiVisualizerDialog.py
+git commit -m "feat: add PianoRollWidget class structure"
+```
 
-        prev_position = self.playhead_position
+---
 
-        # Use actual elapsed time for accurate playback
-        elapsed = self._elapsed_timer.elapsed() / 1000.0  # Convert ms to seconds
-        self.playhead_position = self.playback_start_time + elapsed
+## Task 4: Implement Piano Keyboard Rendering
 
-        # Check if playback finished
-        if self.playhead_position >= self.total_duration:
-            self.playhead_position = self.total_duration
-            self.stop_playback()
-        else:
-            # Play MIDI notes
-            self._play_midi_notes(prev_position, self.playhead_position)
+**Files:**
+- Modify: `src/gui/MidiVisualizerDialog.py`
 
-        # Auto-scroll to follow playhead
-        playhead_x = self._time_to_x(self.playhead_position)
-        visible_left = self.KEYBOARD_WIDTH
-        visible_right = self.width() - self.PLAYHEAD_MARGIN
+**Step 1: Add helper methods for piano keyboard**
 
-        if playhead_x < visible_left or playhead_x > visible_right:
-            self.scroll_x = int(self.playhead_position * self.h_zoom - self.width() / 2 + self.KEYBOARD_WIDTH)
-            self.scroll_x = max(0, self.scroll_x)
-
-        self.position_changed.emit(self.playhead_position)
-        self.update()
-
-    def _play_midi_notes(self, prev_time: float, current_time: float):
-        """Send MIDI messages for notes between prev_time and current_time."""
-        if not self._midi_out:
-            return
-
-        # Find notes that should end (note_off)
-        notes_to_end = []
-        for note in self.notes:
-            note_end = note.start_time + note.duration
-            if note_end > prev_time and note_end <= current_time and note.pitch in self._playing_midi_notes:
-                notes_to_end.append(note.pitch)
-
-        # Send note_off
-        for pitch in notes_to_end:
-            self._midi_out.send(mido.Message('note_off', note=pitch, velocity=0))
-            self._playing_midi_notes.discard(pitch)
-
-        # Find notes that should start (note_on)
-        for note in self.notes:
-            if note.start_time > prev_time and note.start_time <= current_time:
-                if note.pitch not in self._playing_midi_notes:
-                    # Use velocity from note, or default to 80
-                    velocity = min(127, max(1, note.velocity if note.velocity > 0 else 80))
-                    self._midi_out.send(mido.Message('note_on', note=note.pitch, velocity=velocity))
-                    self._playing_midi_notes.add(note.pitch)
-
-    def set_h_zoom(self, value: int):
-        """Set horizontal zoom (pixels per second)."""
-        old_h_zoom = self.h_zoom
-        self.h_zoom = max(self.H_ZOOM_MIN, min(self.H_ZOOM_MAX, value))
-
-        # Adjust scroll to keep center
-        if old_h_zoom > 0:
-            center_time = self._x_to_time(self.width() / 2)
-            self.scroll_x = int(center_time * self.h_zoom - self.width() / 2 + self.KEYBOARD_WIDTH)
-
-        self._update_scroll_range()
-        self.update()
-
-    def set_v_zoom(self, value: int):
-        """Set vertical zoom (pixels per note)."""
-        old_v_zoom = self.v_zoom
-        self.v_zoom = max(self.V_ZOOM_MIN, min(self.V_ZOOM_MAX, value))
-
-        # Adjust scroll to keep center
-        if old_v_zoom > 0:
-            center_pitch = self._y_to_pitch(self.height() / 2)
-            self.scroll_y = int((self.MAX_PITCH - center_pitch) * self.v_zoom - self.height() / 2 + self.TIME_RULER_HEIGHT)
-
-        self._update_scroll_range()
-        self.update()
-
-    def wheelEvent(self, event):
-        """Handle mouse wheel for scrolling and zooming."""
-        modifiers = event.modifiers()
-
-        if modifiers & Qt.ControlModifier:
-            # Ctrl+wheel: horizontal zoom
-            delta = event.angleDelta().y()
-            if delta > 0:
-                self.set_h_zoom(int(self.h_zoom * 1.1))
-            else:
-                self.set_h_zoom(int(self.h_zoom / 1.1))
-        elif modifiers & Qt.ShiftModifier:
-            # Shift+wheel: horizontal scroll
-            delta = event.angleDelta().y()
-            self.scroll_x = max(0, self.scroll_x - delta)
-            max_scroll = max(0, self._content_width - self.width())
-            self.scroll_x = min(self.scroll_x, max_scroll)
-            self.update()
-        else:
-            # Normal wheel: vertical scroll
-            delta = event.angleDelta().y()
-            self.scroll_y = max(0, self.scroll_y - delta)
-            max_scroll = max(0, self._content_height - self.height())
-            self.scroll_y = min(self.scroll_y, max_scroll)
-            self.update()
-        event.accept()
-
-    def mousePressEvent(self, event):
-        """Handle mouse press for note selection and seeking."""
-        if event.button() == Qt.LeftButton:
-            x = event.position().x()
-            y = event.position().y()
-
-            # Click on time ruler to seek
-            if x > self.KEYBOARD_WIDTH and y <= self.TIME_RULER_HEIGHT:
-                click_time = self._x_to_time(x)
-                self.seek_to(click_time)
-                return
-
-            # Click in note area
-            if x > self.KEYBOARD_WIDTH and y > self.TIME_RULER_HEIGHT:
-                # Find clicked note
-                click_time = self._x_to_time(x)
-                click_pitch = self._y_to_pitch(y)
-
-                # Search for note at this position
-                found_note = None
-                for note in reversed(self.notes):  # Check top notes first
-                    if (note.pitch == click_pitch and
-                        note.start_time <= click_time <= note.start_time + note.duration):
-                        found_note = note
-                        break
-
-                self.selected_note = found_note
-                if found_note:
-                    self.note_clicked.emit(found_note)
-                self.update()
-
-    def start_playback(self):
-        """Start playback animation with MIDI sound."""
-        self.is_playing = True
-        self.playback_start_time = self.playhead_position
-        self._elapsed_timer.start()
-        self.playback_timer.start()
-
-        # Initialize MIDI output
-        try:
-            if self._midi_out is None:
-                self._midi_out = mido.open_output(autoreset=True)
-        except Exception:
-            self._midi_out = None  # MIDI not available
-
-    def stop_playback(self):
-        """Stop playback animation and silence all MIDI notes."""
-        self.is_playing = False
-        self.playback_timer.stop()
-
-        # Stop all MIDI notes
-        if self._midi_out:
-            for note in list(self._playing_midi_notes):
-                self._midi_out.send(mido.Message('note_off', note=note, velocity=0))
-            self._playing_midi_notes.clear()
-
-    def cleanup(self):
-        """Clean up resources - stop playback and close MIDI port."""
-        self.stop_playback()
-        if self._midi_out:
-            try:
-                # Send all notes off to ensure sound stops
-                self._midi_out.send(mido.Message('control_change', control=123, value=0))
-                self._midi_out.close()
-            except Exception:
-                pass
-            self._midi_out = None
-
-    def toggle_playback(self):
-        """Toggle playback on/off."""
-        if self.is_playing:
-            self.stop_playback()
-        else:
-            self.start_playback()
-
-    def reset_playhead(self):
-        """Reset playhead to start."""
-        self.stop_playback()
-        self.playhead_position = 0.0
-        self.scroll_x = 0  # Reset scroll to show beginning
-        self.position_changed.emit(self.playhead_position)  # Notify listeners
-        self.update()
-
-    def seek_to(self, time: float):
-        """Seek to a specific time position."""
-        # Stop all playing notes before seeking
-        if self._midi_out and self._playing_midi_notes:
-            for note in list(self._playing_midi_notes):
-                self._midi_out.send(mido.Message('note_off', note=note, velocity=0))
-            self._playing_midi_notes.clear()
-
-        # Set new position
-        self.playhead_position = max(0.0, min(time, self.total_duration))
-
-        # If playing, reset the elapsed timer
-        if self.is_playing:
-            self.playback_start_time = self.playhead_position
-            self._elapsed_timer.start()
-
-        self.position_changed.emit(self.playhead_position)
-        self.update()
-
-    # --- Piano Keyboard Rendering (Task 4) ---
-
+Add to PianoRollWidget class:
+```python
     def _is_black_key(self, pitch: int) -> bool:
         """Check if a pitch is a black key."""
         note_in_octave = pitch % 12
@@ -500,16 +345,24 @@ class PianoRollWidget(QWidget):
     def _pitch_to_y(self, pitch: int) -> float:
         """Convert pitch to y coordinate (top of the note row)."""
         # Higher pitches are at top, so invert
+        pitch_range = self.MAX_PITCH - self.MIN_PITCH + 1
         return (self.MAX_PITCH - pitch) * self.v_zoom - self.scroll_y + self.TIME_RULER_HEIGHT
 
     def _y_to_pitch(self, y: float) -> int:
         """Convert y coordinate to pitch."""
+        pitch_range = self.MAX_PITCH - self.MIN_PITCH + 1
         pitch = self.MAX_PITCH - int((y - self.TIME_RULER_HEIGHT + self.scroll_y) / self.v_zoom)
         return max(self.MIN_PITCH, min(self.MAX_PITCH, pitch))
+```
 
+**Step 2: Add keyboard rendering method**
+
+```python
     def _draw_keyboard(self, painter: QPainter):
         """Draw the piano keyboard on the left side."""
         keyboard_rect = self.KEYBOARD_WIDTH
+        visible_top = self.scroll_y
+        visible_bottom = self.scroll_y + self.height() - self.TIME_RULER_HEIGHT
 
         # Draw white keys first
         for pitch in range(self.MIN_PITCH, self.MAX_PITCH + 1):
@@ -547,9 +400,26 @@ class PianoRollWidget(QWidget):
                 y = self._pitch_to_y(pitch)
                 if self.TIME_RULER_HEIGHT <= y <= self.height():
                     painter.drawText(5, int(y + self.v_zoom - 2), self._pitch_to_name(pitch))
+```
 
-    # --- Note Grid and Time Ruler Rendering (Task 5) ---
+**Step 3: Commit**
 
+```bash
+git add src/gui/MidiVisualizerDialog.py
+git commit -m "feat: implement piano keyboard rendering"
+```
+
+---
+
+## Task 5: Implement Note Grid and Time Ruler Rendering
+
+**Files:**
+- Modify: `src/gui/MidiVisualizerDialog.py`
+
+**Step 1: Add time conversion helpers**
+
+Add to PianoRollWidget class:
+```python
     def _time_to_x(self, time: float) -> float:
         """Convert time in seconds to x coordinate."""
         return time * self.h_zoom - self.scroll_x + self.KEYBOARD_WIDTH
@@ -557,7 +427,11 @@ class PianoRollWidget(QWidget):
     def _x_to_time(self, x: float) -> float:
         """Convert x coordinate to time in seconds."""
         return (x - self.KEYBOARD_WIDTH + self.scroll_x) / self.h_zoom
+```
 
+**Step 2: Add grid and time ruler rendering**
+
+```python
     def _draw_grid(self, painter: QPainter):
         """Draw the time grid."""
         # Calculate visible time range
@@ -618,7 +492,11 @@ class PianoRollWidget(QWidget):
                 # Tick mark
                 painter.drawLine(int(x), self.TIME_RULER_HEIGHT - 4, int(x), self.TIME_RULER_HEIGHT)
             second += 1
+```
 
+**Step 3: Add note rendering**
+
+```python
     def _draw_notes(self, painter: QPainter):
         """Draw all notes."""
         # Get visible area
@@ -657,7 +535,11 @@ class PianoRollWidget(QWidget):
             painter.setPen(QPen(color.darker(120), 1))
             painter.setBrush(QBrush(color))
             painter.drawRoundedRect(int(x), int(y + 1), int(width), int(height), 3, 3)
+```
 
+**Step 4: Implement paintEvent**
+
+```python
     def paintEvent(self, event):
         """Handle paint event."""
         painter = QPainter(self)
@@ -668,7 +550,6 @@ class PianoRollWidget(QWidget):
 
         # Draw components
         self._draw_grid(painter)
-        self._draw_playable_range(painter)
         self._draw_notes(painter)
         self._draw_keyboard(painter)
         self._draw_time_ruler(painter)
@@ -677,45 +558,235 @@ class PianoRollWidget(QWidget):
         if self.playhead_position > 0 or self.is_playing:
             self._draw_playhead(painter)
 
-    def _draw_playable_range(self, painter: QPainter):
-        """Draw the playable range outline (A0 to C8)."""
-        # Playable range: A0 (pitch 21) to C8 (pitch 108)
-        playable_min = 21  # A0
-        playable_max = 108  # C8
-
-        # Calculate y coordinates
-        y_min = self._pitch_to_y(playable_max)  # Top (higher pitch)
-        y_max = self._pitch_to_y(playable_min) + self.v_zoom  # Bottom (lower pitch)
-
-        # Draw semi-transparent background for playable area
-        playable_color = QColor(74, 144, 217, 30)  # Light blue, transparent
-        painter.fillRect(self.KEYBOARD_WIDTH, int(y_min),
-                        self.width() - self.KEYBOARD_WIDTH, int(y_max - y_min),
-                        playable_color)
-
-        # Draw border lines for playable range
-        painter.setPen(QPen(QColor(74, 144, 217, 100), 2, Qt.DashLine))
-        painter.drawLine(self.KEYBOARD_WIDTH, int(y_min),
-                        self.width(), int(y_min))
-        painter.drawLine(self.KEYBOARD_WIDTH, int(y_max),
-                        self.width(), int(y_max))
-
-        # Draw labels
-        painter.setPen(QPen(QColor(100, 100, 100)))
-        font = QFont()
-        font.setPointSize(7)
-        painter.setFont(font)
-        painter.drawText(self.KEYBOARD_WIDTH + 5, int(y_min + 12), "C8")
-        painter.drawText(self.KEYBOARD_WIDTH + 5, int(y_max - 3), "A0")
-
     def _draw_playhead(self, painter: QPainter):
         """Draw the playhead line."""
         x = self._time_to_x(self.playhead_position)
         if x >= self.KEYBOARD_WIDTH and x <= self.width():
             painter.setPen(QPen(self.COLOR_PLAYHEAD, 2))
             painter.drawLine(int(x), self.TIME_RULER_HEIGHT, int(x), self.height())
+```
 
+**Step 5: Commit**
 
+```bash
+git add src/gui/MidiVisualizerDialog.py
+git commit -m "feat: implement note grid, time ruler, and note rendering"
+```
+
+---
+
+## Task 6: Implement Zoom and Scroll
+
+**Files:**
+- Modify: `src/gui/MidiVisualizerDialog.py`
+
+**Step 1: Add scroll range update method**
+
+Add to PianoRollWidget class:
+```python
+    def _update_scroll_range(self):
+        """Update the scroll range based on content size."""
+        content_width = int(self.total_duration * self.h_zoom + self.KEYBOARD_WIDTH)
+        content_height = int((self.MAX_PITCH - self.MIN_PITCH + 1) * self.v_zoom + self.TIME_RULER_HEIGHT)
+        # Store for scroll calculations
+        self._content_width = content_width
+        self._content_height = content_height
+
+    def set_h_zoom(self, value: int):
+        """Set horizontal zoom (pixels per second)."""
+        old_h_zoom = self.h_zoom
+        self.h_zoom = max(self.H_ZOOM_MIN, min(self.H_ZOOM_MAX, value))
+
+        # Adjust scroll to keep center
+        if old_h_zoom > 0:
+            center_time = self._x_to_time(self.width() / 2)
+            self.scroll_x = int(center_time * self.h_zoom - self.width() / 2 + self.KEYBOARD_WIDTH)
+
+        self._update_scroll_range()
+        self.update()
+
+    def set_v_zoom(self, value: int):
+        """Set vertical zoom (pixels per note)."""
+        old_v_zoom = self.v_zoom
+        self.v_zoom = max(self.V_ZOOM_MIN, min(self.V_ZOOM_MAX, value))
+
+        # Adjust scroll to keep center
+        if old_v_zoom > 0:
+            center_pitch = self._y_to_pitch(self.height() / 2)
+            self.scroll_y = int((self.MAX_PITCH - center_pitch) * self.v_zoom - self.height() / 2 + self.TIME_RULER_HEIGHT)
+
+        self._update_scroll_range()
+        self.update()
+```
+
+**Step 2: Add mouse wheel handling**
+
+```python
+    def wheelEvent(self, event):
+        """Handle mouse wheel for scrolling and zooming."""
+        modifiers = event.modifiers()
+
+        if modifiers & Qt.ControlModifier:
+            # Ctrl+wheel: horizontal zoom
+            delta = event.angleDelta().y()
+            if delta > 0:
+                self.set_h_zoom(int(self.h_zoom * 1.1))
+            else:
+                self.set_h_zoom(int(self.h_zoom / 1.1))
+        elif modifiers & Qt.ShiftModifier:
+            # Shift+wheel: vertical zoom
+            delta = event.angleDelta().y()
+            if delta > 0:
+                self.set_v_zoom(int(self.v_zoom * 1.1))
+            else:
+                self.set_v_zoom(int(self.v_zoom / 1.1))
+        else:
+            # Normal wheel: vertical scroll
+            delta = event.angleDelta().y()
+            self.scroll_y = max(0, self.scroll_y - delta)
+            max_scroll = max(0, self._content_height - self.height())
+            self.scroll_y = min(self.scroll_y, max_scroll)
+            self.update()
+```
+
+**Step 3: Commit**
+
+```bash
+git add src/gui/MidiVisualizerDialog.py
+git commit -m "feat: implement zoom and scroll functionality"
+```
+
+---
+
+## Task 7: Implement Note Click Selection
+
+**Files:**
+- Modify: `src/gui/MidiVisualizerDialog.py`
+
+**Step 1: Add mouse press handling**
+
+Add to PianoRollWidget class:
+```python
+    def mousePressEvent(self, event):
+        """Handle mouse press for note selection."""
+        if event.button() == Qt.LeftButton:
+            x = event.position().x()
+            y = event.position().y()
+
+            # Check if click is in the note area
+            if x > self.KEYBOARD_WIDTH and y > self.TIME_RULER_HEIGHT:
+                # Find clicked note
+                click_time = self._x_to_time(x)
+                click_pitch = self._y_to_pitch(y)
+
+                # Search for note at this position
+                found_note = None
+                for note in reversed(self.notes):  # Check top notes first
+                    if (note.pitch == click_pitch and
+                        note.start_time <= click_time <= note.start_time + note.duration):
+                        found_note = note
+                        break
+
+                self.selected_note = found_note
+                if found_note:
+                    self.note_clicked.emit(found_note)
+                self.update()
+```
+
+**Step 2: Commit**
+
+```bash
+git add src/gui/MidiVisualizerDialog.py
+git commit -m "feat: implement note click selection"
+```
+
+---
+
+## Task 8: Implement Playback Animation
+
+**Files:**
+- Modify: `src/gui/MidiVisualizerDialog.py`
+
+**Step 1: Add playback control methods**
+
+Add to PianoRollWidget class:
+```python
+    def start_playback(self):
+        """Start playback animation."""
+        self.is_playing = True
+        self.playback_start_time = self.playhead_position
+        self._playback_real_start = 0.0  # Will track real time
+        self.playback_timer.start()
+
+    def stop_playback(self):
+        """Stop playback animation."""
+        self.is_playing = False
+        self.playback_timer.stop()
+
+    def toggle_playback(self):
+        """Toggle playback on/off."""
+        if self.is_playing:
+            self.stop_playback()
+        else:
+            self.start_playback()
+
+    def reset_playhead(self):
+        """Reset playhead to start."""
+        self.playhead_position = 0.0
+        self.update()
+
+    def _on_playback_tick(self):
+        """Handle playback timer tick."""
+        if not self.is_playing:
+            return
+
+        # Advance playhead (30 FPS, real-time)
+        self.playhead_position += 0.033  # 33ms per frame
+
+        # Check if playback finished
+        if self.playhead_position >= self.total_duration:
+            self.playhead_position = self.total_duration
+            self.stop_playback()
+
+        # Auto-scroll to follow playhead
+        playhead_x = self._time_to_x(self.playhead_position)
+        visible_left = self.KEYBOARD_WIDTH
+        visible_right = self.width() - 50
+
+        if playhead_x < visible_left or playhead_x > visible_right:
+            self.scroll_x = int(self.playhead_position * self.h_zoom - self.width() / 2 + self.KEYBOARD_WIDTH)
+            self.scroll_x = max(0, self.scroll_x)
+
+        self.position_changed.emit(self.playhead_position)
+        self.update()
+```
+
+**Step 2: Commit**
+
+```bash
+git add src/gui/MidiVisualizerDialog.py
+git commit -m "feat: implement playback animation with auto-scroll"
+```
+
+---
+
+## Task 9: Create MidiVisualizerDialog Main Dialog
+
+**Files:**
+- Modify: `src/gui/MidiVisualizerDialog.py`
+
+**Step 1: Add qfluentwidgets imports**
+
+Add to imports:
+```python
+from qfluentwidgets import (MessageBoxBase, SubtitleLabel, BodyLabel,
+                            StrongBodyLabel, ToolButton, Slider, FluentIcon,
+                            SmoothScrollArea, CaptionLabel, isDarkTheme, themeColor)
+```
+
+**Step 2: Add MidiVisualizerDialog class**
+
+```python
 class MidiVisualizerDialog(MessageBoxBase):
     """Main dialog for MIDI visualization."""
 
@@ -732,7 +803,7 @@ class MidiVisualizerDialog(MessageBoxBase):
     def _setup_ui(self):
         """Set up the dialog UI."""
         # Title
-        self.titleLabel = SubtitleLabel(og.app.tr("MIDI Visualizer"), self)
+        self.titleLabel = SubtitleLabel(self.tr("MIDI Visualizer"), self)
         self.viewLayout.addWidget(self.titleLabel)
 
         # Piano roll widget
@@ -752,8 +823,7 @@ class MidiVisualizerDialog(MessageBoxBase):
         self._setup_info_panel()
 
         # Dialog buttons
-        self.yesButton.setText(og.app.tr("Close"))
-        self.yesButton.clicked.connect(self._on_close)
+        self.yesButton.setText(self.tr("Close"))
         self.cancelButton.hide()
 
         # Set dialog size
@@ -772,17 +842,17 @@ class MidiVisualizerDialog(MessageBoxBase):
         toolbar_layout.addWidget(self.play_btn)
 
         # Stop button
-        self.stop_btn = ToolButton(FluentIcon.POWER_BUTTON, self)
+        self.stop_btn = ToolButton(FluentIcon.STOP, self)
         self.stop_btn.clicked.connect(self._stop_playback)
         toolbar_layout.addWidget(self.stop_btn)
 
         toolbar_layout.addSpacing(20)
 
         # Horizontal zoom label
-        toolbar_layout.addWidget(BodyLabel(og.app.tr("Zoom H:")))
+        toolbar_layout.addWidget(BodyLabel(self.tr("Zoom H:")))
 
         # Horizontal zoom slider
-        self.h_zoom_slider = QSlider(Qt.Horizontal, self)
+        self.h_zoom_slider = Slider(Qt.Horizontal, self)
         self.h_zoom_slider.setRange(10, 200)
         self.h_zoom_slider.setValue(50)
         self.h_zoom_slider.setFixedWidth(120)
@@ -792,10 +862,10 @@ class MidiVisualizerDialog(MessageBoxBase):
         toolbar_layout.addSpacing(10)
 
         # Vertical zoom label
-        toolbar_layout.addWidget(BodyLabel(og.app.tr("Zoom V:")))
+        toolbar_layout.addWidget(BodyLabel(self.tr("Zoom V:")))
 
         # Vertical zoom slider
-        self.v_zoom_slider = QSlider(Qt.Horizontal, self)
+        self.v_zoom_slider = Slider(Qt.Horizontal, self)
         self.v_zoom_slider.setRange(8, 24)
         self.v_zoom_slider.setValue(14)
         self.v_zoom_slider.setFixedWidth(100)
@@ -803,18 +873,6 @@ class MidiVisualizerDialog(MessageBoxBase):
         toolbar_layout.addWidget(self.v_zoom_slider)
 
         toolbar_layout.addStretch()
-
-        # Timeline slider for seeking
-        self.timeline_slider = QSlider(Qt.Horizontal, self)
-        self.timeline_slider.setRange(0, 1000)
-        self.timeline_slider.setValue(0)
-        self.timeline_slider.setFixedWidth(200)
-        self.timeline_slider.sliderPressed.connect(self._on_timeline_pressed)
-        self.timeline_slider.sliderReleased.connect(self._on_timeline_released)
-        self.timeline_slider.valueChanged.connect(self._on_timeline_changed)
-        self._timeline_dragging = False
-        self._timeline_updating = False
-        toolbar_layout.addWidget(self.timeline_slider)
 
         # Time display
         self.time_label = BodyLabel("0:00 / 0:00")
@@ -828,8 +886,8 @@ class MidiVisualizerDialog(MessageBoxBase):
         info_layout = QHBoxLayout(self.info_panel)
         info_layout.setContentsMargins(0, 4, 0, 4)
 
-        self.info_label = StrongBodyLabel(og.app.tr("Note: "))
-        self.info_value = BodyLabel(og.app.tr("Click a note to see details"))
+        self.info_label = StrongBodyLabel(self.tr("Note: "))
+        self.info_value = BodyLabel(self.tr("Click a note to see details"))
         info_layout.addWidget(self.info_label)
         info_layout.addWidget(self.info_value)
         info_layout.addStretch()
@@ -856,7 +914,7 @@ class MidiVisualizerDialog(MessageBoxBase):
             self._update_time_display(0, duration)
 
         except Exception as e:
-            self.info_value.setText(og.app.tr("Error loading MIDI: {}").format(e))
+            self.info_value.setText(self.tr(f"Error loading MIDI: {e}"))
 
     def _toggle_playback(self):
         """Toggle playback."""
@@ -872,11 +930,6 @@ class MidiVisualizerDialog(MessageBoxBase):
         self.piano_roll.reset_playhead()
         self.play_btn.setIcon(FluentIcon.PLAY)
         self.play_btn.setChecked(False)
-        # Explicitly reset slider and time display
-        self._timeline_updating = True
-        self.timeline_slider.setValue(0)
-        self._timeline_updating = False
-        self._update_time_display(0, self.piano_roll.total_duration)
 
     def _on_h_zoom_changed(self, value):
         """Handle horizontal zoom change."""
@@ -889,7 +942,7 @@ class MidiVisualizerDialog(MessageBoxBase):
     def _on_note_clicked(self, note: NoteData):
         """Handle note click."""
         pitch_name = self.piano_roll._pitch_to_name(note.pitch)
-        playable = og.app.tr("Playable") if note.is_playable else og.app.tr("Unplayable")
+        playable = self.tr("Playable") if note.is_playable else self.tr("Unplayable")
         self.info_value.setText(
             f"{pitch_name} | Time: {note.start_time:.2f}s | Duration: {note.duration:.2f}s | "
             f"Velocity: {note.velocity} | {playable}"
@@ -898,37 +951,6 @@ class MidiVisualizerDialog(MessageBoxBase):
     def _on_position_changed(self, time: float):
         """Handle playhead position change."""
         self._update_time_display(time, self.piano_roll.total_duration)
-        # Update timeline slider (if not dragging)
-        if not self._timeline_dragging and self.piano_roll.total_duration > 0:
-            progress = time / self.piano_roll.total_duration
-            new_value = int(progress * 1000)
-            # Only update if value actually changed to avoid unnecessary updates
-            if self.timeline_slider.value() != new_value:
-                self._timeline_updating = True
-                self.timeline_slider.setValue(new_value)
-                self._timeline_updating = False
-
-    def _on_timeline_pressed(self):
-        """Handle timeline slider pressed - pause updates during drag."""
-        self._timeline_dragging = True
-
-    def _on_timeline_released(self):
-        """Handle timeline slider released - seek to position."""
-        self._timeline_dragging = False
-        if self.piano_roll.total_duration > 0:
-            progress = self.timeline_slider.value() / 1000.0
-            seek_time = progress * self.piano_roll.total_duration
-            self.piano_roll.seek_to(seek_time)
-
-    def _on_timeline_changed(self, value: int):
-        """Handle timeline slider value change during drag."""
-        # Ignore if this is an internal update (not user interaction)
-        if hasattr(self, '_timeline_updating') and self._timeline_updating:
-            return
-        if self._timeline_dragging and self.piano_roll.total_duration > 0:
-            progress = value / 1000.0
-            seek_time = progress * self.piano_roll.total_duration
-            self._update_time_display(seek_time, self.piano_roll.total_duration)
 
     def _update_time_display(self, current: float, total: float):
         """Update the time display label."""
@@ -937,17 +959,142 @@ class MidiVisualizerDialog(MessageBoxBase):
         total_min = int(total // 60)
         total_sec = int(total % 60)
         self.time_label.setText(f"{current_min}:{current_sec:02d} / {total_min}:{total_sec:02d}")
+```
 
-    def _on_close(self):
-        """Handle close button click."""
-        self.piano_roll.cleanup()
+**Step 3: Add QHBoxLayout import**
 
-    def closeEvent(self, event):
-        """Handle dialog close - clean up resources."""
-        self.piano_roll.cleanup()
-        super().closeEvent(event)
+Add to imports:
+```python
+from PySide6.QtWidgets import QWidget, QSizePolicy, QHBoxLayout
+```
 
-    def reject(self):
-        """Handle dialog rejection (X button) - clean up resources."""
-        self.piano_roll.cleanup()
-        super().reject()
+**Step 4: Commit**
+
+```bash
+git add src/gui/MidiVisualizerDialog.py
+git commit -m "feat: implement MidiVisualizerDialog with toolbar and info panel"
+```
+
+---
+
+## Task 10: Integrate with MidiPlayerTask
+
+**Files:**
+- Modify: `src/tasks/MidiPlayerTask.py`
+
+**Step 1: Add import**
+
+Add at top of `src/tasks/MidiPlayerTask.py`:
+```python
+from src.gui.MidiVisualizerDialog import MidiVisualizerDialog
+```
+
+**Step 2: Add visualize button in __init__**
+
+Find the line with `self.config_type['MIDI Folder']` and add after it:
+```python
+        self.config_type['Visualization'] = {'type': "button", 'buttons': [
+            {'icon': FluentIcon.MUSIC, 'text': 'Visualize', 'callback': self.open_visualizer},
+        ]}
+```
+
+**Step 3: Add open_visualizer method**
+
+Add method to MidiPlayerTask class (after `open_track_selector` method):
+```python
+    def open_visualizer(self):
+        """Open the MIDI visualizer dialog."""
+        midi_file_name = self.config.get('MIDI File')
+        if not midi_file_name or midi_file_name == 'No MIDI files found.':
+            if hasattr(self, 'log_error'):
+                self.log_error("请先选择一个有效的 MIDI 文件。")
+            return
+
+        file_path = os.path.join(self.midi_dir, midi_file_name)
+        if not os.path.exists(file_path):
+            return
+
+        # Get selected tracks
+        selections = self.config.get('_track_selections', {})
+        selected_tracks = set(selections.get(midi_file_name, []))
+
+        # Get playable range from pitch_to_key
+        playable_min = min(self.pitch_to_key.keys())
+        playable_max = max(self.pitch_to_key.keys())
+
+        # Open visualizer dialog
+        dialog = MidiVisualizerDialog(
+            midi_path=file_path,
+            playable_range=(playable_min, playable_max),
+            selected_tracks=selected_tracks,
+            parent=og.app.main_window
+        )
+        dialog.exec()
+```
+
+**Step 4: Commit**
+
+```bash
+git add src/tasks/MidiPlayerTask.py
+git commit -m "feat: integrate MIDI visualizer with MidiPlayerTask"
+```
+
+---
+
+## Task 11: Final Testing and Polish
+
+**Files:**
+- None (testing only)
+
+**Step 1: Run the application**
+
+```bash
+python main_debug.py
+```
+
+**Step 2: Manual test checklist**
+
+1. Open MIDI Player task in onetime tasks
+2. Select a MIDI file
+3. Click "Visualize" button
+4. Verify piano roll displays correctly
+5. Test zoom sliders
+6. Test mouse wheel zoom (Ctrl+wheel, Shift+wheel)
+7. Test scroll with mouse wheel
+8. Click on notes to see details
+9. Test play/pause button
+10. Test stop button
+11. Verify playhead animation
+12. Check playable/unplayable note colors
+13. Close dialog
+
+**Step 3: Fix any issues found during testing**
+
+If issues found, fix and commit with descriptive message.
+
+**Step 4: Final commit**
+
+```bash
+git add -A
+git commit -m "feat: complete MIDI piano roll visualizer"
+```
+
+---
+
+## Summary
+
+This implementation adds:
+- `NoteData` and `TempoEvent` dataclasses for MIDI data representation
+- `MidiParser` class for converting MIDI files to visualizable data
+- `PianoRollWidget` custom widget with full rendering and interaction
+- `MidiVisualizerDialog` main dialog with toolbar and info panel
+- Integration with `MidiPlayerTask` via "Visualize" button
+
+Features:
+- Piano roll grid with keyboard visualization
+- Note rendering with playable/unplayable color coding
+- Horizontal and vertical zoom
+- Mouse wheel scroll and zoom
+- Click-to-select notes with detail display
+- Playback animation with auto-scrolling playhead
+- Time ruler display
