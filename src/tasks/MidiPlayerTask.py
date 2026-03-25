@@ -15,6 +15,7 @@ from qfluentwidgets import MessageBoxBase, SubtitleLabel, CheckBox, SmoothScroll
 from ok import BaseTask, og
 from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
 from ok.util.collection import find_index_in_list
+from src.gui.MidiVisualizerDialog import MidiVisualizerDialog
 
 FILE_LIST_DIRECTORY = 0x0001
 
@@ -34,11 +35,10 @@ class TrackSelectionDialog(MessageBoxBase):
 
         self.checkboxes = []
         for i, track in enumerate(tracks):
-            # 提取音轨名称
-            track_name = f"Track {i}"
+            track_name = og.app.tr("Track {}").format(i)
             for msg in track:
                 if msg.type == 'track_name':
-                    track_name = f"Track {i}: {msg.name}"
+                    track_name = og.app.tr("Track {}: {}").format(i, msg.name)
                     break
             cb = CheckBox(track_name)
             # 如果之前没有选过，则默认全选
@@ -91,11 +91,14 @@ class MidiPlayerTask(BaseTask):
         self.refresh_midi_list()
 
         self.config_type['Tracks'] = {'type': "button", 'buttons': [
-            {'icon': FluentIcon.MENU, 'text': 'Select', 'callback': self.open_track_selector},
+            {'icon': FluentIcon.MENU, 'text': og.app.tr('Select'), 'callback': self.open_track_selector},
         ]}
         self.config_type['MIDI Folder'] = {'type': "button", 'buttons': [
-            {'icon': FluentIcon.FOLDER, 'text': 'Locate', 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))},
-            {'icon': FluentIcon.SYNC, 'text': 'Reload', 'callback': self.reload_options},
+            {'icon': FluentIcon.FOLDER, 'text': og.app.tr('Locate'), 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))},
+            {'icon': FluentIcon.SYNC, 'text': og.app.tr('Reload'), 'callback': self.reload_options},
+        ]}
+        self.config_type['Visualization'] = {'type': "button", 'buttons': [
+            {'icon': FluentIcon.MUSIC, 'text': og.app.tr('Visualize'), 'callback': self.open_visualizer},
         ]}
 
         # 启动后台守护线程监听文件夹变动
@@ -106,7 +109,7 @@ class MidiPlayerTask(BaseTask):
         midi_file_name = self.config.get('MIDI File')
         if not midi_file_name or midi_file_name == 'No MIDI files found.':
             if hasattr(self, 'log_error'):
-                self.log_error("请先选择一个有效的 MIDI 文件。")
+                self.log_error(og.app.tr("Please select a valid MIDI file first."))
             return
 
         file_path = os.path.join(self.midi_dir, midi_file_name)
@@ -117,21 +120,50 @@ class MidiPlayerTask(BaseTask):
             mid = mido.MidiFile(file_path)
         except Exception as e:
             if hasattr(self, 'log_error'):
-                self.log_error(f"无法读取 MIDI 文件: {e}")
+                self.log_error(og.app.tr("Cannot read MIDI file: {}").format(e))
             return
 
-        # 获取该首歌曲的历史选中记录
         selections = self.config.get('_track_selections', {})
         current_selection = selections.get(midi_file_name)
 
-        # 调起弹窗
         dialog = TrackSelectionDialog(mid.tracks, current_selection, parent=og.app.main_window)
         if dialog.exec():
             selected = dialog.get_selected_tracks()
             selections[midi_file_name] = selected
             self.config['_track_selections'] = selections
-            self.log_info(f"已为 {midi_file_name} 选择 {len(selected)} 个音轨。")
+            self.log_info(og.app.tr("Selected {} tracks for {}.").format(len(selected), midi_file_name))
             self.config.save_file()
+
+    def open_visualizer(self):
+        """Open the MIDI visualizer dialog."""
+        midi_file_name = self.config.get('MIDI File')
+        if not midi_file_name or midi_file_name == 'No MIDI files found.':
+            if hasattr(self, 'log_error'):
+                self.log_error(og.app.tr("Please select a valid MIDI file first."))
+            return
+
+        file_path = os.path.join(self.midi_dir, midi_file_name)
+        if not os.path.exists(file_path):
+            if hasattr(self, 'log_error'):
+                self.log_error(og.app.tr("MIDI file does not exist: {}").format(file_path))
+            return
+
+        # Get selected tracks
+        selections = self.config.get('_track_selections', {})
+        selected_tracks = set(selections.get(midi_file_name, []))
+
+        # Get playable range from pitch_to_key
+        playable_min = min(self.pitch_to_key.keys())
+        playable_max = max(self.pitch_to_key.keys())
+
+        # Open visualizer dialog
+        dialog = MidiVisualizerDialog(
+            midi_path=file_path,
+            playable_range=(playable_min, playable_max),
+            selected_tracks=selected_tracks,
+            parent=og.app.main_window
+        )
+        dialog.exec()
 
     def _monitor_directory(self):
         """在后台线程中阻塞监听文件夹"""
@@ -163,7 +195,7 @@ class MidiPlayerTask(BaseTask):
                     self.reload_options()
             except Exception as e:
                 if hasattr(self, 'log_error'):
-                    self.log_error(f"监听文件夹停止: {e}")
+                    self.log_error(og.app.tr("Directory monitoring stopped: {}").format(e))
                 break
 
     def refresh_midi_list(self):
@@ -308,12 +340,12 @@ class MidiPlayerTask(BaseTask):
         file_path = os.path.join('./midi/', midi_file_name)
 
         if not os.path.exists(file_path) or midi_file_name == 'No MIDI files found.':
-            print("错误: 无效的 MIDI 文件")
+            print(og.app.tr("Error: Invalid MIDI file"))
             return
 
         try:
             mid = mido.MidiFile(file_path)
-            self.log_info(f"开始播放: {midi_file_name}")
+            self.log_info(og.app.tr("Starting playback: {}").format(midi_file_name))
             # 过滤未选中的音轨
             selections = self.config.get('_track_selections', {})
             current_selection = selections.get(midi_file_name)
@@ -391,7 +423,7 @@ class MidiPlayerTask(BaseTask):
                         if best_state:
                             self.switch_state(best_state[0], best_state[1])
                         else:
-                            self.log_error(f"无法演奏音高: {msg.note}")
+                            self.log_error(og.app.tr("Cannot play pitch: {}").format(msg.note))
 
                 # 基于全局的绝对时间进行延迟等待
                 # 把切换按键耗费的时间算进去，多退少补
@@ -423,4 +455,4 @@ class MidiPlayerTask(BaseTask):
             if locals().get('is_pedal_on'):
                 self.tap_key('space')
             self.switch_state(1, 0)
-            self.log_error(f"播放出错: {e}", notify=True)
+            self.log_error(og.app.tr("Playback error: {}").format(e), notify=True)

@@ -200,3 +200,111 @@ msgstr "忽略延音踏板"
 
 msgid "Opening Skill"
 msgstr "开场技能"
+
+msgid "MIDI Visualizer"
+msgstr "MIDI 可视化"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "Zoom H:"
+msgstr "水平缩放:"
+
+msgid "Zoom V:"
+msgstr "垂直缩放:"
+
+msgid "Note: "
+msgstr "音符: "
+
+msgid "Click a note to see details"
+msgstr "点击音符查看详情"
+
+msgid "Playable"
+msgstr "可演奏"
+
+msgid "Unplayable"
+msgstr "不可演奏"
+
+msgid "Error loading MIDI: {}"
+msgstr "加载 MIDI 出错: {}"
+
+msgid "Please select a valid MIDI file first."
+msgstr "请先选择一个有效的 MIDI 文件。"
+
+msgid "Cannot read MIDI file: {}"
+msgstr "无法读取 MIDI 文件: {}"
+
+msgid "MIDI file does not exist: {}"
+msgstr "MIDI 文件不存在: {}"
+
+msgid "Track Selection"
+msgstr "音轨选择"
+
+msgid "OK"
+msgstr "确定"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Select"
+msgstr "选择"
+
+msgid "Locate"
+msgstr "定位"
+
+msgid "Reload"
+msgstr "刷新"
+
+msgid "Visualize"
+msgstr "可视化"
+
+msgid "Track {}"
+msgstr "音轨 {}"
+
+msgid "Track {}: {}"
+msgstr "音轨 {}: {}"
+
+msgid "Cannot read MIDI file: {}"
+msgstr "无法读取 MIDI 文件: {}"
+
+msgid "Selected {} tracks for {}."
+msgstr "已为 {} 选择 {} 个音轨。"
+
+msgid "Directory monitoring stopped: {}"
+msgstr "监听文件夹停止: {}"
+
+msgid "Error: Invalid MIDI file"
+msgstr "错误: 无效的 MIDI 文件"
+
+msgid "Starting playback: {}"
+msgstr "开始播放: {}"
+
+msgid "Cannot play pitch: {}"
+msgstr "无法演奏音高: {}"
+
+msgid "Playback error: {}"
+msgstr "播放出错: {}"
+
+msgid "No MIDI files found."
+msgstr "未找到 MIDI 文件。"
+
+msgid "MIDI Player"
+msgstr "MIDI 播放器"
+
+msgid "Plays MIDI files using in-game instruments."
+msgstr "使用游戏内乐器播放 MIDI 文件。"
+
+msgid "MIDI File"
+msgstr "MIDI 文件"
+
+msgid "Mute Pedal"
+msgstr "忽略延音踏板"
+
+msgid "Tracks"
+msgstr "音轨"
+
+msgid "MIDI Folder"
+msgstr "MIDI 文件夹"
+
+msgid "Visualization"
+msgstr "可视化"
