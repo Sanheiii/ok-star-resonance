@@ -10,465 +10,465 @@
             "width": 1920,
             "height": 1080,
             "id": 1,
+            "file_name": "images/0.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 2,
+            "file_name": "images/0.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 3,
+            "file_name": "images/0.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 4,
+            "file_name": "images/0.png"
+        },
+        {
+            "width": 1920,
+            "height": 1080,
+            "id": 5,
             "file_name": "images/1.png"
         },
         {
             "width": 1920,
             "height": 1080,
-            "id": 2,
+            "id": 6,
             "file_name": "images/2.png"
         },
         {
             "width": 1920,
             "height": 1080,
-            "id": 3,
-            "file_name": "images/3.png"
-        },
-        {
-            "width": 1920,
-            "height": 1080,
-            "id": 4,
-            "file_name": "images/4.png"
-        },
-        {
-            "width": 1920,
-            "height": 1080,
-            "id": 5,
-            "file_name": "images/5.png"
-        },
-        {
-            "width": 1920,
-            "height": 1080,
-            "id": 6,
-            "file_name": "images/6.png"
-        },
-        {
-            "width": 1920,
-            "height": 1080,
             "id": 7,
-            "file_name": "images/7.png"
+            "file_name": "images/1.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 8,
-            "file_name": "images/8.png"
+            "file_name": "images/0.png"
         },
         {
             "width": 1911,
             "height": 977,
             "id": 9,
-            "file_name": "images/9.png"
+            "file_name": "images/5.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 10,
-            "file_name": "images/10.png"
+            "file_name": "images/0.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 11,
-            "file_name": "images/11.png"
+            "file_name": "images/1.png"
         },
         {
             "width": 2560,
             "height": 1440,
             "id": 12,
-            "file_name": "images/12.png"
+            "file_name": "images/6.png"
         },
         {
             "width": 2560,
             "height": 1440,
             "id": 13,
-            "file_name": "images/13.png"
+            "file_name": "images/6.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 14,
-            "file_name": "images/14.png"
+            "file_name": "images/0.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 15,
-            "file_name": "images/15.png"
+            "file_name": "images/2.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 16,
-            "file_name": "images/16.png"
+            "file_name": "images/0.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 17,
-            "file_name": "images/17.png"
+            "file_name": "images/0.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 18,
-            "file_name": "images/18.png"
+            "file_name": "images/1.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 19,
-            "file_name": "images/19.png"
+            "file_name": "images/0.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 20,
-            "file_name": "images/20.png"
+            "file_name": "images/0.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 21,
-            "file_name": "images/21.png"
+            "file_name": "images/0.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 22,
-            "file_name": "images/22.png"
+            "file_name": "images/3.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 23,
-            "file_name": "images/23.png"
+            "file_name": "images/4.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 24,
-            "file_name": "images/24.png"
+            "file_name": "images/2.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 25,
-            "file_name": "images/25.png"
+            "file_name": "images/2.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 26,
-            "file_name": "images/26.png"
+            "file_name": "images/0.png"
         },
         {
             "width": 1920,
             "height": 1080,
             "id": 27,
-            "file_name": "images/27.png"
+            "file_name": "images/2.png"
         }
     ],
     "categories": [
         {
             "id": 0,
-            "name": "box_boss_hp_end"
+            "name": "boss_hp_end"
         },
         {
             "id": 1,
-            "name": "box_boss_hp_start"
+            "name": "boss_hp_start"
         },
         {
             "id": 2,
-            "name": "box_buy"
+            "name": "buy"
         },
         {
             "id": 3,
-            "name": "box_buy_en"
+            "name": "buy_en"
         },
         {
             "id": 4,
-            "name": "box_buy_jp"
+            "name": "buy_jp"
         },
         {
             "id": 5,
-            "name": "box_cancel"
+            "name": "cancel"
         },
         {
             "id": 6,
-            "name": "box_confirm"
+            "name": "confirm"
         },
         {
             "id": 7,
-            "name": "box_confirm_en"
+            "name": "confirm_en"
         },
         {
             "id": 8,
-            "name": "box_continue_fishing"
+            "name": "continue_fishing"
         },
         {
             "id": 9,
-            "name": "box_event_icon"
+            "name": "event_icon"
         },
         {
             "id": 10,
-            "name": "box_exit"
+            "name": "exit"
         },
         {
             "id": 11,
-            "name": "box_fishing_icon"
+            "name": "fishing_icon"
         },
         {
             "id": 12,
-            "name": "box_fishing_level"
+            "name": "fishing_level"
         },
         {
             "id": 13,
-            "name": "box_fishing_level_en"
+            "name": "fishing_level_en"
         },
         {
             "id": 14,
-            "name": "box_fishing_level_jp"
+            "name": "fishing_level_jp"
         },
         {
             "id": 15,
-            "name": "box_guild_hunt_title"
+            "name": "guild_hunt_title"
         },
         {
             "id": 16,
-            "name": "box_leave_party"
+            "name": "leave_party"
         },
         {
             "id": 17,
-            "name": "box_loading"
+            "name": "loading"
         },
         {
             "id": 18,
-            "name": "box_msg_confirm_mission"
-        },
-        {
-            "id": 19,
-            "name": "box_msg_confirm_mission_en"
-        },
-        {
-            "id": 20,
-            "name": "box_msg_retire_mission"
-        },
-        {
-            "id": 21,
-            "name": "box_msg_use_bean"
-        },
-        {
-            "id": 22,
-            "name": "box_next"
-        },
-        {
-            "id": 23,
-            "name": "box_party_accept"
-        },
-        {
-            "id": 24,
-            "name": "box_respawn"
-        },
-        {
-            "id": 25,
-            "name": "box_revive"
-        },
-        {
-            "id": 26,
-            "name": "box_stop_pull"
-        },
-        {
-            "id": 27,
-            "name": "box_stop_pull_en"
-        },
-        {
-            "id": 28,
-            "name": "box_stop_pull_jp"
-        },
-        {
-            "id": 29,
-            "name": "box_teammate_left"
-        },
-        {
-            "id": 30,
-            "name": "box_use_revive_bean"
-        },
-        {
-            "id": 31,
-            "name": "hint_fishing_click"
-        },
-        {
-            "id": 32,
-            "name": "hint_fishing_left"
-        },
-        {
-            "id": 33,
-            "name": "hint_fishing_right"
-        },
-        {
-            "id": 34,
             "name": "maj_0m"
         },
         {
-            "id": 35,
+            "id": 19,
             "name": "maj_0p"
         },
         {
-            "id": 36,
+            "id": 20,
             "name": "maj_0s"
         },
         {
-            "id": 37,
+            "id": 21,
             "name": "maj_1m"
         },
         {
-            "id": 38,
+            "id": 22,
             "name": "maj_1p"
         },
         {
-            "id": 39,
+            "id": 23,
             "name": "maj_1s"
         },
         {
-            "id": 40,
+            "id": 24,
             "name": "maj_1z"
         },
         {
-            "id": 41,
+            "id": 25,
             "name": "maj_2m"
         },
         {
-            "id": 42,
+            "id": 26,
             "name": "maj_2p"
         },
         {
-            "id": 43,
+            "id": 27,
             "name": "maj_2s"
         },
         {
-            "id": 44,
+            "id": 28,
             "name": "maj_2z"
         },
         {
-            "id": 45,
+            "id": 29,
             "name": "maj_3m"
         },
         {
-            "id": 46,
+            "id": 30,
             "name": "maj_3p"
         },
         {
-            "id": 47,
+            "id": 31,
             "name": "maj_3s"
         },
         {
-            "id": 48,
+            "id": 32,
             "name": "maj_3z"
         },
         {
-            "id": 49,
+            "id": 33,
             "name": "maj_4m"
         },
         {
-            "id": 50,
+            "id": 34,
             "name": "maj_4p"
         },
         {
-            "id": 51,
+            "id": 35,
             "name": "maj_4s"
         },
         {
-            "id": 52,
+            "id": 36,
             "name": "maj_4z"
         },
         {
-            "id": 53,
+            "id": 37,
             "name": "maj_5m"
         },
         {
-            "id": 54,
+            "id": 38,
             "name": "maj_5p"
         },
         {
-            "id": 55,
+            "id": 39,
             "name": "maj_5s"
         },
         {
-            "id": 56,
+            "id": 40,
             "name": "maj_5z"
         },
         {
-            "id": 57,
+            "id": 41,
             "name": "maj_6m"
         },
         {
-            "id": 58,
+            "id": 42,
             "name": "maj_6p"
         },
         {
-            "id": 59,
+            "id": 43,
             "name": "maj_6s"
         },
         {
-            "id": 60,
+            "id": 44,
             "name": "maj_6z"
         },
         {
-            "id": 61,
+            "id": 45,
             "name": "maj_7m"
         },
         {
-            "id": 62,
+            "id": 46,
             "name": "maj_7p"
         },
         {
-            "id": 63,
+            "id": 47,
             "name": "maj_7s"
         },
         {
-            "id": 64,
+            "id": 48,
             "name": "maj_7z"
         },
         {
-            "id": 65,
+            "id": 49,
             "name": "maj_8m"
         },
         {
-            "id": 66,
+            "id": 50,
             "name": "maj_8p"
         },
         {
-            "id": 67,
+            "id": 51,
             "name": "maj_8s"
         },
         {
-            "id": 68,
+            "id": 52,
             "name": "maj_9m"
         },
         {
-            "id": 69,
+            "id": 53,
             "name": "maj_9p"
         },
         {
-            "id": 70,
+            "id": 54,
             "name": "maj_9s"
         },
         {
-            "id": 71,
+            "id": 55,
             "name": "maj_riichi"
         },
         {
-            "id": 72,
+            "id": 56,
             "name": "maj_ron"
         },
         {
-            "id": 73,
+            "id": 57,
             "name": "maj_skip"
         },
         {
-            "id": 74,
+            "id": 58,
             "name": "maj_tsumo"
+        },
+        {
+            "id": 59,
+            "name": "msg_confirm_mission"
+        },
+        {
+            "id": 60,
+            "name": "msg_confirm_mission_en"
+        },
+        {
+            "id": 61,
+            "name": "msg_retire_mission"
+        },
+        {
+            "id": 62,
+            "name": "msg_use_bean"
+        },
+        {
+            "id": 63,
+            "name": "next"
+        },
+        {
+            "id": 64,
+            "name": "party_accept"
+        },
+        {
+            "id": 65,
+            "name": "respawn"
+        },
+        {
+            "id": 66,
+            "name": "revive"
+        },
+        {
+            "id": 67,
+            "name": "teammate_left"
+        },
+        {
+            "id": 68,
+            "name": "tip_fishing_click"
+        },
+        {
+            "id": 69,
+            "name": "tip_fishing_left"
+        },
+        {
+            "id": 70,
+            "name": "tip_fishing_right"
+        },
+        {
+            "id": 71,
+            "name": "tip_stop_pull"
+        },
+        {
+            "id": 72,
+            "name": "tip_stop_pull_en"
+        },
+        {
+            "id": 73,
+            "name": "tip_stop_pull_jp"
+        },
+        {
+            "id": 74,
+            "name": "use_revive_bean"
         }
     ],
     "annotations": [
@@ -505,7 +505,7 @@
         {
             "id": 2,
             "image_id": 1,
-            "category_id": 26,
+            "category_id": 71,
             "segmentation": [],
             "bbox": [
                 1031.3681546625403,
@@ -520,7 +520,7 @@
         {
             "id": 3,
             "image_id": 2,
-            "category_id": 32,
+            "category_id": 69,
             "segmentation": [],
             "bbox": [
                 810.4112161065055,
@@ -535,7 +535,7 @@
         {
             "id": 4,
             "image_id": 3,
-            "category_id": 33,
+            "category_id": 70,
             "segmentation": [],
             "bbox": [
                 1039.1253721072787,
@@ -595,7 +595,7 @@
         {
             "id": 8,
             "image_id": 7,
-            "category_id": 28,
+            "category_id": 73,
             "segmentation": [],
             "bbox": [
                 886.1747679166724,
@@ -655,7 +655,7 @@
         {
             "id": 12,
             "image_id": 10,
-            "category_id": 27,
+            "category_id": 72,
             "segmentation": [],
             "bbox": [
                 824.7870182555781,
@@ -685,7 +685,7 @@
         {
             "id": 14,
             "image_id": 12,
-            "category_id": 31,
+            "category_id": 68,
             "segmentation": [],
             "bbox": [
                 1246.7236866698813,
@@ -715,7 +715,7 @@
         {
             "id": 16,
             "image_id": 14,
-            "category_id": 24,
+            "category_id": 65,
             "segmentation": [],
             "bbox": [
                 1672.969051407467,
@@ -730,7 +730,7 @@
         {
             "id": 17,
             "image_id": 15,
-            "category_id": 30,
+            "category_id": 74,
             "segmentation": [],
             "bbox": [
                 1748.5523685516437,
@@ -745,7 +745,7 @@
         {
             "id": 18,
             "image_id": 15,
-            "category_id": 25,
+            "category_id": 66,
             "segmentation": [],
             "bbox": [
                 1598.2771435852349,
@@ -790,7 +790,7 @@
         {
             "id": 21,
             "image_id": 16,
-            "category_id": 21,
+            "category_id": 62,
             "segmentation": [],
             "bbox": [
                 604.9704142011834,
@@ -805,7 +805,7 @@
         {
             "id": 22,
             "image_id": 17,
-            "category_id": 23,
+            "category_id": 64,
             "segmentation": [],
             "bbox": [
                 1869.4300132687113,
@@ -835,7 +835,7 @@
         {
             "id": 24,
             "image_id": 18,
-            "category_id": 20,
+            "category_id": 61,
             "segmentation": [],
             "bbox": [
                 809.4674556213016,
@@ -865,7 +865,7 @@
         {
             "id": 26,
             "image_id": 20,
-            "category_id": 18,
+            "category_id": 59,
             "segmentation": [],
             "bbox": [
                 791.4654245858385,
@@ -880,7 +880,7 @@
         {
             "id": 27,
             "image_id": 21,
-            "category_id": 29,
+            "category_id": 67,
             "segmentation": [],
             "bbox": [
                 943.9855215269249,
@@ -910,7 +910,7 @@
         {
             "id": 29,
             "image_id": 23,
-            "category_id": 7,
+            "category_id": 60,
             "segmentation": [],
             "bbox": [
                 1670.0156985871308,
@@ -925,7 +925,7 @@
         {
             "id": 30,
             "image_id": 23,
-            "category_id": 19,
+            "category_id": 7,
             "segmentation": [],
             "bbox": [
                 791.7739403453689,
@@ -940,7 +940,7 @@
         {
             "id": 31,
             "image_id": 24,
-            "category_id": 22,
+            "category_id": 63,
             "segmentation": [],
             "bbox": [
                 899.5936794582391,
@@ -985,7 +985,7 @@
         {
             "id": 34,
             "image_id": 27,
-            "category_id": 41,
+            "category_id": 25,
             "segmentation": [],
             "bbox": [
                 377.693761814745,
@@ -1000,7 +1000,7 @@
         {
             "id": 35,
             "image_id": 27,
-            "category_id": 45,
+            "category_id": 29,
             "segmentation": [],
             "bbox": [
                 470.58601134215496,
@@ -1015,7 +1015,7 @@
         {
             "id": 36,
             "image_id": 27,
-            "category_id": 49,
+            "category_id": 33,
             "segmentation": [],
             "bbox": [
                 555.31190926276,
@@ -1030,7 +1030,7 @@
         {
             "id": 37,
             "image_id": 27,
-            "category_id": 53,
+            "category_id": 37,
             "segmentation": [],
             "bbox": [
                 1016.710775047259,
@@ -1045,7 +1045,7 @@
         {
             "id": 38,
             "image_id": 27,
-            "category_id": 57,
+            "category_id": 41,
             "segmentation": [],
             "bbox": [
                 1108.5822306238185,
@@ -1060,7 +1060,7 @@
         {
             "id": 39,
             "image_id": 27,
-            "category_id": 65,
+            "category_id": 49,
             "segmentation": [],
             "bbox": [
                 735.992438563327,
@@ -1075,7 +1075,7 @@
         {
             "id": 40,
             "image_id": 27,
-            "category_id": 68,
+            "category_id": 52,
             "segmentation": [],
             "bbox": [
                 832.9678638941398,
@@ -1090,7 +1090,7 @@
         {
             "id": 41,
             "image_id": 27,
-            "category_id": 61,
+            "category_id": 45,
             "segmentation": [],
             "bbox": [
                 648.2041587901701,
@@ -1105,7 +1105,7 @@
         {
             "id": 42,
             "image_id": 27,
-            "category_id": 37,
+            "category_id": 21,
             "segmentation": [],
             "bbox": [
                 286.8431001890359,
@@ -1120,7 +1120,7 @@
         {
             "id": 43,
             "image_id": 27,
-            "category_id": 38,
+            "category_id": 22,
             "segmentation": [],
             "bbox": [
                 283.780718336484,
@@ -1135,7 +1135,7 @@
         {
             "id": 44,
             "image_id": 27,
-            "category_id": 42,
+            "category_id": 26,
             "segmentation": [],
             "bbox": [
                 381.77693761814743,
@@ -1150,7 +1150,7 @@
         {
             "id": 45,
             "image_id": 27,
-            "category_id": 46,
+            "category_id": 30,
             "segmentation": [],
             "bbox": [
                 461.398865784499,
@@ -1165,7 +1165,7 @@
         {
             "id": 46,
             "image_id": 27,
-            "category_id": 50,
+            "category_id": 34,
             "segmentation": [],
             "bbox": [
                 1186.162570888469,
@@ -1180,7 +1180,7 @@
         {
             "id": 47,
             "image_id": 27,
-            "category_id": 54,
+            "category_id": 38,
             "segmentation": [],
             "bbox": [
                 554.2911153119093,
@@ -1195,7 +1195,7 @@
         {
             "id": 48,
             "image_id": 27,
-            "category_id": 58,
+            "category_id": 42,
             "segmentation": [],
             "bbox": [
                 1009.5652173913044,
@@ -1210,7 +1210,7 @@
         {
             "id": 49,
             "image_id": 27,
-            "category_id": 62,
+            "category_id": 46,
             "segmentation": [],
             "bbox": [
                 644.1209829867676,
@@ -1225,7 +1225,7 @@
         {
             "id": 50,
             "image_id": 27,
-            "category_id": 66,
+            "category_id": 50,
             "segmentation": [],
             "bbox": [
                 833.9886578449905,
@@ -1240,7 +1240,7 @@
         {
             "id": 51,
             "image_id": 27,
-            "category_id": 69,
+            "category_id": 53,
             "segmentation": [],
             "bbox": [
                 909.5274102079395,
@@ -1255,7 +1255,7 @@
         {
             "id": 52,
             "image_id": 27,
-            "category_id": 39,
+            "category_id": 23,
             "segmentation": [],
             "bbox": [
                 292.9678638941399,
@@ -1270,7 +1270,7 @@
         {
             "id": 53,
             "image_id": 27,
-            "category_id": 43,
+            "category_id": 27,
             "segmentation": [],
             "bbox": [
                 401.1720226843101,
@@ -1285,7 +1285,7 @@
         {
             "id": 54,
             "image_id": 27,
-            "category_id": 47,
+            "category_id": 31,
             "segmentation": [],
             "bbox": [
                 469.5652173913043,
@@ -1300,7 +1300,7 @@
         {
             "id": 55,
             "image_id": 27,
-            "category_id": 51,
+            "category_id": 35,
             "segmentation": [],
             "bbox": [
                 842.1550094517958,
@@ -1315,7 +1315,7 @@
         {
             "id": 56,
             "image_id": 27,
-            "category_id": 55,
+            "category_id": 39,
             "segmentation": [],
             "bbox": [
                 562.4574669187145,
@@ -1330,7 +1330,7 @@
         {
             "id": 57,
             "image_id": 27,
-            "category_id": 59,
+            "category_id": 43,
             "segmentation": [],
             "bbox": [
                 1017.7315689981095,
@@ -1345,7 +1345,7 @@
         {
             "id": 58,
             "image_id": 27,
-            "category_id": 63,
+            "category_id": 47,
             "segmentation": [],
             "bbox": [
                 654.3289224952741,
@@ -1360,7 +1360,7 @@
         {
             "id": 59,
             "image_id": 27,
-            "category_id": 67,
+            "category_id": 51,
             "segmentation": [],
             "bbox": [
                 743.1379962192816,
@@ -1375,7 +1375,7 @@
         {
             "id": 60,
             "image_id": 27,
-            "category_id": 70,
+            "category_id": 54,
             "segmentation": [],
             "bbox": [
                 1109.6030245746692,
@@ -1390,7 +1390,7 @@
         {
             "id": 61,
             "image_id": 27,
-            "category_id": 40,
+            "category_id": 24,
             "segmentation": [],
             "bbox": [
                 473.64839319470696,
@@ -1405,7 +1405,7 @@
         {
             "id": 62,
             "image_id": 27,
-            "category_id": 44,
+            "category_id": 28,
             "segmentation": [],
             "bbox": [
                 290.92627599243855,
@@ -1420,7 +1420,7 @@
         {
             "id": 63,
             "image_id": 27,
-            "category_id": 48,
+            "category_id": 32,
             "segmentation": [],
             "bbox": [
                 378.71455576559543,
@@ -1435,7 +1435,7 @@
         {
             "id": 64,
             "image_id": 27,
-            "category_id": 52,
+            "category_id": 36,
             "segmentation": [],
             "bbox": [
                 561.436672967864,
@@ -1450,7 +1450,7 @@
         {
             "id": 65,
             "image_id": 27,
-            "category_id": 56,
+            "category_id": 40,
             "segmentation": [],
             "bbox": [
                 860.5293005671069,
@@ -1465,7 +1465,7 @@
         {
             "id": 66,
             "image_id": 27,
-            "category_id": 60,
+            "category_id": 44,
             "segmentation": [],
             "bbox": [
                 652.2873345935728,
@@ -1480,7 +1480,7 @@
         {
             "id": 67,
             "image_id": 27,
-            "category_id": 64,
+            "category_id": 48,
             "segmentation": [],
             "bbox": [
                 741.0964083175803,
@@ -1495,7 +1495,7 @@
         {
             "id": 68,
             "image_id": 27,
-            "category_id": 74,
+            "category_id": 58,
             "segmentation": [],
             "bbox": [
                 1352.5506072874498,
@@ -1510,7 +1510,7 @@
         {
             "id": 69,
             "image_id": 27,
-            "category_id": 72,
+            "category_id": 56,
             "segmentation": [],
             "bbox": [
                 1358.3805668016198,
@@ -1525,7 +1525,7 @@
         {
             "id": 70,
             "image_id": 27,
-            "category_id": 71,
+            "category_id": 55,
             "segmentation": [],
             "bbox": [
                 1350.607287449393,
@@ -1540,7 +1540,7 @@
         {
             "id": 71,
             "image_id": 27,
-            "category_id": 73,
+            "category_id": 57,
             "segmentation": [],
             "bbox": [
                 1334.1776937618147,
@@ -1555,7 +1555,7 @@
         {
             "id": 72,
             "image_id": 27,
-            "category_id": 34,
+            "category_id": 18,
             "segmentation": [],
             "bbox": [
                 921.7769376181475,
@@ -1570,7 +1570,7 @@
         {
             "id": 73,
             "image_id": 27,
-            "category_id": 36,
+            "category_id": 20,
             "segmentation": [],
             "bbox": [
                 925.8601134215501,
@@ -1585,7 +1585,7 @@
         {
             "id": 74,
             "image_id": 27,
-            "category_id": 35,
+            "category_id": 19,
             "segmentation": [],
             "bbox": [
                 1096.3327032136106,
@@ -1604,6 +1604,6 @@
         "description": "",
         "contributor": "Label Studio",
         "url": "",
-        "date_created": "2026-03-25 18:14:03.417614"
+        "date_created": "2026-03-26 01:56:59.016181"
     }
 }

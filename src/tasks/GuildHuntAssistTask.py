@@ -22,9 +22,9 @@ class GuildHuntAssistTask(BaseTask):
         self.info['Entry Count'] = 0
         while True:
             # 检测队友退出队伍自动退队
-            if self.find_one('box_teammate_left', box=self.box_of_screen(0.46, 0.18, 0.63, 0.30)):
+            if self.find_one('teammate_left', box=self.box_of_screen(0.46, 0.18, 0.63, 0.30)):
                 self.send_key('i')
-                if self.wait_click_feature('box_leave_party', box=self.box_of_screen(0.89, 0.88, 1, 0.95), raise_if_not_found=False):
+                if self.wait_click_feature('leave_party', box=self.box_of_screen(0.89, 0.88, 1, 0.95), raise_if_not_found=False):
                     self.sleep(1)
                     self.click(0.62,0.74)
                 self.sleep(1)
@@ -32,12 +32,12 @@ class GuildHuntAssistTask(BaseTask):
                 self.sleep(3)
 
             # 确认进入副本
-            if self.find_one('box_loading', box=self.box_of_screen(0, 0.76, 0.09, 0.82), threshold=0.5):
+            if self.find_one('loading', box=self.box_of_screen(0, 0.76, 0.09, 0.82), threshold=0.5):
                 # 刷新状态，允许进行操作
                 self.executed = False
 
             # 检测到在副本内
-            if not self.executed and self.find_one('box_guild_hunt_title', box=self.box_of_screen(0.02, 0.21, 0.06, 0.24)):
+            if not self.executed and self.find_one('guild_hunt_title', box=self.box_of_screen(0.02, 0.21, 0.06, 0.24)):
                 # Entry Count增加
                 self.info['Entry Count'] += 1
                 if self.config.get('I\'m Tank'):
@@ -62,10 +62,10 @@ class GuildHuntAssistTask(BaseTask):
                 self.executed = True
 
             # 点击下一步
-            if box:=self.find_one('box_next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92)):
+            if box:=self.find_one('next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92)):
                 self.click(box)
             # 点击离开
-            if box:=self.find_one('box_exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97)):
+            if box:=self.find_one('exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97)):
                 self.click(box)
                 self.sleep(1)
 

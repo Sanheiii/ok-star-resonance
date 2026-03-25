@@ -132,7 +132,7 @@ class FishingTask(SRTriggerTask):
         now = time.time()
         if self.last_reeling_time is not None and now - self.last_reeling_time <= 3:
             return False
-        if self.find_one("hint_fishing_click", threshold=0.5):
+        if self.find_one("tip_fishing_click", threshold=0.5):
             self.log_info('鱼上钩了', notify=False)
             self.my_mouse_down(0.5, 0.5)
             self.last_update_time = time.time()
@@ -156,7 +156,7 @@ class FishingTask(SRTriggerTask):
     def _handle_minigame(self) -> bool:
         """管理收线和溜鱼"""
         # 如果“鱼线张力”文本可见，则需要收线。
-        if self.find_one("box_fishing_icon", box=self.box_of_screen(0.33, 0.80, 0.37, 0.87)):
+        if self.find_one("fishing_icon", box=self.box_of_screen(0.33, 0.80, 0.37, 0.87)):
             if self.config.get('Always Rapid Click') or self._find_stop_pull():
                 now = time.time()
                 if self.last_switch_time is None or now - self.last_switch_time >= 0.05:
@@ -166,9 +166,9 @@ class FishingTask(SRTriggerTask):
                 self.my_mouse_down(0.5, 0.5)
 
             # 尝试寻找钓鱼方向的提示
-            hint_left = self.find_one("hint_fishing_left", box=self.box_of_screen(0.32, 0.44, 0.50, 0.55),
+            hint_left = self.find_one("tip_fishing_left", box=self.box_of_screen(0.32, 0.44, 0.50, 0.55),
                                       threshold=0.7)
-            hint_right = self.find_one("hint_fishing_right", box=self.box_of_screen(0.50, 0.44, 0.68, 0.55),
+            hint_right = self.find_one("tip_fishing_right", box=self.box_of_screen(0.50, 0.44, 0.68, 0.55),
                                        threshold=0.7)
 
             # 获取鱼的实际位置
@@ -349,25 +349,25 @@ class FishingTask(SRTriggerTask):
     def _find_fishing_level(self):
         language = self.get_game_language()
         if language == 'zhs' or language == 'zht':
-            return self.find_one("box_fishing_level", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
+            return self.find_one("fishing_level", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
         elif language == 'jp':
-            return self.find_one("box_fishing_level_jp", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
+            return self.find_one("fishing_level_jp", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
         else:
-            return self.find_one("box_fishing_level_en", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
+            return self.find_one("fishing_level_en", box=self.box_of_screen(0.56, 0.91, 0.60, 0.96))
 
     def _find_stop_pull(self):
         language = self.get_game_language()
         if language == 'zhs' or language == 'zht':
-            return self.find_one("box_stop_pull", box=self.box_of_screen(0.50, 0.75, 0.70, 0.92), threshold=0.5)
+            return self.find_one("tip_stop_pull", box=self.box_of_screen(0.50, 0.75, 0.70, 0.92), threshold=0.5)
         elif language == 'jp':
-            return self.find_one("box_stop_pull_jp", box=self.box_of_screen(0.45, 0.75, 0.70, 0.92), threshold=0.5)
+            return self.find_one("tip_stop_pull_jp", box=self.box_of_screen(0.45, 0.75, 0.70, 0.92), threshold=0.5)
         else:
-            return self.find_one("box_stop_pull_en", box=self.box_of_screen(0.41, 0.75, 0.60, 0.92), threshold=0.5)
+            return self.find_one("tip_stop_pull_en", box=self.box_of_screen(0.41, 0.75, 0.60, 0.92), threshold=0.5)
 
     def _match_continue_fishing(self):
         lang = self.get_game_language()
         if lang == 'zhs':
-            return self.find_one("box_continue_fishing", box=self.box_of_screen(0.79, 0.88, 0.87, 0.93))
+            return self.find_one("continue_fishing", box=self.box_of_screen(0.79, 0.88, 0.87, 0.93))
         elif lang == 'zht':
             return self.ocr(0.79, 0.88, 0.87, 0.93, match=self.get_regex('continue_fishing'))
         else:

@@ -55,11 +55,11 @@ class GatherTask(SRTriggerTask):
         for i, box in enumerate(sorted_boxes):
             self.sleep(0.5)
             if (self.config.get('Use Focus') and re.search(pattern2_str, box.name)) or (not self.config.get('Use Focus') and not re.search(pattern2_str, box.name)):
-                self.controller.press(keyboard.Key.alt_l)
+                self.send_key_down('lalt')
                 self.sleep(0.1)
                 self.click(box)
                 self.sleep(0.1)
-                self.controller.release(keyboard.Key.alt_l)
+                self.send_key_down('lalt')
                 self.run_interval = 5.5
                 break
         return

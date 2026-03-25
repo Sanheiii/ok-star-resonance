@@ -20,8 +20,8 @@ class AimPurchaseButtonTask(SRTriggerTask):
     def _find_purchase(self):
         language = self.get_game_language()
         if language == 'zhs' or language == 'zht':
-            return self.find_one("box_buy", box=self.box_of_screen(0.90, 0.90, 0.985, 0.95))
+            return self.find_one("buy", box=self.box_of_screen(0.90, 0.90, 0.985, 0.95))
         elif language == 'jp':
-            return self.find_one("box_buy_jp", box=self.box_of_screen(0.90, 0.90, 0.985, 0.95))
+            return self.find_one("buy_jp", box=self.box_of_screen(0.90, 0.90, 0.985, 0.95))
         else:
-            return self.find_one("box_buy_en", box=self.box_of_screen(0.90, 0.90, 0.985, 0.95))
+            return self.find_one("buy_en", box=self.box_of_screen(0.90, 0.90, 0.985, 0.95))

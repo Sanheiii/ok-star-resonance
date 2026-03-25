@@ -30,11 +30,11 @@ class AutoReviveTask(SRTriggerTask):
     def run(self):
         area = self.box_of_screen(0.81, 0.84, 0.94, 0.92)
         target_box = None
-        if (box := self.find_one('box_revive', box=area)) and self.is_colorful(box):
+        if (box := self.find_one('revive', box=area)) and self.is_colorful(box):
             target_box = box
-        elif self.config.get('Allow Respawn to Base') and (box := self.find_one('box_respawn', box=area)) and self.is_colorful(box):
+        elif self.config.get('Allow Respawn to Base') and (box := self.find_one('respawn', box=area)) and self.is_colorful(box):
             target_box = box
-        elif self.config.get('Use Revive Bean') and (box := self.find_one('box_use_revive_bean', box=area)) and self.is_colorful(box):
+        elif self.config.get('Use Revive Bean') and (box := self.find_one('use_revive_bean', box=area)) and self.is_colorful(box):
             target_box = box
 
         if target_box:
@@ -46,7 +46,7 @@ class AutoReviveTask(SRTriggerTask):
         else:
             self.last_detected_box = None
 
-        if self.find_one('box_msg_use_bean'):
+        if self.find_one('msg_use_bean'):
             if self.config.get('Use Revive Bean'):
                 self.click(0.37, 0.62)
             else:
