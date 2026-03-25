@@ -308,3 +308,6 @@ msgstr "MIDI 文件夹"
 
 msgid "Visualization"
 msgstr "可视化"
+
+msgid "⚠ Contains {} sections unplayable by single person"
+msgstr "⚠ 包含 {} 个单人无法演奏的段落"

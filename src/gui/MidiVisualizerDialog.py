@@ -20,7 +20,17 @@ class NoteData:
     duration: float  # Duration in seconds
     velocity: int  # Note velocity (0-127)
     track_index: int  # Which track this note belongs to
-    is_playable: bool  # Whether this note is in playable range (C3-B5)
+    is_playable: bool  # Whether this note is in playable range (A0-C8)
+    is_multi_person: bool = False  # Whether this note is in a section unplayable by single person
+
+
+@dataclass
+class UnplayableSection:
+    """Stores information about sections unplayable by single person."""
+    start_time: float
+    end_time: float
+    min_pitch: int
+    max_pitch: int
 
 
 @dataclass
@@ -49,12 +59,12 @@ class MidiParser:
         """Check if a note is within overall playable range (A0-C8)."""
         return self.playable_min <= pitch <= self.playable_max
 
-    def parse(self, midi_file: MidiFile, selected_tracks: Set[int] = None) -> Tuple[List[NoteData], List[TempoEvent], float]:
+    def parse(self, midi_file: MidiFile, selected_tracks: Set[int] = None) -> Tuple[List[NoteData], List[TempoEvent], float, List['UnplayableSection']]:
         """
         Parse MIDI file into notes and tempo events.
 
         Returns:
-            Tuple of (notes list, tempo events list, total duration in seconds)
+            Tuple of (notes list, tempo events list, total duration in seconds, unplayable sections)
         """
         notes = []
         tempo_events = []
@@ -76,7 +86,75 @@ class MidiParser:
         # Calculate total duration
         total_duration = max((n.start_time + n.duration for n in notes), default=0.0)
 
-        return notes, tempo_events, total_duration
+        # Detect multi-person sections
+        unplayable_sections = self._detect_multi_person_sections(notes)
+
+        return notes, tempo_events, total_duration, unplayable_sections
+
+    def _detect_multi_person_sections(self, notes: List[NoteData]) -> List['UnplayableSection']:
+        """
+        Detect sections where notes span across 4+ pages simultaneously.
+
+        A single page with octave modifiers can cover ~5 octaves (60 semitones).
+        If notes at the same time span more than this, it's unplayable by single person.
+        """
+        if not notes:
+            return []
+
+        # Build events list: (time, is_start, note)
+        events = []
+        for note in notes:
+            if note.is_playable:  # Only check playable notes
+                events.append((note.start_time, True, note))
+                events.append((note.start_time + note.duration, False, note))
+
+        events.sort(key=lambda e: (e[0], not e[1]))  # Sort by time, ends before starts
+
+        unplayable_sections = []
+        active_notes: List[NoteData] = []
+        current_section_start = None
+
+        for time, is_start, note in events:
+            if is_start:
+                active_notes.append(note)
+            else:
+                if note in active_notes:
+                    active_notes.remove(note)
+
+            if active_notes:
+                min_pitch = min(n.pitch for n in active_notes)
+                max_pitch = max(n.pitch for n in active_notes)
+                pitch_span = max_pitch - min_pitch
+
+                # If span > 48 semitones (4 octaves), requires 4+ page switches
+                # This is unplayable by single person
+                if pitch_span > 48:
+                    if current_section_start is None:
+                        current_section_start = time
+                    # Mark all active notes as multi-person
+                    for n in active_notes:
+                        n.is_multi_person = True
+                else:
+                    if current_section_start is not None:
+                        # End of unplayable section
+                        unplayable_sections.append(UnplayableSection(
+                            start_time=current_section_start,
+                            end_time=time,
+                            min_pitch=min_pitch,
+                            max_pitch=max_pitch
+                        ))
+                        current_section_start = None
+            else:
+                if current_section_start is not None:
+                    unplayable_sections.append(UnplayableSection(
+                        start_time=current_section_start,
+                        end_time=time,
+                        min_pitch=0,
+                        max_pitch=127
+                    ))
+                    current_section_start = None
+
+        return unplayable_sections
 
     def _build_tempo_map(self, midi_file: MidiFile, tempo_events: List[TempoEvent]) -> List[Tuple[int, int]]:
         """Build a list of (tick, tempo) pairs from all tracks."""
@@ -190,6 +268,8 @@ class PianoRollWidget(QWidget):
     COLOR_PLAYHEAD = QColor(39, 174, 96)
     COLOR_PLAYABLE = None  # Set from theme
     COLOR_UNPLAYABLE = QColor(231, 76, 60)
+    COLOR_MULTI_PERSON = QColor(255, 165, 0)  # Orange for multi-person notes
+    COLOR_UNPLAYABLE_SECTION = QColor(255, 0, 0, 50)  # Light red for unplayable sections
     COLOR_BACKGROUND = QColor(255, 255, 255)
 
     def __init__(self, parent=None):
@@ -198,6 +278,7 @@ class PianoRollWidget(QWidget):
         self.tempo_events: List[TempoEvent] = []
         self.total_duration = 0.0
         self.selected_tracks: Set[int] = set()
+        self.unplayable_sections: List[UnplayableSection] = []
 
         # Zoom state
         self.h_zoom = 50  # pixels per second
@@ -236,12 +317,13 @@ class PianoRollWidget(QWidget):
         # Enable scrollbars via mouse wheel
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
 
-    def set_notes(self, notes: List[NoteData], tempo_events: List[TempoEvent], duration: float, selected_tracks: Set[int] = None):
+    def set_notes(self, notes: List[NoteData], tempo_events: List[TempoEvent], duration: float, selected_tracks: Set[int] = None, unplayable_sections: List[UnplayableSection] = None):
         """Set the notes to display."""
         self.notes = notes
         self.tempo_events = tempo_events
         self.total_duration = duration
         self.selected_tracks = selected_tracks or set()
+        self.unplayable_sections = unplayable_sections or []
         self._update_scroll_range()
         self._scroll_to_playable_range()
         self.update()
@@ -644,6 +726,8 @@ class PianoRollWidget(QWidget):
             # Choose color based on playability and selection
             if note == self.selected_note:
                 color = QColor(255, 200, 0)  # Yellow for selected
+            elif note.is_multi_person:
+                color = self.COLOR_MULTI_PERSON  # Orange for multi-person notes
             elif note.is_playable:
                 color = self.COLOR_PLAYABLE or QColor(74, 144, 217)
             else:
@@ -658,6 +742,32 @@ class PianoRollWidget(QWidget):
             painter.setBrush(QBrush(color))
             painter.drawRoundedRect(int(x), int(y + 1), int(width), int(height), 3, 3)
 
+    def _draw_unplayable_sections(self, painter: QPainter):
+        """Draw red outlines for sections unplayable by single person."""
+        for section in self.unplayable_sections:
+            x_start = self._time_to_x(section.start_time)
+            x_end = self._time_to_x(section.end_time)
+            y_top = self._pitch_to_y(section.max_pitch)
+            y_bottom = self._pitch_to_y(section.min_pitch) + self.v_zoom
+
+            # Only draw if visible
+            if x_end < self.KEYBOARD_WIDTH or x_start > self.width():
+                continue
+
+            # Clip to visible area
+            x_start = max(self.KEYBOARD_WIDTH, x_start)
+            x_end = min(self.width(), x_end)
+
+            # Draw semi-transparent red background
+            painter.fillRect(int(x_start), int(y_top), int(x_end - x_start),
+                           int(y_bottom - y_top), self.COLOR_UNPLAYABLE_SECTION)
+
+            # Draw red outline
+            painter.setPen(QPen(QColor(255, 0, 0), 2))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(int(x_start), int(y_top), int(x_end - x_start),
+                           int(y_bottom - y_top))
+
     def paintEvent(self, event):
         """Handle paint event."""
         painter = QPainter(self)
@@ -669,6 +779,7 @@ class PianoRollWidget(QWidget):
         # Draw components
         self._draw_grid(painter)
         self._draw_playable_range(painter)
+        self._draw_unplayable_sections(painter)
         self._draw_notes(painter)
         self._draw_keyboard(painter)
         self._draw_time_ruler(painter)
@@ -845,15 +956,19 @@ class MidiVisualizerDialog(MessageBoxBase):
         try:
             midi_file = mido.MidiFile(self.midi_path)
             parser = MidiParser(self.playable_range)
-            notes, tempo_events, duration = parser.parse(midi_file, self.selected_tracks)
+            notes, tempo_events, duration, unplayable_sections = parser.parse(midi_file, self.selected_tracks)
 
             # Set playable color from theme
             color = themeColor()
             self.piano_roll.COLOR_PLAYABLE = color
-            self.piano_roll.set_notes(notes, tempo_events, duration, self.selected_tracks)
+            self.piano_roll.set_notes(notes, tempo_events, duration, self.selected_tracks, unplayable_sections)
 
             # Update time display
             self._update_time_display(0, duration)
+
+            # Show warning if there are unplayable sections
+            if unplayable_sections:
+                self.info_value.setText(og.app.tr("⚠ Contains {} sections unplayable by single person").format(len(unplayable_sections)))
 
         except Exception as e:
             self.info_value.setText(og.app.tr("Error loading MIDI: {}").format(e))
