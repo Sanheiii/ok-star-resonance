@@ -21,12 +21,14 @@ class MahjongTask(BaseTask):
             self.next_frame()
             self.run_game()
             if (box:=self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68))) and not self.find_one('mahjong_matching'):
-                self.send_key_down('lalt')
-                self.sleep(0.1)
-                self.click(box)
-                self.sleep(0.1)
-                self.send_key_up('lalt')
-                self.sleep(1)
+                self.sleep(20)
+                if box := self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68)):
+                    self.send_key_down('lalt')
+                    self.sleep(0.1)
+                    self.click(box)
+                    self.sleep(0.1)
+                    self.send_key_up('lalt')
+                    self.sleep(1)
             elif box:=self.find_one('accept'):
                 self.click(box)
             # 自动点击下一步
@@ -174,7 +176,9 @@ class MahjongTask(BaseTask):
                 break
             self.sleep(0.5)
             self.next_frame()
-
+        if len(self.discarded_tiles) == 0:
+            self.sleep(3)
+            self.next_frame()
         for hand_box in hand_boxes_list:
             for _ in range(4):
                 hand = self.find_one(tiles_features, box=hand_box, threshold=0.95)
