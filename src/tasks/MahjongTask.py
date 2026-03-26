@@ -3,6 +3,9 @@ from mahjong_utils.shanten import shanten, regular_shanten
 
 from ok import BaseTask
 
+from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
+
+
 class MahjongTask(BaseTask):
 
     def __init__(self, *args, **kwargs):
@@ -32,6 +35,12 @@ class MahjongTask(BaseTask):
                 self.discarded_tiles.clear()
             if box := self.find_one('confirm', box=self.box_of_screen(0.86, 0.89, 0.93, 0.95)):
                 self.click(box)
+
+            # 如果触发任务中勾了自动领取月卡则检查月卡
+            claim_monthly_pass_task = self.get_task_by_class(ClaimMonthlyPassTask)
+            if claim_monthly_pass_task.enabled:
+                claim_monthly_pass_task.run()
+
 
     def run_game(self):
         if skip_box:=self.find_one(['maj_skip'], box=self.box_of_screen(0.48,0.75,0.89,0.85)):
