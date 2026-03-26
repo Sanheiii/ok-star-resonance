@@ -311,3 +311,18 @@ msgstr "可视化"
 
 msgid "⚠ Contains {} sections unplayable by single person"
 msgstr "⚠ 包含 {} 个单人无法演奏的段落"
+
+msgid "Mahjong"
+msgstr "麻将"
+
+msgid "Hora Count"
+msgstr "和牌次数"
+
+msgid "Shanten"
+msgstr "向听"
+
+msgid "Tiles"
+msgstr "手牌"
+
+msgid "Discard"
+msgstr "出牌"

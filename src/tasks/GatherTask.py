@@ -59,7 +59,7 @@ class GatherTask(SRTriggerTask):
                 self.sleep(0.1)
                 self.click(box)
                 self.sleep(0.1)
-                self.send_key_down('lalt')
+                self.send_key_up('lalt')
                 self.run_interval = 5.5
                 break
         return

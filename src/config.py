@@ -78,7 +78,7 @@ config = {
         ["ok", "DiagnosisTask"],
         ["src.tasks.GuildHuntAssistTask", "GuildHuntAssistTask"],
         ["src.tasks.MidiPlayerTask", "MidiPlayerTask"],
-        # ["src.tasks.MahjongTask", "MahjongTask"],
+        ["src.tasks.MahjongTask", "MahjongTask"],
     ],
     'trigger_tasks':[
         ["src.tasks.FishingTask", "FishingTask"],

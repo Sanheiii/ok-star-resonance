@@ -1,5 +1,5 @@
 from mahjong_utils.models.tile import parse_tiles
-from mahjong_utils.shanten import shanten
+from mahjong_utils.shanten import shanten, regular_shanten
 
 from ok import BaseTask
 
@@ -7,35 +7,48 @@ class MahjongTask(BaseTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.name = '麻将'
-        self.description = ''
+        self.name = 'Mahjong'
 
         # 记录已打出的牌
         self.discarded_tiles = []
     def run(self):
         self.discarded_tiles.clear()
+        self.info['Hora Count'] = 0
         while True:
             self.next_frame()
             self.run_game()
-            # 检测到对局结束的下一步则重置状态
-            # self.discarded_tiles.clear()
-            # 自动坐桌子及点击准备
+            if (box:=self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68))) and not self.find_one('mahjong_matching'):
+                self.send_key_down('lalt')
+                self.sleep(0.1)
+                self.click(box)
+                self.sleep(0.1)
+                self.send_key_up('lalt')
+                self.sleep(1)
+            elif box:=self.find_one('accept'):
+                self.click(box)
+            # 自动点击下一步
+            if box:=self.find_one('confirm', box=self.box_of_screen(0.46,0.89,0.54,0.95)):
+                self.click(box)
+                self.discarded_tiles.clear()
+            if box := self.find_one('confirm', box=self.box_of_screen(0.86, 0.89, 0.93, 0.95)):
+                self.click(box)
 
     def run_game(self):
-        # 检测到自摸或荣和，则点击它
-        if box:=self.find_one(['maj_tsumo', 'maj_ron']): # 设定box
-            self.click(box)
-            self.info_incr('和牌次数')
-            self.sleep(3)
-            return
+        if skip_box:=self.find_one(['maj_skip'], box=self.box_of_screen(0.48,0.75,0.89,0.85)):
+            self.sleep(0.5)
+            self.next_frame()
+            if box := self.find_one(['maj_riichi'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+                pass
+            elif box := self.find_one(['maj_tsumo', 'maj_ron'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+                self.click(box)
+                self.info_incr('Hora Count')
+                self.sleep(2)
+            else:
+                self.click(skip_box)
+                self.sleep(1)
         # 检测到摸牌区有牌，进入出牌方法
-        if self.find_one('maj_tile', box=self.box_of_screen(0.828, 0.87, 0.875, 1.00), threshold=0.95):
+        if self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95):
             self.discard_tile()
-            self.sleep(1)
-            return
-        # 检测到跳过按钮，上面已优先处理和牌，立直，剩下的都跳过
-        if box:=self.find_one('maj_skip'): # 设定box
-            self.click(box)
             self.sleep(1)
             return
 
@@ -50,8 +63,14 @@ class MahjongTask(BaseTask):
             return
 
         # 手牌传入mahjong_utils
-        self.info['当前手牌'] = tiles_str
-        result = shanten(parse_tiles(tiles_str))
+        self.info['Tiles'] = tiles_str
+        t = parse_tiles(tiles_str)
+        regular = regular_shanten(t)
+        result = shanten(t)
+        if regular.shanten - result.shanten < 2:
+            result = regular
+
+        self.info['Shanten'] = result.shanten
 
         best_discard:str| None = None
         min_shanten = float('inf')
@@ -85,7 +104,7 @@ class MahjongTask(BaseTask):
                 max_advance = current_advance
                 best_discard = str(tile_name)
             elif current_shanten == min_shanten:
-                if current_advance > max_advance:
+                if current_advance >= max_advance:
                     max_advance = current_advance
                     best_discard = str(tile_name)
 
@@ -94,16 +113,23 @@ class MahjongTask(BaseTask):
             return
 
         # 可以立直的话先点立直再出牌
-        if box:= self.find_one('maj_riichi'): # 设定box
-            self.click(box)
+        if box:= self.find_one('maj_riichi', box=self.box_of_screen(0.48,0.75,0.89,0.85)):
             self.sleep(0.5)
+            self.click(box)
+            self.sleep(1)
 
         # 双击要出的牌
-        if box:= self.find_one('maj_' + best_discard, box=self.box_of_screen(0.193, 0.87, 0.875, 1.00), threshold=0.95):
+        tiles=['maj_' + best_discard]
+        if best_discard in {'5m','5s','5p'}:
+            red_tile = 'maj_' + best_discard.replace('5', '0')
+            tiles.append(red_tile)
+            pass
+        if box:= self.find_one(tiles, box=self.box_of_screen(0.193, 0.87, 0.875, 1.00), threshold=0.95):
             self.click(box)
             self.sleep(0.01)
             self.click(box)
-            self.info['出牌'] = best_discard
+            self.move_relative(0.5,0.5)
+            self.info['Discard'] = best_discard
             self.discarded_tiles.append(best_discard)
         else:
             self.log_error('出牌时没有找到' + best_discard)
@@ -133,7 +159,7 @@ class MahjongTask(BaseTask):
         tiles = []
 
         for _ in range(4):
-            draw = self.find_one(tiles_features, box=self.box_of_screen(0.828, 0.87, 0.875, 1.00), threshold=0.95)
+            draw = self.find_one(tiles_features, box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95)
             if draw:
                 tiles.append(draw)
                 break
