@@ -404,70 +404,74 @@
         },
         {
             "id": 58,
-            "name": "maj_tsumo"
+            "name": "maj_tile"
         },
         {
             "id": 59,
-            "name": "msg_confirm_mission"
+            "name": "maj_tsumo"
         },
         {
             "id": 60,
-            "name": "msg_confirm_mission_en"
+            "name": "msg_confirm_mission"
         },
         {
             "id": 61,
-            "name": "msg_retire_mission"
+            "name": "msg_confirm_mission_en"
         },
         {
             "id": 62,
-            "name": "msg_use_bean"
+            "name": "msg_retire_mission"
         },
         {
             "id": 63,
-            "name": "next"
+            "name": "msg_use_bean"
         },
         {
             "id": 64,
-            "name": "party_accept"
+            "name": "next"
         },
         {
             "id": 65,
-            "name": "respawn"
+            "name": "party_accept"
         },
         {
             "id": 66,
-            "name": "revive"
+            "name": "respawn"
         },
         {
             "id": 67,
-            "name": "teammate_left"
+            "name": "revive"
         },
         {
             "id": 68,
-            "name": "tip_fishing_click"
+            "name": "teammate_left"
         },
         {
             "id": 69,
-            "name": "tip_fishing_left"
+            "name": "tip_fishing_click"
         },
         {
             "id": 70,
-            "name": "tip_fishing_right"
+            "name": "tip_fishing_left"
         },
         {
             "id": 71,
-            "name": "tip_stop_pull"
+            "name": "tip_fishing_right"
         },
         {
             "id": 72,
-            "name": "tip_stop_pull_en"
+            "name": "tip_stop_pull"
         },
         {
             "id": 73,
-            "name": "tip_stop_pull_jp"
+            "name": "tip_stop_pull_en"
         },
         {
             "id": 74,
+            "name": "tip_stop_pull_jp"
+        },
+        {
+            "id": 75,
             "name": "use_revive_bean"
         }
     ],
@@ -505,7 +509,7 @@
         {
             "id": 2,
             "image_id": 1,
-            "category_id": 71,
+            "category_id": 72,
             "segmentation": [],
             "bbox": [
                 1031.3681546625403,
@@ -520,7 +524,7 @@
         {
             "id": 3,
             "image_id": 2,
-            "category_id": 69,
+            "category_id": 70,
             "segmentation": [],
             "bbox": [
                 810.4112161065055,
@@ -535,7 +539,7 @@
         {
             "id": 4,
             "image_id": 3,
-            "category_id": 70,
+            "category_id": 71,
             "segmentation": [],
             "bbox": [
                 1039.1253721072787,
@@ -595,7 +599,7 @@
         {
             "id": 8,
             "image_id": 7,
-            "category_id": 73,
+            "category_id": 74,
             "segmentation": [],
             "bbox": [
                 886.1747679166724,
@@ -655,7 +659,7 @@
         {
             "id": 12,
             "image_id": 10,
-            "category_id": 72,
+            "category_id": 73,
             "segmentation": [],
             "bbox": [
                 824.7870182555781,
@@ -685,7 +689,7 @@
         {
             "id": 14,
             "image_id": 12,
-            "category_id": 68,
+            "category_id": 69,
             "segmentation": [],
             "bbox": [
                 1246.7236866698813,
@@ -715,7 +719,7 @@
         {
             "id": 16,
             "image_id": 14,
-            "category_id": 65,
+            "category_id": 66,
             "segmentation": [],
             "bbox": [
                 1672.969051407467,
@@ -730,7 +734,7 @@
         {
             "id": 17,
             "image_id": 15,
-            "category_id": 74,
+            "category_id": 75,
             "segmentation": [],
             "bbox": [
                 1748.5523685516437,
@@ -745,7 +749,7 @@
         {
             "id": 18,
             "image_id": 15,
-            "category_id": 66,
+            "category_id": 67,
             "segmentation": [],
             "bbox": [
                 1598.2771435852349,
@@ -790,7 +794,7 @@
         {
             "id": 21,
             "image_id": 16,
-            "category_id": 62,
+            "category_id": 63,
             "segmentation": [],
             "bbox": [
                 604.9704142011834,
@@ -805,7 +809,7 @@
         {
             "id": 22,
             "image_id": 17,
-            "category_id": 64,
+            "category_id": 65,
             "segmentation": [],
             "bbox": [
                 1869.4300132687113,
@@ -835,7 +839,7 @@
         {
             "id": 24,
             "image_id": 18,
-            "category_id": 61,
+            "category_id": 62,
             "segmentation": [],
             "bbox": [
                 809.4674556213016,
@@ -865,7 +869,7 @@
         {
             "id": 26,
             "image_id": 20,
-            "category_id": 59,
+            "category_id": 60,
             "segmentation": [],
             "bbox": [
                 791.4654245858385,
@@ -880,7 +884,7 @@
         {
             "id": 27,
             "image_id": 21,
-            "category_id": 67,
+            "category_id": 68,
             "segmentation": [],
             "bbox": [
                 943.9855215269249,
@@ -910,7 +914,7 @@
         {
             "id": 29,
             "image_id": 23,
-            "category_id": 60,
+            "category_id": 61,
             "segmentation": [],
             "bbox": [
                 1670.0156985871308,
@@ -940,7 +944,7 @@
         {
             "id": 31,
             "image_id": 24,
-            "category_id": 63,
+            "category_id": 64,
             "segmentation": [],
             "bbox": [
                 899.5936794582391,
@@ -1273,14 +1277,14 @@
             "category_id": 27,
             "segmentation": [],
             "bbox": [
-                401.1720226843101,
-                600.226843100189,
-                18.374291115311895,
-                85.74669187145557
+                401.1720226843106,
+                584.2268431001888,
+                44.37429111531158,
+                101.74669187145496
             ],
             "ignore": 0,
             "iscrowd": 0,
-            "area": 1575.5346786210728
+            "area": 4514.9373251238485
         },
         {
             "id": 54,
@@ -1495,7 +1499,7 @@
         {
             "id": 68,
             "image_id": 27,
-            "category_id": 58,
+            "category_id": 59,
             "segmentation": [],
             "bbox": [
                 1352.5506072874498,
@@ -1596,6 +1600,21 @@
             "ignore": 0,
             "iscrowd": 0,
             "area": 4668.2508996179995
+        },
+        {
+            "id": 75,
+            "image_id": 27,
+            "category_id": 58,
+            "segmentation": [],
+            "bbox": [
+                1002.5585865545178,
+                566.5632074940655,
+                40.430657226792256,
+                23.4072226049848
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 946.3693937733638
         }
     ],
     "info": {
@@ -1604,6 +1623,6 @@
         "description": "",
         "contributor": "Label Studio",
         "url": "",
-        "date_created": "2026-03-26 01:56:59.016181"
+        "date_created": "2026-03-26 03:35:47.149942"
     }
 }
