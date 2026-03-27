@@ -14,6 +14,8 @@ class MahjongTask(BaseTask):
         super().__init__(*args, **kwargs)
         self.name = 'Mahjong'
 
+        self.default_config.update({'Pure Tsumogiri': False})
+
         # 记录已打出的牌
         self.discarded_tiles = []
         # 记录上一次对局点确定的时间，防止过快开始卡副本
@@ -68,7 +70,12 @@ class MahjongTask(BaseTask):
         if (self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95)
                 and self.find_one('maj_tile', box=self.box_of_screen(0.193, 0.87, 0.239, 1.0), threshold=0.95)
                 and self.find_one('maj_tile', box=self.box_of_screen(0.755, 0.87, 0.802, 1.0), threshold=0.95)):
-            self.discard_tile()
+            self.sleep(0.5)
+            self.next_frame()
+            if self.config['Pure Tsumogiri']:
+                self.tsumogiri()
+            else:
+                self.discard_tile()
             self.sleep(1)
         else:
             self.allow_discard_record = True
@@ -202,3 +209,12 @@ class MahjongTask(BaseTask):
                 self.next_frame()
 
         return tiles
+
+    def tsumogiri(self):
+        if box:=self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95):
+            self.sleep(0.2)
+            self.click(box)
+            self.sleep(0.02)
+            self.click(box)
+            self.sleep(0.02)
+            self.move_relative(0.5,0.5)

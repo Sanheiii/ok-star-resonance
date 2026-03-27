@@ -326,3 +326,6 @@ msgstr "手牌"
 
 msgid "Discard"
 msgstr "出牌"
+
+msgid "Pure Tsumogiri"
+msgstr "只打模切"
