@@ -55,9 +55,9 @@ class MahjongTask(BaseTask):
 
     def run_game(self):
         if skip_box:=self.find_one(['maj_skip'], box=self.box_of_screen(0.48,0.75,0.89,0.85)):
-            self.sleep(0.5)
+            self.sleep(0.2)
             self.next_frame()
-            if box := self.find_one(['maj_riichi'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+            if self.find_one(['maj_riichi'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
                 pass
             elif box := self.find_one(['maj_tsumo', 'maj_ron'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
                 self.click(box)
@@ -70,7 +70,7 @@ class MahjongTask(BaseTask):
         if (self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95)
                 and self.find_one('maj_tile', box=self.box_of_screen(0.193, 0.87, 0.239, 1.0), threshold=0.95)
                 and self.find_one('maj_tile', box=self.box_of_screen(0.755, 0.87, 0.802, 1.0), threshold=0.95)):
-            self.sleep(0.5)
+            self.sleep(0.2)
             self.next_frame()
             if self.config['Pure Tsumogiri']:
                 self.tsumogiri()
@@ -143,9 +143,9 @@ class MahjongTask(BaseTask):
 
         # 可以立直的话先点立直再出牌
         if box:= self.find_one('maj_riichi', box=self.box_of_screen(0.48,0.75,0.89,0.85)):
-            self.sleep(0.5)
+            self.sleep(0.3)
             self.click(box)
-            self.sleep(1)
+            self.sleep(0.3)
 
         # 双击要出的牌
         tiles=['maj_' + best_discard]
@@ -154,7 +154,6 @@ class MahjongTask(BaseTask):
             tiles.append(red_tile)
 
         if box:= self.find_one(tiles, box=self.box_of_screen(0.193, 0.87, 0.875, 1.00), threshold=0.95):
-            self.sleep(0.2)
             self.click(box)
             self.sleep(0.02)
             self.click(box)
@@ -212,7 +211,6 @@ class MahjongTask(BaseTask):
 
     def tsumogiri(self):
         if box:=self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95):
-            self.sleep(0.2)
             self.click(box)
             self.sleep(0.02)
             self.click(box)
