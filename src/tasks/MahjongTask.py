@@ -18,6 +18,8 @@ class MahjongTask(BaseTask):
         self.discarded_tiles = []
         # 记录上一次对局点确定的时间，防止过快开始卡副本
         self.last_confirm = datetime.min
+        # 防止打牌失败重复打牌多次将牌添加到 discard_tiles
+        self.allow_discard_record = True
     def run(self):
         self.discarded_tiles.clear()
         self.last_confirm = datetime.min
@@ -68,6 +70,8 @@ class MahjongTask(BaseTask):
                 and self.find_one('maj_tile', box=self.box_of_screen(0.755, 0.87, 0.802, 1.0), threshold=0.95)):
             self.discard_tile()
             self.sleep(1)
+        else:
+            self.allow_discard_record = True
             return
 
     def discard_tile(self):
@@ -141,14 +145,18 @@ class MahjongTask(BaseTask):
         if best_discard in {'5m','5s','5p'}:
             red_tile = 'maj_' + best_discard.replace('5', '0')
             tiles.append(red_tile)
-            pass
+
         if box:= self.find_one(tiles, box=self.box_of_screen(0.193, 0.87, 0.875, 1.00), threshold=0.95):
+            self.sleep(0.2)
             self.click(box)
-            self.sleep(0.01)
+            self.sleep(0.02)
             self.click(box)
+            self.sleep(0.02)
             self.move_relative(0.5,0.5)
             self.info['Discard'] = best_discard
-            self.discarded_tiles.append(best_discard)
+            if self.allow_discard_record:
+                self.discarded_tiles.append(best_discard)
+                self.allow_discard_record = False
         else:
             self.log_error('出牌时没有找到' + best_discard)
 
