@@ -15,6 +15,7 @@ class MahjongTask(BaseTask):
         self.name = 'Mahjong'
 
         self.default_config.update({'Pure Tsumogiri': False})
+        self.default_config.update({'Anti-Renchan': False})
 
         # 记录已打出的牌
         self.discarded_tiles = []
@@ -72,7 +73,11 @@ class MahjongTask(BaseTask):
                 and self.find_one('maj_tile', box=self.box_of_screen(0.755, 0.87, 0.802, 1.0), threshold=0.95)):
             self.sleep(0.2)
             self.next_frame()
+            # 开了摸切模式
             if self.config['Pure Tsumogiri']:
+                self.tsumogiri()
+            # 开了防止连庄并且检测到玩家是庄家
+            elif self.config['Anti-Renchan'] and self.find_one('maj_east'):
                 self.tsumogiri()
             else:
                 self.discard_tile()

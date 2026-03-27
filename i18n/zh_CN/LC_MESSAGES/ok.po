@@ -329,3 +329,6 @@ msgstr "出牌"
 
 msgid "Pure Tsumogiri"
 msgstr "只打模切"
+
+msgid "Anti-Renchan"
+msgstr "防止连庄"
