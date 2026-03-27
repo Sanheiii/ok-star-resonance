@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from mahjong_utils.models.tile import parse_tiles
 from mahjong_utils.shanten import shanten, regular_shanten
 
@@ -14,15 +16,17 @@ class MahjongTask(BaseTask):
 
         # 记录已打出的牌
         self.discarded_tiles = []
+        # 记录上一次对局点确定的时间，防止过快开始卡副本
+        self.last_confirm = datetime.min
     def run(self):
         self.discarded_tiles.clear()
+        self.last_confirm = datetime.min
         self.info['Hora Count'] = 0
         while True:
             self.next_frame()
             self.run_game()
             if (box:=self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68))) and not self.find_one('mahjong_matching'):
-                self.sleep(20)
-                if box := self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68)):
+                if datetime.now() - self.last_confirm > timedelta(seconds=30):
                     self.send_key_down('lalt')
                     self.sleep(0.1)
                     self.click(box)
@@ -35,6 +39,7 @@ class MahjongTask(BaseTask):
             if box:=self.find_one('confirm', box=self.box_of_screen(0.46,0.89,0.54,0.95)):
                 self.click(box)
                 self.discarded_tiles.clear()
+                self.last_confirm=datetime.now()
             if box := self.find_one('confirm', box=self.box_of_screen(0.86, 0.89, 0.93, 0.95)):
                 self.click(box)
 
@@ -57,8 +62,10 @@ class MahjongTask(BaseTask):
             else:
                 self.click(skip_box)
                 self.sleep(1)
-        # 检测到摸牌区有牌，进入出牌方法
-        if self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95):
+        # 检测到摸牌区有牌并且手牌区第一和最后一张都有牌，进入出牌方法
+        if (self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95)
+                and self.find_one('maj_tile', box=self.box_of_screen(0.193, 0.87, 0.239, 1.0), threshold=0.95)
+                and self.find_one('maj_tile', box=self.box_of_screen(0.755, 0.87, 0.802, 1.0), threshold=0.95)):
             self.discard_tile()
             self.sleep(1)
             return
@@ -175,9 +182,6 @@ class MahjongTask(BaseTask):
                 tiles.append(draw)
                 break
             self.sleep(0.5)
-            self.next_frame()
-        if len(self.discarded_tiles) == 0:
-            self.sleep(3)
             self.next_frame()
         for hand_box in hand_boxes_list:
             for _ in range(4):
