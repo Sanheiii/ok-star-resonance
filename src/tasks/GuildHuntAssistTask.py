@@ -32,12 +32,12 @@ class GuildHuntAssistTask(BaseTask):
                 self.sleep(3)
 
             # 确认进入副本
-            if self.find_one('loading', box=self.box_of_screen(0, 0.76, 0.09, 0.82), threshold=0.5):
+            if self.find_one('loading'):
                 # 刷新状态，允许进行操作
                 self.executed = False
 
             # 检测到在副本内
-            if not self.executed and self.find_one('guild_hunt_title', box=self.box_of_screen(0.02, 0.21, 0.06, 0.24)):
+            if not self.executed and self.find_one('guild_hunt_title', threshold=0.6):
                 # Entry Count增加
                 self.info['Entry Count'] += 1
                 if self.config.get('I\'m Tank'):
@@ -64,10 +64,12 @@ class GuildHuntAssistTask(BaseTask):
             # 点击下一步
             if box:=self.find_one('next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92)):
                 self.click(box)
+                self.executed = False
             # 点击离开
             if box:=self.find_one('exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97)):
                 self.click(box)
                 self.sleep(1)
+                self.executed = False
 
             self.next_frame()
             # 处理自动入队和自动复活
