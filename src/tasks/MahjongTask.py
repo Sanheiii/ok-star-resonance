@@ -73,12 +73,15 @@ class MahjongTask(BaseTask):
                 and self.find_one('maj_tile', box=self.box_of_screen(0.755, 0.87, 0.802, 1.0), threshold=0.95)):
             self.sleep(0.2)
             self.next_frame()
+            self.info['test'] = self.calculate_color_percentage({'r':(140,158), 'g': (208, 226), 'b': (213, 231)}, 'maj_auto_tsumogiri')
             # 开了摸切模式
             if self.config['Pure Tsumogiri']:
-                self.tsumogiri()
+                if self.calculate_color_percentage({'r':(140,158), 'g': (208, 226), 'b': (213, 231)}, 'maj_auto_tsumogiri') < 0.05:
+                     self.click_box('maj_auto_tsumogiri')
             # 开了防止连庄并且检测到玩家是庄家
             elif self.config['Anti-Renchan'] and self.find_one('maj_east'):
-                self.tsumogiri()
+                if self.calculate_color_percentage({'r':(140,158), 'g': (208, 226), 'b': (213, 231)}, 'maj_auto_tsumogiri') < 0.05:
+                     self.click_box('maj_auto_tsumogiri')
             else:
                 self.discard_tile()
             self.sleep(1)
@@ -91,7 +94,8 @@ class MahjongTask(BaseTask):
         tiles_str = "".join(tile.name.removeprefix('maj_') for tile in tiles)
         if not len(tiles) == 14:
             # 手牌检测出错了，跳过本轮检测
-            self.log_error(f'手牌检测错误，当前检出手牌：{tiles_str}')
+            self.log_info(f'检出手牌：{tiles_str}')
+            self.log_error(f'没有检测到全部手牌，如果无法正常打牌，请将游戏设置为1920*1080，FSR3效果挡')
             self.sleep(0.5)
             self.next_frame()
             return
