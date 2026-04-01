@@ -217,8 +217,6 @@ class MidiPlayerTask(BaseTask):
             self.config['_track_selections'] = selections
             self.config.save_file()
 
-        self.load_config()
-
     def reload_options(self):
         self.refresh_midi_list()
         v_box_layout = og.app.main_window.onetime_tab.vBoxLayout
