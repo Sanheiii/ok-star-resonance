@@ -13,6 +13,8 @@ class MissionEntryTask(SRTriggerTask):
     def run(self):
         if self._find_msg() and (box:=self._find_confirm()):
             self.click(box)
+        if box:=self.find_one('accept'):
+            self.click(box)
         return
 
     def _find_msg(self):
