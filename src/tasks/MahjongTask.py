@@ -92,16 +92,15 @@ class MahjongTask(BaseTask):
     def discard_tile(self):
         tiles = self.get_tiles()
         tiles_str = "".join(tile.name.removeprefix('maj_') for tile in tiles)
+        self.info['Tiles'] = tiles_str
         if not len(tiles) == 14:
             # 手牌检测出错了，跳过本轮检测
-            self.log_info(f'检出手牌：{tiles_str}')
             self.log_error(f'没有检测到全部手牌，如果无法正常打牌，请将游戏设置为1920*1080，FSR3效果挡')
             self.sleep(0.5)
             self.next_frame()
             return
 
         # 手牌传入mahjong_utils
-        self.info['Tiles'] = tiles_str
         t = parse_tiles(tiles_str)
         regular = regular_shanten(t)
         result = shanten(t)
