@@ -73,7 +73,6 @@ class MahjongTask(BaseTask):
                 and self.find_one('maj_tile', box=self.box_of_screen(0.755, 0.87, 0.802, 1.0), threshold=0.95)):
             self.sleep(0.2)
             self.next_frame()
-            self.info['test'] = self.calculate_color_percentage({'r':(140,158), 'g': (208, 226), 'b': (213, 231)}, 'maj_auto_tsumogiri')
             # 开了摸切模式
             if self.config['Pure Tsumogiri']:
                 if self.calculate_color_percentage({'r':(140,158), 'g': (208, 226), 'b': (213, 231)}, 'maj_auto_tsumogiri') < 0.05:
