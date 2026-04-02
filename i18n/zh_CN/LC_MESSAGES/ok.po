@@ -332,3 +332,6 @@ msgstr "只打模切"
 
 msgid "Anti-Renchan"
 msgstr "防止连庄"
+
+msgid "Only Tanyao"
+msgstr "只做断幺"

@@ -16,6 +16,7 @@ class MahjongTask(BaseTask):
 
         self.default_config.update({'Pure Tsumogiri': False})
         self.default_config.update({'Anti-Renchan': False})
+        self.default_config.update({'Only Tanyao': False})
 
         # 记录已打出的牌
         self.discarded_tiles = []
@@ -23,6 +24,7 @@ class MahjongTask(BaseTask):
         self.last_confirm = datetime.min
         # 防止打牌失败重复打牌多次将牌添加到 discard_tiles
         self.allow_discard_record = True
+
     def run(self):
         self.discarded_tiles.clear()
         self.last_confirm = datetime.min
@@ -30,7 +32,9 @@ class MahjongTask(BaseTask):
         while True:
             self.next_frame()
             self.run_game()
-            if (box:=self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68))) and not self.find_one('mahjong_matching'):
+            if (
+            box := self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68))) and not self.find_one(
+                    'mahjong_matching'):
                 if datetime.now() - self.last_confirm > timedelta(seconds=30):
                     self.send_key_down('lalt')
                     self.sleep(0.1)
@@ -38,13 +42,13 @@ class MahjongTask(BaseTask):
                     self.sleep(0.1)
                     self.send_key_up('lalt')
                     self.sleep(1)
-            elif box:=self.find_one('accept'):
+            elif box := self.find_one('accept'):
                 self.click(box)
             # 自动点击下一步
-            if box:=self.find_one('confirm', box=self.box_of_screen(0.46,0.89,0.54,0.95)):
+            if box := self.find_one('confirm', box=self.box_of_screen(0.46, 0.89, 0.54, 0.95)):
                 self.click(box)
                 self.discarded_tiles.clear()
-                self.last_confirm=datetime.now()
+                self.last_confirm = datetime.now()
             if box := self.find_one('confirm', box=self.box_of_screen(0.86, 0.89, 0.93, 0.95)):
                 self.click(box)
 
@@ -53,9 +57,8 @@ class MahjongTask(BaseTask):
             if claim_monthly_pass_task.enabled:
                 claim_monthly_pass_task.run()
 
-
     def run_game(self):
-        if skip_box:=self.find_one(['maj_skip'], box=self.box_of_screen(0.48,0.75,0.89,0.85)):
+        if skip_box := self.find_one(['maj_skip'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
             self.sleep(0.2)
             self.next_frame()
             if self.find_one(['maj_riichi'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
@@ -75,12 +78,14 @@ class MahjongTask(BaseTask):
             self.next_frame()
             # 开了摸切模式
             if self.config['Pure Tsumogiri']:
-                if self.calculate_color_percentage({'r':(140,158), 'g': (208, 226), 'b': (213, 231)}, 'maj_auto_tsumogiri') < 0.05:
-                     self.click_box('maj_auto_tsumogiri')
+                if self.calculate_color_percentage({'r': (140, 158), 'g': (208, 226), 'b': (213, 231)},
+                                                   'maj_auto_tsumogiri') < 0.05:
+                    self.click_box('maj_auto_tsumogiri')
             # 开了防止连庄并且检测到玩家是庄家
             elif self.config['Anti-Renchan'] and self.find_one('maj_east'):
-                if self.calculate_color_percentage({'r':(140,158), 'g': (208, 226), 'b': (213, 231)}, 'maj_auto_tsumogiri') < 0.05:
-                     self.click_box('maj_auto_tsumogiri')
+                if self.calculate_color_percentage({'r': (140, 158), 'g': (208, 226), 'b': (213, 231)},
+                                                   'maj_auto_tsumogiri') < 0.05:
+                    self.click_box('maj_auto_tsumogiri')
             else:
                 self.discard_tile()
             self.sleep(1)
@@ -108,11 +113,31 @@ class MahjongTask(BaseTask):
 
         self.info['Shanten'] = result.shanten
 
-        best_discard:str| None = None
+        best_discard: str | None = None
         min_shanten = float('inf')
         max_advance = -1
+
+        # 切牌候选池
+        candidates = result.discard_to_advance.items()
+
+        # 只做断幺逻辑
+        if self.config.get('Only Tanyao'):
+            yaoqiuhai = {'1m', '9m', '1p', '9p', '1s', '9s', '1z', '2z', '3z', '4z', '5z', '6z', '7z'}
+            hand_tile_names = [tile.name.removeprefix('maj_') for tile in tiles]
+            tanyao_targets = set(hand_tile_names).intersection(yaoqiuhai)
+
+            # 如果手牌中存在幺九牌，则只允许从幺九牌中选择打出
+            if tanyao_targets:
+                filtered_candidates = [(k, v) for k, v in candidates if str(k) in tanyao_targets]
+                if filtered_candidates:
+                    candidates = filtered_candidates
+                else:
+                    # 如果向听计算没给出打幺九牌的选项，则强行随便挑一张幺九出
+                    best_discard = list(tanyao_targets)[0]
+                    candidates = []
+
         # 遍历切牌选择
-        for tile_name, info in result.discard_to_advance.items():
+        for tile_name, info in candidates:
             current_shanten = info.shanten
             current_advance = info.advance_num
             is_tenpai = (current_shanten == 0)
@@ -149,23 +174,23 @@ class MahjongTask(BaseTask):
             return
 
         # 可以立直的话先点立直再出牌
-        if box:= self.find_one('maj_riichi', box=self.box_of_screen(0.48,0.75,0.89,0.85)):
+        if box := self.find_one('maj_riichi', box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
             self.sleep(0.3)
             self.click(box)
             self.sleep(0.3)
 
         # 双击要出的牌
-        tiles=['maj_' + best_discard]
-        if best_discard in {'5m','5s','5p'}:
+        tiles = ['maj_' + best_discard]
+        if best_discard in {'5m', '5s', '5p'}:
             red_tile = 'maj_' + best_discard.replace('5', '0')
             tiles.append(red_tile)
 
-        if box:= self.find_one(tiles, box=self.box_of_screen(0.193, 0.87, 0.875, 1.00), threshold=0.95):
+        if box := self.find_one(tiles, box=self.box_of_screen(0.193, 0.87, 0.875, 1.00), threshold=0.95):
             self.click(box)
             self.sleep(0.02)
             self.click(box)
             self.sleep(0.02)
-            self.move_relative(0.5,0.5)
+            self.move_relative(0.5, 0.5)
             self.info['Discard'] = best_discard
             if self.allow_discard_record:
                 self.discarded_tiles.append(best_discard)
@@ -217,9 +242,9 @@ class MahjongTask(BaseTask):
         return tiles
 
     def tsumogiri(self):
-        if box:=self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95):
+        if box := self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95):
             self.click(box)
             self.sleep(0.02)
             self.click(box)
             self.sleep(0.02)
-            self.move_relative(0.5,0.5)
+            self.move_relative(0.5, 0.5)
