@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from mahjong_utils.models.tile import parse_tiles
+from mahjong_utils.models.tile import parse_tiles, Tile
 from mahjong_utils.shanten import shanten, regular_shanten
 
 from ok import BaseTask
@@ -108,7 +108,8 @@ class MahjongTask(BaseTask):
         t = parse_tiles(tiles_str)
         regular = regular_shanten(t)
         result = shanten(t)
-        if regular.shanten - result.shanten < 2:
+        # 如果七对没有听牌，降低权重
+        if result.shanten > 0 and (regular.shanten - result.shanten < 2):
             result = regular
 
         self.info['Shanten'] = result.shanten
@@ -173,11 +174,12 @@ class MahjongTask(BaseTask):
             self.log_error(f'没有算出要出什么牌，手牌：{tiles_str}')
             return
 
-        # 可以立直的话先点立直再出牌
-        if box := self.find_one('maj_riichi', box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
-            self.sleep(0.3)
-            self.click(box)
-            self.sleep(0.3)
+        # 打出牌后是0向听的话先点立直再出牌
+        if result.discard_to_advance.get(Tile.by_text(best_discard)).shanten == 0:
+            if box := self.find_one('maj_riichi', box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+                self.sleep(0.3)
+                self.click(box)
+                self.sleep(0.3)
 
         # 双击要出的牌
         tiles = ['maj_' + best_discard]
@@ -240,11 +242,3 @@ class MahjongTask(BaseTask):
                 self.next_frame()
 
         return tiles
-
-    def tsumogiri(self):
-        if box := self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95):
-            self.click(box)
-            self.sleep(0.02)
-            self.click(box)
-            self.sleep(0.02)
-            self.move_relative(0.5, 0.5)

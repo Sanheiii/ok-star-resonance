@@ -37,7 +37,7 @@ class GuildHuntAssistTask(BaseTask):
                 self.executed = False
 
             # 检测到在副本内
-            if not self.executed and self.find_one('guild_hunt_title', threshold=0.6):
+            if not self.executed and self.find_one('guild_hunt_title',box=self.box_of_screen(0.02, 0.21, 0.06, 0.24), threshold=0.6):
                 # Entry Count增加
                 self.info['Entry Count'] += 1
                 if self.config.get('I\'m Tank'):
