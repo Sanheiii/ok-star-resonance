@@ -21,6 +21,7 @@ key_config_option = ConfigOption(
 
 
 config = {
+    'custom_tasks':True, # enable creating and editing custom tasks
     'debug': False,  # Optional, default: False
     'use_gui': True,
     'config_folder': 'configs',

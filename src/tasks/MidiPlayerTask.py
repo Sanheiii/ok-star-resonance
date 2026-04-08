@@ -359,6 +359,7 @@ class MidiPlayerTask(BaseTask):
         try:
             mid = mido.MidiFile(file_path)
             self.log_info(og.app.tr("Starting playback: {}").format(midi_file_name))
+
             # 过滤未选中的音轨
             selections = self.config.get('_track_selections', {})
             current_selection = selections.get(midi_file_name)
@@ -368,17 +369,50 @@ class MidiPlayerTask(BaseTask):
                         # 清空未选音轨中的发声及控制消息
                         track[:] = [msg for msg in track if msg.is_meta]
 
-            # 预处理：提取音符和控制信息
-            events = []
+            # 提取音符和控制信息
+            raw_events = []
             abs_time = 0.0
             allowed_types = {'note_on', 'note_off'}
             # 如果忽视延音踏板则不关注control_change
             if not self.config['Mute Pedal']:
                 allowed_types.add('control_change')
+
             for msg in mid:
                 abs_time += msg.time
                 if msg.type in allowed_types:
-                    events.append((abs_time, msg))
+                    raw_events.append({'time': abs_time, 'msg': msg})
+
+            # 预处理音符防止连续的音符只按下一次
+            # 记录每个 pitch 上一次 note_off 事件的引用
+            last_off_event = {}
+            # 记录每个 pitch 上一次 note_on 的时间，防止 note_off 提前过头导致持续时间变为负数
+            last_on_time = {}
+
+            MIN_GAP = 0.033
+
+            for evt in raw_events:
+                msg = evt['msg']
+                if msg.type == 'note_on' and msg.velocity > 0:
+                    pitch = msg.note
+                    # 检查是否存在前一个相同的音符
+                    if pitch in last_off_event:
+                        prev_off_evt = last_off_event[pitch]
+                        gap = evt['time'] - prev_off_evt['time']
+
+                        if gap < MIN_GAP:
+                            # 将前一个 off 时间提前且至少保留 1ms 持续时间
+                            new_off_time = max(last_on_time.get(pitch, 0) + 0.001, evt['time'] - MIN_GAP)
+                            prev_off_evt['time'] = new_off_time
+
+                    last_on_time[pitch] = evt['time']
+
+                elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
+                    # 记录下这个 off 事件，供下一个相同的 note_on 参考
+                    last_off_event[msg.note] = evt
+
+            # 3. 重新排序事件
+            raw_events.sort(key=lambda x: x['time'])
+            events = [(e['time'], e['msg']) for e in raw_events]
 
             # 初始化游戏内部钢琴状态
             self.current_page = 1  # 默认在中间页面: 1 (对应 C3~B5)
