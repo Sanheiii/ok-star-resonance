@@ -6,6 +6,7 @@ tesseract
 models
 fonts
 data2
+ok_templates/
 # Byte-compiled / optimized / DLL files
 .idea/
 data_export
