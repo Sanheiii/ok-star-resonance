@@ -65,10 +65,12 @@
 仅支持Python 3.12
 
 ```
-#CPU版本, 使用openvino
-pip install -r requirements.txt --upgrade #install python dependencies, 更新代码后可能需要重新运行
-python main.py # run the release version
-python main_debug.py # run the debug version
+git clone https://github.com/Sanheiii/ok-star-resonance.git
+cd ok-star-resonance
+git clone https://github.com/Sanheiii/ok-star-resonance-templates.git ok_templates # 可选，如需修改内置模板，clone此项目到ok_templates文件夹
+pip install -r requirements.txt --upgrade # 安装python依赖，更新代码后可能需要重新运行
+python main_debug.py # 运行 Debug 版
+python main.py # 运行 Release 版
 ```
 
 ### 致谢
