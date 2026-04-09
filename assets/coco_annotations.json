@@ -185,6 +185,12 @@
             "height": 1080,
             "id": 30,
             "file_name": "images/0.png"
+        },
+        {
+            "id": 31,
+            "file_name": "images/3.png",
+            "width": 1920,
+            "height": 1080
         }
     ],
     "categories": [
@@ -511,6 +517,36 @@
         {
             "id": 80,
             "name": "use_revive_bean"
+        },
+        {
+            "id": 81,
+            "name": "maj_ron_en",
+            "supercategory": ""
+        },
+        {
+            "id": 82,
+            "name": "maj_skip_en",
+            "supercategory": ""
+        },
+        {
+            "id": 83,
+            "name": "maj_east_en",
+            "supercategory": ""
+        },
+        {
+            "id": 84,
+            "name": "maj_tsumo_en",
+            "supercategory": ""
+        },
+        {
+            "id": 85,
+            "name": "maj_riichi_en",
+            "supercategory": ""
+        },
+        {
+            "id": 86,
+            "name": "maj_auto_tsumogiri_en",
+            "supercategory": ""
         }
     ],
     "annotations": [
@@ -1728,6 +1764,84 @@
             "ignore": 0,
             "iscrowd": 0,
             "area": 2375.073926290112
+        },
+        {
+            "id": 81,
+            "image_id": 31,
+            "category_id": 81,
+            "bbox": [
+                783,
+                851,
+                127,
+                53
+            ],
+            "area": 6731,
+            "iscrowd": 0
+        },
+        {
+            "id": 82,
+            "image_id": 31,
+            "category_id": 82,
+            "bbox": [
+                1144,
+                845,
+                163,
+                51
+            ],
+            "area": 8313,
+            "iscrowd": 0
+        },
+        {
+            "id": 83,
+            "image_id": 31,
+            "category_id": 83,
+            "bbox": [
+                815,
+                567,
+                19,
+                27
+            ],
+            "area": 513,
+            "iscrowd": 0
+        },
+        {
+            "id": 84,
+            "image_id": 31,
+            "category_id": 84,
+            "bbox": [
+                963,
+                849,
+                134,
+                35
+            ],
+            "area": 4690,
+            "iscrowd": 0
+        },
+        {
+            "id": 85,
+            "image_id": 31,
+            "category_id": 85,
+            "bbox": [
+                1364,
+                851,
+                129,
+                48
+            ],
+            "area": 6192,
+            "iscrowd": 0
+        },
+        {
+            "id": 86,
+            "image_id": 31,
+            "category_id": 86,
+            "bbox": [
+                4,
+                800,
+                73,
+                11
+            ],
+            "area": 803,
+            "iscrowd": 0
         }
     ],
     "info": {

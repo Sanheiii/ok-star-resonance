@@ -3,12 +3,11 @@ from datetime import datetime, timedelta
 from mahjong_utils.models.tile import parse_tiles, Tile
 from mahjong_utils.shanten import shanten, regular_shanten
 
-from ok import BaseTask
-
 from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
+from src.tasks.SRTask import SRTask
 
 
-class MahjongTask(BaseTask):
+class MahjongTask(SRTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -58,12 +57,20 @@ class MahjongTask(BaseTask):
                 claim_monthly_pass_task.run()
 
     def run_game(self):
-        if skip_box := self.find_one(['maj_skip'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+        lang = self.get_game_language()
+        maj_skip = 'maj_skip' if lang in ['zhs', 'zht'] else 'maj_skip_en'
+        maj_riichi = 'maj_riichi' if lang in ['zhs', 'zht'] else 'maj_riichi_en'
+        maj_tsumo = 'maj_tsumo' if lang in ['zhs', 'zht'] else 'maj_tsumo_en'
+        maj_ron = 'maj_ron' if lang in ['zhs', 'zht'] else 'maj_ron_en'
+        maj_auto_tsumogiri = 'maj_auto_tsumogiri' if lang in ['zhs', 'zht'] else 'maj_auto_tsumogiri_en'
+        maj_east = 'maj_east' if lang in ['zhs', 'zht'] else 'maj_east_en'
+
+        if skip_box := self.find_one([maj_skip], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
             self.sleep(0.2)
             self.next_frame()
-            if self.find_one(['maj_riichi'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+            if self.find_one([maj_riichi], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
                 pass
-            elif box := self.find_one(['maj_tsumo', 'maj_ron'], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+            elif box := self.find_one([maj_tsumo, maj_ron], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
                 self.click(box)
                 self.info_incr('Hora Count')
                 self.sleep(2)
@@ -79,13 +86,13 @@ class MahjongTask(BaseTask):
             # 开了摸切模式
             if self.config['Pure Tsumogiri']:
                 if self.calculate_color_percentage({'r': (140, 158), 'g': (208, 226), 'b': (213, 231)},
-                                                   'maj_auto_tsumogiri') < 0.05:
-                    self.click_box('maj_auto_tsumogiri')
+                                                   maj_auto_tsumogiri) < 0.05:
+                    self.click_box(maj_auto_tsumogiri)
             # 开了防止连庄并且检测到玩家是庄家
-            elif self.config['Anti-Renchan'] and self.find_one('maj_east'):
+            elif self.config['Anti-Renchan'] and self.find_one(maj_east):
                 if self.calculate_color_percentage({'r': (140, 158), 'g': (208, 226), 'b': (213, 231)},
-                                                   'maj_auto_tsumogiri') < 0.05:
-                    self.click_box('maj_auto_tsumogiri')
+                                                   maj_auto_tsumogiri) < 0.05:
+                    self.click_box(maj_auto_tsumogiri)
             else:
                 self.discard_tile()
             self.sleep(1)
@@ -99,7 +106,7 @@ class MahjongTask(BaseTask):
         self.info['Tiles'] = tiles_str
         if not len(tiles) == 14:
             # 手牌检测出错了，跳过本轮检测
-            self.log_error(f'没有检测到全部手牌，如果无法正常打牌，请将游戏设置为1920*1080，FSR3效果挡')
+            self.log_error(f'Full hand not detected. If unable to play, set game to 1920x1080 and FSR 3 to Quality.')
             self.sleep(0.5)
             self.next_frame()
             return
@@ -171,12 +178,14 @@ class MahjongTask(BaseTask):
                     best_discard = str(tile_name)
 
         if not best_discard:
-            self.log_error(f'没有算出要出什么牌，手牌：{tiles_str}')
+            self.log_error(self._app.tr('Failed to determine which tile to discard. Hand: {tiles_str}').format(tiles_str = tiles_str))
             return
 
         # 打出牌后是0向听的话先点立直再出牌
         if result.discard_to_advance.get(Tile.by_text(best_discard)).shanten == 0:
-            if box := self.find_one('maj_riichi', box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+            lang = self.get_game_language()
+            maj_riichi = 'maj_riichi' if lang in ['zhs', 'zht'] else 'maj_riichi_en'
+            if box := self.find_one(maj_riichi, box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
                 self.sleep(0.3)
                 self.click(box)
                 self.sleep(0.3)

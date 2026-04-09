@@ -335,3 +335,9 @@ msgstr "防止连庄"
 
 msgid "Only Tanyao"
 msgstr "只做断幺"
+
+msgid "Failed to determine which tile to discard. Hand: {tiles_str}"
+msgstr "没有算出要出什么牌，手牌：{tiles_str}"
+
+msgid "Full hand not detected. If unable to play, set game to 1920x1080 and FSR 3 to Quality."
+msgstr "没有检测到全部手牌，如果无法正常打牌，请将游戏设置为1920*1080，FSR3效果档"
