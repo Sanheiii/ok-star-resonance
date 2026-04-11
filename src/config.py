@@ -88,7 +88,6 @@ config = {
         ["src.tasks.AimPurchaseButtonTask", "AimPurchaseButtonTask"],
         ["src.tasks.AutoSkillTask", "AutoSkillTask"],
         ["src.tasks.AutoPartyTask", "AutoPartyTask"],
-        ["src.tasks.MissionEntryTask", "MissionEntryTask"],
-        ["src.tasks.AutoReviveTask", "AutoReviveTask"]
+        ["src.tasks.MissionEntryTask", "MissionEntryTask"]
     ]
 }
