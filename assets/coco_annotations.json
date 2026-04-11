@@ -58,7 +58,7 @@
             "width": 1911,
             "height": 977,
             "id": 9,
-            "file_name": "images/5.png"
+            "file_name": "images/6.png"
         },
         {
             "width": 1920,
@@ -76,13 +76,13 @@
             "width": 2560,
             "height": 1440,
             "id": 12,
-            "file_name": "images/6.png"
+            "file_name": "images/7.png"
         },
         {
             "width": 2560,
             "height": 1440,
             "id": 13,
-            "file_name": "images/6.png"
+            "file_name": "images/7.png"
         },
         {
             "width": 1920,
@@ -189,6 +189,12 @@
         {
             "id": 31,
             "file_name": "images/3.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 32,
+            "file_name": "images/5.png",
             "width": 1920,
             "height": 1080
         }
@@ -546,6 +552,16 @@
         {
             "id": 86,
             "name": "maj_auto_tsumogiri_en",
+            "supercategory": ""
+        },
+        {
+            "id": 87,
+            "name": "msg_confirm_mission_zht",
+            "supercategory": ""
+        },
+        {
+            "id": 88,
+            "name": "confirm_zht",
             "supercategory": ""
         }
     ],
@@ -1841,6 +1857,32 @@
                 11
             ],
             "area": 803,
+            "iscrowd": 0
+        },
+        {
+            "id": 87,
+            "image_id": 32,
+            "category_id": 87,
+            "bbox": [
+                794,
+                847,
+                333,
+                22
+            ],
+            "area": 7326,
+            "iscrowd": 0
+        },
+        {
+            "id": 88,
+            "image_id": 32,
+            "category_id": 88,
+            "bbox": [
+                1707,
+                973,
+                56,
+                27
+            ],
+            "area": 1512,
             "iscrowd": 0
         }
     ],

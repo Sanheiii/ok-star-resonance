@@ -19,8 +19,10 @@ class MissionEntryTask(SRTriggerTask):
 
     def _find_msg(self):
         language = self.get_game_language()
-        if language == 'zhs' or language == 'zht':
+        if language == 'zhs':
             return self.find_one("msg_confirm_mission", box=self.box_of_screen(0.38, 0.77, 0.62, 0.82))
+        elif language == 'zht':
+            return self.find_one("msg_confirm_mission_zht")
         elif language == 'en':
             return self.find_one("msg_confirm_mission_en", box=self.box_of_screen(0.38, 0.77, 0.62, 0.82))
         else:
@@ -28,8 +30,10 @@ class MissionEntryTask(SRTriggerTask):
 
     def _find_confirm(self):
         language = self.get_game_language()
-        if language == 'zhs' or language == 'zht':
+        if language == 'zhs':
             return self.find_one("confirm", box=self.box_of_screen(0.83, 0.89, 0.98, 0.94))
+        elif language == 'zht':
+            return self.find_one("confirm_zht", box=self.box_of_screen(0.83, 0.89, 0.98, 0.94))
         elif language == 'en':
             return self.find_one("confirm_en", box=self.box_of_screen(0.83, 0.89, 0.98, 0.94))
         else:
