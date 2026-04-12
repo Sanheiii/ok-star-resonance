@@ -197,6 +197,12 @@
             "file_name": "images/5.png",
             "width": 1920,
             "height": 1080
+        },
+        {
+            "id": 33,
+            "file_name": "images/0.png",
+            "width": 1920,
+            "height": 1080
         }
     ],
     "categories": [
@@ -562,6 +568,16 @@
         {
             "id": 88,
             "name": "confirm_zht",
+            "supercategory": ""
+        },
+        {
+            "id": 89,
+            "name": "timestamp_zero",
+            "supercategory": ""
+        },
+        {
+            "id": 90,
+            "name": "keyboard",
             "supercategory": ""
         }
     ],
@@ -1883,6 +1899,32 @@
                 27
             ],
             "area": 1512,
+            "iscrowd": 0
+        },
+        {
+            "id": 89,
+            "image_id": 33,
+            "category_id": 89,
+            "bbox": [
+                183,
+                286,
+                28,
+                19
+            ],
+            "area": 532,
+            "iscrowd": 0
+        },
+        {
+            "id": 90,
+            "image_id": 33,
+            "category_id": 90,
+            "bbox": [
+                382,
+                818,
+                70,
+                119
+            ],
+            "area": 8330,
             "iscrowd": 0
         }
     ],

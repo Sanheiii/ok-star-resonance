@@ -80,6 +80,7 @@ config = {
         ["src.tasks.GuildHuntAssistTask", "GuildHuntAssistTask"],
         ["src.tasks.MidiPlayerTask", "MidiPlayerTask"],
         ["src.tasks.MahjongTask", "MahjongTask"],
+        ["src.tasks.OtogeTask", "OtogeTask"],
     ],
     'trigger_tasks':[
         ["src.tasks.FishingTask", "FishingTask"],
