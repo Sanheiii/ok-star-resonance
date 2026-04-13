@@ -43,13 +43,13 @@ msgid "Game Language"
 msgstr "游戏语言"
 
 msgid "Auto Gather"
-msgstr "自动采集"
+msgstr "采集"
 
 msgid "Auto Fish"
-msgstr "自动钓鱼"
+msgstr "钓鱼"
 
 msgid "Auto-claim Monthly Card"
-msgstr "自动领取月卡"
+msgstr "领取月卡"
 
 msgid "Automatically claims the monthly card when it interface pops up"
 msgstr "弹出月卡界面后自动领取月卡"
@@ -61,7 +61,7 @@ msgid "Auto-disable after run"
 msgstr "运行后会自动关闭"
 
 msgid "Auto Skill Spammer"
-msgstr "自动连点技能"
+msgstr "连点技能"
 
 msgid "Auto-cast skills sequentially."
 msgstr "按顺序连点技能"
@@ -97,7 +97,7 @@ msgid  "Enable Imagine X"
 msgstr "启用战斗幻想X"
 
 msgid  "Auto Revive"
-msgstr "自动复活"
+msgstr "复活"
 
 msgid  "Automatically interacts with the revive prompt."
 msgstr "自动点击复活提示"
@@ -121,7 +121,7 @@ msgid  "Automatically clicks the confirmation button when a mission or dungeon e
 msgstr "弹出确认进入副本时自动点击确认按钮"
 
 msgid  "Auto Guild Hunt"
-msgstr "自动协会狩猎"
+msgstr "协会狩猎"
 
 msgid  "Auto-accept invites and assist in Guild Hunts."
 msgstr "自动接受其他玩家的邀请并帮助他协会狩猎 "
@@ -286,13 +286,13 @@ msgid "Playback error: {}"
 msgstr "播放出错: {}"
 
 msgid "No MIDI files found."
-msgstr "未找到 MIDI 文件。"
+msgstr "未找到 MIDI 文件"
 
 msgid "MIDI Player"
 msgstr "MIDI 播放器"
 
 msgid "Plays MIDI files using in-game instruments."
-msgstr "使用游戏内乐器播放 MIDI 文件。"
+msgstr "使用游戏内乐器播放 MIDI 文件"
 
 msgid "MIDI File"
 msgstr "MIDI 文件"
@@ -337,7 +337,31 @@ msgid "Only Tanyao"
 msgstr "只做断幺"
 
 msgid "Failed to determine which tile to discard. Hand: {tiles_str}"
-msgstr "没有算出要出什么牌，手牌：{tiles_str}"
+msgstr "没有算出要出什么牌，手牌：{tiles_str}。"
 
 msgid "Full hand not detected. If unable to play, set game to 1920x1080 and FSR 3 to Quality."
-msgstr "没有检测到全部手牌，如果无法正常打牌，请将游戏设置为1920*1080，FSR3效果档"
+msgstr "没有检测到全部手牌，如果无法正常打牌，请将游戏设置为1920*1080，FSR3效果档。"
+
+msgid "Band"
+msgstr "乐队"
+
+msgid "Tutorial Chart Performance"
+msgstr "演奏教学谱面"
+
+msgid "Use in stable light; avoid moving objects/VFX at at the top."
+msgstr "在光线稳定的场景使用，确保画面上方没有运动的物体或特效"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Waiting"
+msgstr "等待开始"
+
+msgid "Playing"
+msgstr "演奏中"
+
+msgid "Done"
+msgstr "已完成"
+
+msgid "Offset (ms)"
+msgstr "偏移（毫秒）"

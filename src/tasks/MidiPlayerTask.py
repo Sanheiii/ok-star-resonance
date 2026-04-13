@@ -61,6 +61,8 @@ class MidiPlayerTask(BaseTask):
         super().__init__(*args, **kwargs)
         self.name = "MIDI Player"
         self.description = "Plays MIDI files using in-game instruments."
+        self.group_name = 'Band'
+        self.group_icon = FluentIcon.MUSIC
         self.midi_list = None
 
         self.pitch_to_key = {

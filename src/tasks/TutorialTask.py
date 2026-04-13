@@ -1,17 +1,21 @@
 import time
 import heapq
 import numpy as np
+from PySide6.QtCore import QTimer
 from numpy._typing import NDArray
 from itertools import groupby
-from ok import BaseTask, Box
+from ok import BaseTask, og
+from ok.gui.tasks.LabelAndSpinBox import LabelAndSpinBox
 
 
-class OtogeTask(BaseTask):
+class TutorialTask(BaseTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.name = "音游考核"
-        self.description = "自动打音游"
+        self.name = "Tutorial Chart Performance"
+        self.description = "Use in stable light; avoid moving objects/VFX at at the top."
+        self.default_config.update({'Offset (ms)': -1})
+        self.group_name = 'Band'
         self.default_config.update({})
         self.executed = False
 
@@ -32,15 +36,32 @@ class OtogeTask(BaseTask):
         self.height_threshold = 0.15
         self.diff_threshold = 3
 
+    def on_create(self):
+        super().on_create()
+        QTimer.singleShot(1000, self.fix_offset_range)
+
+    def fix_offset_range(self):
+        for tab in og.app.main_window.grouped_task_tabs:
+            if tab.group_name == self.group_name:
+                v_box_layout = tab.vBoxLayout
+                for i in range(v_box_layout.count()):
+                    widget = v_box_layout.itemAt(i).widget()
+                    if widget and hasattr(widget, 'task') and widget.task is self:
+                        for config_widget in widget.config_widgets:
+                            if isinstance(config_widget, LabelAndSpinBox) and config_widget.key == 'Offset (ms)':
+                                config_widget.spin_box.setRange(-300, 1000)
+                        break
+
     def run(self):
-        self.info['status'] = '等待开始'
+        self.info['status'] = 'Waiting'
+        offset = self.config['Offset (ms)']
         while(True):
             self.next_frame()
             if self.find_one('timestamp_zero'):
                 break
             self.sleep(0.016)
 
-        self.info['status'] = '演奏中'
+        self.info['status'] = 'Playing'
         # 截取检测区域并获取背景图作为参照
         roi = self.box_of_screen(0.237, 0.044, 0.954, 0.091)
         self.next_frame()
@@ -88,10 +109,10 @@ class OtogeTask(BaseTask):
 
                 # 按下与松开，延时 3.35s 是根据音游流速推测的硬编码
                 if is_condition_met and not current_key_state[key]:
-                    heapq.heappush(event_queue, (current_time + 3.35, 'down', key))
+                    heapq.heappush(event_queue, (current_time + 3.35 + offset/1000, 'down', key))
                     current_key_state[key] = True
                 elif not is_condition_met and current_key_state[key]:
-                    heapq.heappush(event_queue, (current_time + 3.15, 'up', key))
+                    heapq.heappush(event_queue, (current_time + 3.15 + offset/1000, 'up', key))
                     current_key_state[key] = False
 
                 # 处理连在一起没有间隙的 Note
@@ -122,8 +143,8 @@ class OtogeTask(BaseTask):
                             # 如果出现了比追踪过的note头更靠上的，说明后面又跟了一个新 Note
                             if hasattr(self, 'log_debug'):
                                 self.log_debug(f"[{key}] New note detected, resetting...")
-                            heapq.heappush(event_queue, (current_time + 3.3, 'up', key))
-                            heapq.heappush(event_queue, (current_time + 3.35, 'down', key))
+                            heapq.heappush(event_queue, (current_time + 3.3 + offset/1000, 'up', key))
+                            heapq.heappush(event_queue, (current_time + 3.35 + offset/1000, 'down', key))
                             pure_block_records[key] = top_y
                         else:
                             # 持续追踪已发现的note头
@@ -143,5 +164,5 @@ class OtogeTask(BaseTask):
                     self.send_key_up(key)
 
             if not self.find_one('keyboard'):
-                self.info['status'] = '已完成'
+                self.info['status'] = 'Done'
                 return
