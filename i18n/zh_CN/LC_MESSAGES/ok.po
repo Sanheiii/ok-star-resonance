@@ -35,7 +35,7 @@ msgstr "自动点击屏幕上出现的采集按钮，注意调整角度使按钮
 
 msgid "Always Rapid Click"
 msgstr "无视鱼线张力直接连点"
-bang
+
 msgid "Game Settings"
 msgstr "游戏设置"
 
