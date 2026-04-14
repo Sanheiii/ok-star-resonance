@@ -1,11 +1,14 @@
+import os
 import time
 import datetime
 import re
 import threading
 
 from ok import og
+from ok.util.file import get_path_relative_to_exe
 from pypushdeer import PushDeer
 
+from src.Yolo8Detect import Yolo8Detect
 from src.tasks.SRTriggerTask import SRTriggerTask
 
 class FishingTask(SRTriggerTask):
@@ -72,6 +75,7 @@ class FishingTask(SRTriggerTask):
         self.yolo_count = 0
         self.last_stat_time = time.time()
         self.stat_lock = threading.Lock()
+        self._yolo_model : Yolo8Detect | None = None
 
     def _splash_finder_worker(self, frame):
         """
@@ -339,7 +343,7 @@ class FishingTask(SRTriggerTask):
         self.fish_pos_from_game = 0
 
     def _find_splash(self, frame, threshold=0.5):
-        ret = og.my_app.yolo_detect(frame, threshold=threshold, label=0)
+        ret = self.yolo_detect(frame, threshold=threshold, label=0)
 
         with self.stat_lock:
             self.yolo_count += 1
@@ -374,7 +378,12 @@ class FishingTask(SRTriggerTask):
             return self.ocr(0.76, 0.88, 0.90, 0.93, match=self.get_regex('continue_fishing'))
 
     def on_enabled(self) -> None:
+        self.init_yolo_model()
         self.clean_pushdeer_related_resources()
+
+    def on_disabled(self) -> None:
+        self._yolo_model = None
+        self.log_info("Destroy Yolo Modal")
 
     def clean_pushdeer_related_resources(self):
         self.last_start_time = None
@@ -396,3 +405,21 @@ class FishingTask(SRTriggerTask):
                 self.run_count = 0
                 self.yolo_count = 0
                 self.last_stat_time = now
+
+    def init_yolo_model(self):
+        if self._yolo_model is None:
+            weights = get_path_relative_to_exe(os.path.join("assets", "models", "bpsr_splash.onnx"))
+            self.log_info(og.config)
+            if og.config.get("ocr").get("params").get("use_openvino"):
+                self.logger.info("yolo_model Using OpenVinoYolo8Detect")
+                from src.OpenVinoYolo8Detect import OpenVinoYolo8Detect
+                self._yolo_model = OpenVinoYolo8Detect(
+                    weights=weights)
+            else:
+                self.logger.info("yolo_model Using OnnxYolo8Detect")
+                from src.OnnxYolo8Detect import OnnxYolo8Detect
+                self._yolo_model = OnnxYolo8Detect(
+                    weights=weights)
+
+    def yolo_detect(self, image, threshold=0.6, label=-1):
+        return self._yolo_model.detect(image, threshold=threshold, label=label)

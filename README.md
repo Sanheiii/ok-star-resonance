@@ -72,6 +72,21 @@
 
 仅支持Python 3.12
 
+**使用 uv（推荐）**
+
+[uv](https://docs.astral.sh/uv/) 是一个快速的 Python 包管理器，可自动管理 Python 版本和虚拟环境。
+
+```
+git clone https://github.com/Sanheiii/ok-star-resonance.git
+cd ok-star-resonance
+git clone https://github.com/Sanheiii/ok-star-resonance-templates.git ok_templates # 可选，如需修改内置模板，clone此项目到ok_templates文件夹
+uv sync # 安装依赖并创建虚拟环境，更新代码后可能需要重新运行
+uv run python main_debug.py # 运行 Debug 版
+uv run python main.py # 运行 Release 版
+```
+
+**使用 pip**
+
 ```
 git clone https://github.com/Sanheiii/ok-star-resonance.git
 cd ok-star-resonance
