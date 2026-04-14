@@ -28,12 +28,21 @@ class MahjongTask(SRTask):
         self.discarded_tiles.clear()
         self.last_confirm = datetime.min
         self.info['Hora Count'] = 0
+        language = self.get_game_language()
+
+        mahjong_matching = 'mahjong_matching'
+        confirm = 'confirm'
+        accept = 'accept'
+        if language == 'en':
+            mahjong_matching = 'mahjong_matching_en'
+            confirm = 'confirm_en'
+            accept = 'accept_en'
         while True:
             self.next_frame()
             self.run_game()
             if (
             box := self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68))) and not self.find_one(
-                    'mahjong_matching'):
+                    mahjong_matching):
                 if datetime.now() - self.last_confirm > timedelta(seconds=30):
                     self.send_key_down('lalt')
                     self.sleep(0.1)
@@ -41,14 +50,14 @@ class MahjongTask(SRTask):
                     self.sleep(0.1)
                     self.send_key_up('lalt')
                     self.sleep(1)
-            elif box := self.find_one('accept'):
+            elif box := self.find_one(accept):
                 self.click(box)
             # 自动点击下一步
-            if box := self.find_one('confirm', box=self.box_of_screen(0.46, 0.89, 0.54, 0.95)):
+            if box := self.find_one(confirm, box=self.box_of_screen(0.46, 0.89, 0.54, 0.95)):
                 self.click(box)
                 self.discarded_tiles.clear()
                 self.last_confirm = datetime.now()
-            if box := self.find_one('confirm', box=self.box_of_screen(0.86, 0.89, 0.93, 0.95)):
+            if box := self.find_one(confirm, box=self.box_of_screen(0.86, 0.89, 0.93, 0.95)):
                 self.click(box)
 
             # 如果触发任务中勾了自动领取月卡则检查月卡
