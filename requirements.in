@@ -1,6 +1,6 @@
 ok-script==1.0.99
 onnxocr-ppocrv5==0.0.14
-onnxruntime
+onnxruntime-directml==1.24.4
 openvino
 opencv-python
 pynput

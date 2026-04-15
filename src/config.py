@@ -1,3 +1,4 @@
+import json
 import os
 
 import numpy as np
@@ -6,16 +7,61 @@ from ok import ConfigOption
 version = "dev"
 
 
+# Monkey-patch onnxocr PredictBase to use DirectML when og.use_dml is True.
+# onnxocr hardcodes ['CPUExecutionProvider'], so we patch __init__ to inject DmlExecutionProvider.
+import onnxocr.predict_base as _pb
+
+_OriginalPredictBaseInit = _pb.PredictBase.__init__
+
+
+def _patched_predict_base_init(self, model_dir, use_openvino=True, use_npu=True, logger=None, force_static_shape=False):
+    _OriginalPredictBaseInit(self, model_dir, use_openvino, use_npu, logger, force_static_shape)
+    if not self.is_openvino and hasattr(self.session, 'get_providers'):
+        try:
+            from ok import og
+            if getattr(og, 'use_dml', False) and self.session.get_providers() == ['CPUExecutionProvider']:
+                import onnxruntime as _ort
+                if 'DmlExecutionProvider' in _ort.get_available_providers():
+                    self.logger.info('OCR switching from CPU to DirectML')
+                    with open(model_dir, 'rb') as f:
+                        self.session = _ort.InferenceSession(f.read(), None, providers=[
+                            ('DmlExecutionProvider', {'device_id': 0}), 'CPUExecutionProvider'
+                        ])
+        except ImportError:
+            pass
+        self.logger.info(f'OCR InferenceSession active provider: {self.session.get_providers()[0]}')
+
+
+_pb.PredictBase.__init__ = _patched_predict_base_init
+
+
+def _read_ocr_use_openvino():
+    settings_path = os.path.join('configs', 'Game Settings.json')
+    if os.path.exists(settings_path):
+        try:
+            with open(settings_path, encoding='utf-8') as f:
+                return json.load(f).get('Inference Backend') == 'OpenVINO(Intel)'
+        except (json.JSONDecodeError, OSError):
+            pass
+    return False
+
+
 key_config_option = ConfigOption(
-    "Game Settings",
-    {
+    name = "Game Settings",
+    default = {
         "Game Language": "简体中文",
+        "Inference Backend": "ONNX Runtime",
     },
+    description="Inference Backend now affect OCR and Yolo8Detect, Use ONNX Runtime with DirectML enabled should be the Fastest",
     config_type={
         "Game Language": {
             "type": "drop_down",
             "options": ["简体中文", "繁體中文", "English", "日本語"],
-        }
+        },
+        "Inference Backend": {
+            "type": "drop_down",
+            "options": ["ONNX Runtime", "OpenVINO(Intel)"],
+        },
     },
 )
 
@@ -33,7 +79,7 @@ config = {
     'ocr': {
         'lib': 'onnxocr',
         'params': {
-            'use_openvino': True,
+            'use_openvino': _read_ocr_use_openvino(),
         }
     },
     'windows': {  # required  when supporting windows game

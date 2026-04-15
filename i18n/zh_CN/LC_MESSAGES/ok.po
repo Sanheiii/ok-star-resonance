@@ -42,6 +42,12 @@ msgstr "游戏设置"
 msgid "Game Language"
 msgstr "游戏语言"
 
+msgid "Inference Backend"
+msgstr "推理后端"
+
+msgid "Inference Backend now affect OCR and Yolo8Detect, Use ONNX Runtime with DirectML enabled should be the Fastest"
+msgstr "推理后端配置现在会影响OCR和Yolo8识别，使用ONNX Runtime同时启用DirectML理论上是最快的"
+
 msgid "Auto Gather"
 msgstr "采集"
 
