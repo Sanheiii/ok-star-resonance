@@ -1,6 +1,8 @@
 import json
 import os
 
+os.environ.setdefault('ORT_DISABLE_LOGGING', '1')
+
 import numpy as np
 from ok import ConfigOption
 
@@ -24,7 +26,9 @@ def _patched_predict_base_init(self, model_dir, use_openvino=True, use_npu=True,
                 if 'DmlExecutionProvider' in _ort.get_available_providers():
                     self.logger.info('OCR switching from CPU to DirectML')
                     with open(model_dir, 'rb') as f:
-                        self.session = _ort.InferenceSession(f.read(), None, providers=[
+                        opts = _ort.SessionOptions()
+                        opts.log_severity_level = 4
+                        self.session = _ort.InferenceSession(f.read(), opts, providers=[
                             ('DmlExecutionProvider', {'device_id': 0}), 'CPUExecutionProvider'
                         ])
         except ImportError:
@@ -50,7 +54,7 @@ key_config_option = ConfigOption(
     name = "Game Settings",
     default = {
         "Game Language": "简体中文",
-        "Inference Backend": "ONNX Runtime",
+        "Inference Backend": "OpenVINO(Intel)",
     },
     description="Inference Backend now affect OCR and Yolo8Detect, Use ONNX Runtime with DirectML enabled should be the Fastest",
     config_type={
