@@ -23,11 +23,13 @@ class MahjongTask(SRTask):
         self.last_confirm = datetime.min
         # 防止打牌失败重复打牌多次将牌添加到 discard_tiles
         self.allow_discard_record = True
+        self._fail_count = 0
 
     def run(self):
         self.discarded_tiles.clear()
         self.last_confirm = datetime.min
         self.info['Hora Count'] = 0
+        self._fail_count = 0
         language = self.get_game_language()
 
         mahjong_matching = 'mahjong_matching'
@@ -110,15 +112,26 @@ class MahjongTask(SRTask):
             return
 
     def discard_tile(self):
+        lang = self.get_game_language()
+        maj_auto_tsumogiri = 'maj_auto_tsumogiri' if lang in ['zhs', 'zht'] else 'maj_auto_tsumogiri_en'
+
         tiles = self.get_tiles()
         tiles_str = "".join(tile.name.removeprefix('maj_') for tile in tiles)
         self.info['Tiles'] = tiles_str
+
         if not len(tiles) == 14:
+            self._fail_count += 1
             # 手牌检测出错了，跳过本轮检测
             self.log_error(f'Full hand not detected. If unable to play, set game to 1920x1080 and FSR 3 to Quality.')
             self.sleep(0.5)
             self.next_frame()
+            # 如果连续十次以上检测失败，则点击自动摸切
+            if self._fail_count > 10:
+                if self.calculate_color_percentage({'r': (140, 158), 'g': (208, 226), 'b': (213, 231)}, maj_auto_tsumogiri) < 0.05:
+                    self.click_box(maj_auto_tsumogiri)
             return
+
+        self._fail_count = 0
 
         # 手牌传入mahjong_utils
         t = parse_tiles(tiles_str)
