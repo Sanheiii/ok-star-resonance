@@ -44,7 +44,7 @@ def _read_ocr_use_openvino():
     if os.path.exists(settings_path):
         try:
             with open(settings_path, encoding='utf-8') as f:
-                return json.load(f).get('Inference Backend') == 'OpenVINO(Intel)'
+                return json.load(f).get('Inference Backend') == 'OpenVINO'
         except (json.JSONDecodeError, OSError):
             pass
     return False
@@ -54,9 +54,8 @@ key_config_option = ConfigOption(
     name = "Game Settings",
     default = {
         "Game Language": "简体中文",
-        "Inference Backend": "OpenVINO(Intel)",
+        "Inference Backend": "OpenVINO",
     },
-    description="Inference Backend now affect OCR and Yolo8Detect, Use ONNX Runtime with DirectML enabled should be the Fastest",
     config_type={
         "Game Language": {
             "type": "drop_down",
@@ -64,7 +63,7 @@ key_config_option = ConfigOption(
         },
         "Inference Backend": {
             "type": "drop_down",
-            "options": ["ONNX Runtime", "OpenVINO(Intel)"],
+            "options": ["OpenVINO", "ONNX Runtime"],
         },
     },
 )
