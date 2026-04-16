@@ -728,16 +728,14 @@
             "id": 8,
             "image_id": 7,
             "category_id": 79,
-            "segmentation": [],
             "bbox": [
                 886,
                 928,
                 346,
-                21
+                22
             ],
-            "ignore": 0,
-            "iscrowd": 0,
-            "area": 7326.460501104689
+            "area": 7612,
+            "iscrowd": 0
         },
         {
             "id": 9,
