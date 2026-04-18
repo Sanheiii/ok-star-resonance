@@ -30,21 +30,25 @@ class MahjongTask(SRTask):
         self.last_confirm = datetime.min
         self.info['Hora Count'] = 0
         self._fail_count = 0
-        language = self.get_game_language()
 
-        mahjong_matching = 'mahjong_matching'
+        lang = self.get_game_language()
         confirm = 'confirm'
         accept = 'accept'
-        if language == 'en':
-            mahjong_matching = 'mahjong_matching_en'
+        if lang == 'en':
             confirm = 'confirm_en'
             accept = 'accept_en'
+        elif lang =='jp':
+            # confirm = 'confirm_jp'
+            accept = 'accept_jp'
+        elif lang == 'zht':
+            confirm = 'confirm_zht'
+
         while True:
             self.next_frame()
             self.run_game()
             if (
             box := self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68))) and not self.find_one(
-                    mahjong_matching):
+                    'matching'):
                 if datetime.now() - self.last_confirm > timedelta(seconds=30):
                     self.send_key_down('lalt')
                     self.sleep(0.1)
@@ -69,12 +73,27 @@ class MahjongTask(SRTask):
 
     def run_game(self):
         lang = self.get_game_language()
-        maj_skip = 'maj_skip' if lang in ['zhs', 'zht'] else 'maj_skip_en'
-        maj_riichi = 'maj_riichi' if lang in ['zhs', 'zht'] else 'maj_riichi_en'
-        maj_tsumo = 'maj_tsumo' if lang in ['zhs', 'zht'] else 'maj_tsumo_en'
-        maj_ron = 'maj_ron' if lang in ['zhs', 'zht'] else 'maj_ron_en'
-        maj_auto_tsumogiri = 'maj_auto_tsumogiri' if lang in ['zhs', 'zht'] else 'maj_auto_tsumogiri_en'
-        maj_east = 'maj_east' if lang in ['zhs', 'zht'] else 'maj_east_en'
+
+        maj_skip = 'maj_skip'
+        maj_riichi = 'maj_riichi'
+        maj_tsumo = 'maj_tsumo'
+        maj_ron = 'maj_ron'
+        maj_auto_tsumogiri = 'maj_auto_tsumogiri'
+        maj_east = 'maj_east'
+
+        if lang == 'jp':
+            maj_skip = 'maj_skip_jp'
+            maj_riichi = 'maj_riichi_jp'
+            maj_tsumo = 'maj_tsumo_jp'
+            maj_ron = 'maj_ron_jp'
+            maj_east = 'maj_east_jp'
+        elif lang == 'en':
+            maj_skip = 'maj_skip_en'
+            maj_riichi = 'maj_riichi_en'
+            maj_tsumo = 'maj_tsumo_en'
+            maj_ron = 'maj_ron_en'
+            maj_auto_tsumogiri = 'maj_auto_tsumogiri_en'
+            maj_east = 'maj_east_en'
 
         if skip_box := self.find_one([maj_skip], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
             self.sleep(0.2)
@@ -113,10 +132,10 @@ class MahjongTask(SRTask):
 
     def discard_tile(self):
         lang = self.get_game_language()
-        maj_auto_tsumogiri = 'maj_auto_tsumogiri' if lang in ['zhs', 'zht'] else 'maj_auto_tsumogiri_en'
+        maj_auto_tsumogiri = 'maj_auto_tsumogiri_en' if lang == 'en' else 'maj_auto_tsumogiri'
 
         tiles = self.get_tiles()
-        tiles_str = "".join(tile.name.removeprefix('maj_') for tile in tiles)
+        tiles_str = "".join(tile.name.removeprefix('maj_').removesuffix('_jp') for tile in tiles)
         self.info['Tiles'] = tiles_str
 
         if not len(tiles) == 14:
@@ -153,7 +172,7 @@ class MahjongTask(SRTask):
         # 只做断幺逻辑
         if self.config.get('Only Tanyao'):
             yaoqiuhai = {'1m', '9m', '1p', '9p', '1s', '9s', '1z', '2z', '3z', '4z', '5z', '6z', '7z'}
-            hand_tile_names = [tile.name.removeprefix('maj_') for tile in tiles]
+            hand_tile_names = [tile.name.removeprefix('maj_').removesuffix('_jp') for tile in tiles]
             tanyao_targets = set(hand_tile_names).intersection(yaoqiuhai)
 
             # 如果手牌中存在幺九牌，则只允许从幺九牌中选择打出
@@ -217,6 +236,8 @@ class MahjongTask(SRTask):
         if best_discard in {'5m', '5s', '5p'}:
             red_tile = 'maj_' + best_discard.replace('5', '0')
             tiles.append(red_tile)
+        if best_discard == '5z':
+            tiles.append('maj_5z_jp')
 
         if box := self.find_one(tiles, box=self.box_of_screen(0.193, 0.87, 0.875, 1.00), threshold=0.95):
             self.click(box)
@@ -236,7 +257,7 @@ class MahjongTask(SRTask):
             'maj_1m', 'maj_2m', 'maj_3m', 'maj_4m', 'maj_5m', 'maj_0m', 'maj_6m', 'maj_7m', 'maj_8m', 'maj_9m',
             'maj_1p', 'maj_2p', 'maj_3p', 'maj_4p', 'maj_5p', 'maj_0p', 'maj_6p', 'maj_7p', 'maj_8p', 'maj_9p',
             'maj_1s', 'maj_2s', 'maj_3s', 'maj_4s', 'maj_5s', 'maj_0s', 'maj_6s', 'maj_7s', 'maj_8s', 'maj_9s',
-            'maj_1z', 'maj_2z', 'maj_3z', 'maj_4z', 'maj_5z', 'maj_6z', 'maj_7z',
+            'maj_1z', 'maj_2z', 'maj_3z', 'maj_4z', 'maj_5z', 'maj_5z_jp', 'maj_6z', 'maj_7z',
         ]
         hand_boxes_list = [
             self.box_of_screen(0.193, 0.87, 0.239, 1.0),

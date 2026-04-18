@@ -47,5 +47,7 @@ class MissionEntryTask(SRTriggerTask):
             return self.find_one("accept")
         elif language == 'en':
             return self.find_one("accept_en")
+        elif language == 'jp':
+            return self.find_one("accept_jp")
         else:
             return None
