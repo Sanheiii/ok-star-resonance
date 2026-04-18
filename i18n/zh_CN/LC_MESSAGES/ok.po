@@ -30,6 +30,9 @@ msgstr "切换鱼竿按键"
 msgid "Disable Yolo Detection"
 msgstr "禁用Yolo识别"
 
+msgid "Yolo Detection Use DirectML(Need Restart)"
+msgstr "Yolo识别使用DirectML(需要重启)"
+
 msgid "Auto-click when the button appears. Please adjust angle for clear text."
 msgstr "自动点击屏幕上出现的采集按钮，注意调整角度使按钮上的文字清晰可见"
 

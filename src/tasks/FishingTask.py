@@ -19,6 +19,7 @@ class FishingTask(SRTriggerTask):
         self.description = "Auto fish after interaction"
         
         self.default_config.update({
+            'Yolo Detection Use DirectML(Need Restart)': False,
             'Always Rapid Click': False,
             'Disable Yolo Detect': False,
             'Switch Pole Key': 'm',
@@ -409,16 +410,15 @@ class FishingTask(SRTriggerTask):
     def init_yolo_model(self):
         if self._yolo_model is None:
             weights = get_path_relative_to_exe(os.path.join("assets", "models", "bpsr_splash.onnx"))
-            self.log_info(og.config)
-            if og.config.get("ocr").get("params").get("use_openvino"):
-                self.logger.info("yolo_model Using OpenVinoYolo8Detect")
-                from src.OpenVinoYolo8Detect import OpenVinoYolo8Detect
-                self._yolo_model = OpenVinoYolo8Detect(
-                    weights=weights)
-            else:
+            if self.config.get("Yolo Detection Use DirectML(Need Restart)"):
                 self.logger.info("yolo_model Using OnnxYolo8Detect")
                 from src.OnnxYolo8Detect import OnnxYolo8Detect
                 self._yolo_model = OnnxYolo8Detect(
+                    weights=weights)
+            else:
+                self.logger.info("yolo_model Using OpenVinoYolo8Detect")
+                from src.OpenVinoYolo8Detect import OpenVinoYolo8Detect
+                self._yolo_model = OpenVinoYolo8Detect(
                     weights=weights)
 
     def yolo_detect(self, image, threshold=0.6, label=-1):
