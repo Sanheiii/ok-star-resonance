@@ -38,7 +38,7 @@ class MahjongTask(SRTask):
             confirm = 'confirm_en'
             accept = 'accept_en'
         elif lang =='jp':
-            # confirm = 'confirm_jp'
+            confirm = 'confirm_jp'
             accept = 'accept_jp'
         elif lang == 'zht':
             confirm = 'confirm_zht'

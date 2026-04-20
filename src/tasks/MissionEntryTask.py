@@ -36,6 +36,8 @@ class MissionEntryTask(SRTriggerTask):
             return self.find_one("confirm_zht", box=self.box_of_screen(0.83, 0.89, 0.98, 0.94))
         elif language == 'en':
             return self.find_one("confirm_en", box=self.box_of_screen(0.83, 0.89, 0.98, 0.94))
+        elif language == 'jp':
+            return self.find_one("confirm_jp", box=self.box_of_screen(0.83, 0.89, 0.98, 0.94))
         else:
             return None
 
