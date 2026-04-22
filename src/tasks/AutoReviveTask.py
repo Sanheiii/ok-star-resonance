@@ -12,7 +12,6 @@ class AutoReviveTask(SRTriggerTask):
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
         s_channel = hsv[:, :, 1]
         avg_saturation = np.mean(s_channel)
-        print(avg_saturation)
         return avg_saturation > min_saturation
 
     def __init__(self, *args, **kwargs):

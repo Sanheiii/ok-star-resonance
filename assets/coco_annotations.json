@@ -264,7 +264,8 @@
         },
         {
             "id": 8,
-            "name": "confirm_en"
+            "name": "confirm_en",
+            "supercategory": ""
         },
         {
             "id": 9,
@@ -497,7 +498,8 @@
         },
         {
             "id": 66,
-            "name": "msg_confirm_mission_en"
+            "name": "msg_confirm_mission_en",
+            "supercategory": ""
         },
         {
             "id": 67,
@@ -1088,32 +1090,28 @@
         {
             "id": 29,
             "image_id": 23,
-            "category_id": 66,
-            "segmentation": [],
+            "category_id": 8,
             "bbox": [
-                1670,
-                966,
-                127,
-                39
+                1678,
+                972,
+                113,
+                28
             ],
-            "ignore": 0,
-            "iscrowd": 0,
-            "area": 4958.584810569465
+            "area": 3164,
+            "iscrowd": 0
         },
         {
             "id": 30,
             "image_id": 23,
-            "category_id": 8,
-            "segmentation": [],
+            "category_id": 66,
             "bbox": [
                 792,
                 848,
                 337,
                 25
             ],
-            "ignore": 0,
-            "iscrowd": 0,
-            "area": 8580.507628724667
+            "area": 8425,
+            "iscrowd": 0
         },
         {
             "id": 31,
