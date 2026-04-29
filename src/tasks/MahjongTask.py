@@ -225,7 +225,11 @@ class MahjongTask(SRTask):
         # 打出牌后是0向听的话先点立直再出牌
         if result.discard_to_advance.get(Tile.by_text(best_discard)).shanten == 0:
             lang = self.get_game_language()
-            maj_riichi = 'maj_riichi' if lang in ['zhs', 'zht'] else 'maj_riichi_en'
+            maj_riichi = (
+                'maj_riichi' if lang in ['zhs', 'zht']
+                else 'maj_riichi_jp' if lang == 'jp'
+                else 'maj_riichi_en'
+            )
             if box := self.find_one(maj_riichi, box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
                 self.sleep(0.3)
                 self.click(box)
