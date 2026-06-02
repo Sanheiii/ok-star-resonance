@@ -13,8 +13,7 @@ on:
         default: 'https://api.github.com/repos/Sanheiii/ok-star-resonance/releases/tags/v0.1.14'
         type: string
 
-permissions:
-  contents: write-all
+permissions: write-all
 
 jobs:
   build:
