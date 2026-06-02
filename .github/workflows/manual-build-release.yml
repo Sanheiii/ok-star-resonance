@@ -14,7 +14,7 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: write-all
 
 jobs:
   build:
