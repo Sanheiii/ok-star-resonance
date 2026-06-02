@@ -1,32 +1,24 @@
-name: Manual Build Old Version
+name: Manual Build Release
 
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: 'Commit SHA / branch / tag to build, e.g. abc1234 or v0.2.28'
-        required: true
-        type: string
-      release_tag:
-        description: 'Release tag to create/upload, e.g. v0.2.28-rebuild'
+      tag:
+        description: 'Existing tag to build and release, e.g. v0.2.28'
         required: true
         type: string
       use_release:
         description: 'Base release API URL used by pyappify-action'
         required: false
+        default: 'https://api.github.com/repos/Sanheiii/ok-star-resonance/releases/tags/v0.1.14'
         type: string
-      upload_release:
-        description: 'Upload build result to GitHub Release'
-        required: true
-        default: true
-        type: boolean
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build old version manually
+    name: Build selected tag
     runs-on: windows-2022
 
     env:
@@ -43,22 +35,18 @@ jobs:
         id: meta
         shell: pwsh
         run: |
-          $ref = "${{ inputs.ref }}"
-          $tag = "${{ inputs.release_tag }}"
+          $tag = "${{ inputs.tag }}"
 
-          if ([string]::IsNullOrWhiteSpace($ref)) {
-            throw "Input 'ref' is required."
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            throw "Input 'tag' is required."
           }
 
           if ($tag -notmatch '^v?\d+\.\d+\.\d+(-[A-Za-z0-9._-]+)?$') {
-            throw "release_tag must look like v0.2.28."
+            throw "tag must look like v0.2.28."
           }
 
-          "ref=$ref" >> $env:GITHUB_OUTPUT
           "tag=$tag" >> $env:GITHUB_OUTPUT
-
-          Write-Host "Checkout ref: $ref"
-          Write-Host "Release tag: $tag"
+          Write-Host "Build tag: $tag"
 
       - name: Configure git
         shell: pwsh
@@ -69,13 +57,26 @@ jobs:
           git config --global user.email "Sanheiii@users.noreply.github.com"
           git config --global user.name "Sanheiii"
 
-      - name: Checkout selected ref
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.meta.outputs.ref }}
           submodules: true
           lfs: true
           fetch-depth: 0
+
+      - name: Verify tag exists
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.meta.outputs.tag }}"
+          git fetch --force --tags origin
+
+          $tagRef = git ls-remote --tags origin "refs/tags/$tag"
+          if ([string]::IsNullOrWhiteSpace($tagRef)) {
+            throw "Remote tag '$tag' does not exist. This workflow will not create new tags."
+          }
+
+          git checkout "refs/tags/$tag"
+          git status --short --branch
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -116,14 +117,14 @@ jobs:
           path: pyappify_dist/*
 
       - name: Create or update GitHub Release
-        if: ${{ inputs.upload_release }}
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
-          target_commitish: ${{ steps.meta.outputs.ref }}
+          target_commitish: ${{ steps.meta.outputs.tag }}
           files: pyappify_dist/*
           draft: false
           prerelease: false
           generate_release_notes: true
+          overwrite_files: true
