@@ -121,7 +121,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
-          target_commitish: ${{ steps.meta.outputs.tag }}
           files: pyappify_dist/*
           draft: false
           prerelease: false
