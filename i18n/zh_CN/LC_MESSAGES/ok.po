@@ -342,6 +342,18 @@ msgstr "防止连庄"
 msgid "Only Tanyao"
 msgstr "只做断幺"
 
+msgid "Interruption"
+msgstr "中断"
+
+msgid "Stop After Current Round"
+msgstr "本轮后停止"
+
+msgid "Mahjong will stop after the current round."
+msgstr "麻将会在当前这一轮结束后停止。"
+
+msgid "Mahjong stopped before starting the next match."
+msgstr "麻将已在开始下一次匹配前停止。"
+
 msgid "Failed to determine which tile to discard. Hand: {tiles_str}"
 msgstr "没有算出要出什么牌，手牌：{tiles_str}。"
 

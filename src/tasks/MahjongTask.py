@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 
 from mahjong_utils.models.tile import parse_tiles, Tile
 from mahjong_utils.shanten import shanten, regular_shanten
+from ok import og
+from qfluentwidgets import FluentIcon
 
 from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
 from src.tasks.SRTask import SRTask
@@ -16,6 +18,9 @@ class MahjongTask(SRTask):
         self.default_config.update({'Pure Tsumogiri': False})
         self.default_config.update({'Anti-Renchan': False})
         self.default_config.update({'Only Tanyao': False})
+        self.config_type['Interruption'] = {'type': "button", 'buttons': [
+            {'icon': FluentIcon.PAUSE, 'text': 'Stop After Current Round', 'callback': self.stop_after_current_round},
+        ]}
 
         # 记录已打出的牌
         self.discarded_tiles = []
@@ -24,12 +29,18 @@ class MahjongTask(SRTask):
         # 防止打牌失败重复打牌多次将牌添加到 discard_tiles
         self.allow_discard_record = True
         self._fail_count = 0
+        self._stop_after_current_round = False
+
+    def stop_after_current_round(self):
+        self._stop_after_current_round = True
+        self.log_info(self._app.tr('Mahjong will stop after the current round.'))
 
     def run(self):
         self.discarded_tiles.clear()
         self.last_confirm = datetime.min
         self.info['Hora Count'] = 0
         self._fail_count = 0
+        self._stop_after_current_round = False
 
         lang = self.get_game_language()
         confirm = 'confirm'
@@ -49,6 +60,9 @@ class MahjongTask(SRTask):
             if (
             box := self.find_one('mahjong_match', box=self.box_of_screen(0.73, 0.5, 0.77, 0.68))) and not self.find_one(
                     'matching'):
+                if self._stop_after_current_round:
+                    self.log_info(self._app.tr('Mahjong stopped before starting the next match.'))
+                    break
                 if datetime.now() - self.last_confirm > timedelta(seconds=30):
                     self.send_key_down('lalt')
                     self.sleep(0.1)
