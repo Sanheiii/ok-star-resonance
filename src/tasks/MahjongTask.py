@@ -28,6 +28,7 @@ class MahjongTask(SRTask):
         self.last_confirm = datetime.min
         # 防止打牌失败重复打牌多次将牌添加到 discard_tiles
         self.allow_discard_record = True
+        self.allow_entry_count = True
         self._fail_count = 0
         self._stop_after_current_round = False
 
@@ -39,8 +40,10 @@ class MahjongTask(SRTask):
         self.discarded_tiles.clear()
         self.last_confirm = datetime.min
         self.info['Hora Count'] = 0
+        self.info['Entry Count'] = 0
         self._fail_count = 0
         self._stop_after_current_round = False
+        self.allow_entry_count = True
 
         lang = self.get_game_language()
         confirm = 'confirm'
@@ -72,6 +75,7 @@ class MahjongTask(SRTask):
                     self.sleep(1)
             elif box := self.find_one(accept):
                 self.click(box)
+                self.allow_entry_count = True
             # 自动点击下一步
             if box := self.find_one(confirm, box=self.box_of_screen(0.46, 0.89, 0.54, 0.95)):
                 self.click(box)
@@ -125,6 +129,9 @@ class MahjongTask(SRTask):
         if (self.find_one('maj_tile', box=self.box_of_screen(0.81, 0.87, 0.875, 1.00), threshold=0.95)
                 and self.find_one('maj_tile', box=self.box_of_screen(0.193, 0.87, 0.239, 1.0), threshold=0.95)
                 and self.find_one('maj_tile', box=self.box_of_screen(0.755, 0.87, 0.802, 1.0), threshold=0.95)):
+            if self.allow_entry_count:
+                self.info_incr('Entry Count')
+                self.allow_entry_count = False
             self.sleep(0.2)
             self.next_frame()
             # 开了摸切模式
