@@ -426,5 +426,11 @@ msgstr "面向：未知"
 msgid "Facing: "
 msgstr "面向："
 
+msgid "Speed: Unknown"
+msgstr "移动速度：未知"
+
+msgid "Speed: "
+msgstr "移动速度："
+
 msgid "Copy position"
 msgstr "复制位置"

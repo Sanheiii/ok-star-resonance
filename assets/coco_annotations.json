@@ -227,6 +227,24 @@
             "file_name": "images/2.png",
             "width": 1920,
             "height": 1080
+        },
+        {
+            "id": 38,
+            "file_name": "images/1.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 39,
+            "file_name": "images/0.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 40,
+            "file_name": "images/0.png",
+            "width": 1920,
+            "height": 1080
         }
     ],
     "categories": [
@@ -651,6 +669,21 @@
             "id": 99,
             "name": "confirm_jp",
             "supercategory": ""
+        },
+        {
+            "id": 100,
+            "name": "dungeon_entrance",
+            "supercategory": ""
+        },
+        {
+            "id": 101,
+            "name": "dungeon_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 102,
+            "name": "dungeon_scene_icon",
+            "supercategory": ""
         }
     ],
     "annotations": [
@@ -763,14 +796,16 @@
             "id": 7,
             "image_id": 6,
             "category_id": 15,
+            "segmentation": [],
             "bbox": [
-                1104,
-                989,
-                48,
-                25
+                1103,
+                988,
+                49,
+                26
             ],
-            "area": 1200,
-            "iscrowd": 0
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 1274
         },
         {
             "id": 8,
@@ -1601,12 +1636,12 @@
             "image_id": 26,
             "category_id": 61,
             "bbox": [
-                1373,
-                586,
-                115,
-                43
+                1358,
+                577,
+                130,
+                52
             ],
-            "area": 4945,
+            "area": 6760,
             "iscrowd": 0
         },
         {
@@ -2018,6 +2053,45 @@
                 22
             ],
             "area": 858,
+            "iscrowd": 0
+        },
+        {
+            "id": 100,
+            "image_id": 38,
+            "category_id": 100,
+            "bbox": [
+                1414,
+                551,
+                29,
+                29
+            ],
+            "area": 841,
+            "iscrowd": 0
+        },
+        {
+            "id": 101,
+            "image_id": 39,
+            "category_id": 101,
+            "bbox": [
+                48,
+                31,
+                43,
+                43
+            ],
+            "area": 1849,
+            "iscrowd": 0
+        },
+        {
+            "id": 102,
+            "image_id": 40,
+            "category_id": 102,
+            "bbox": [
+                211,
+                35,
+                13,
+                18
+            ],
+            "area": 234,
             "iscrowd": 0
         }
     ],
