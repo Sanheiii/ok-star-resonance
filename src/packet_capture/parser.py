@@ -25,31 +25,21 @@ MAX_FRAME_SIZE = 10 * 1024 * 1024
 
 
 def _load_proto_module():
-    for name in (
-        "src.packet_capture.proto.blueprotobuf_pb2",
-        "src.packet_capture.proto.blueprotobuf_package_pb2",
-        "src.packet_capture.proto.BlueProtobuf_pb2",
-    ):
-        try:
-            return importlib.import_module(name)
-        except ImportError:
-            continue
-    return None
-
-
-def _present(message, *names):
-    """Return a present protobuf field across proto2/proto3 generators."""
-    if message is None:
+    try:
+        return importlib.import_module("src.packet_capture.proto.BlueProtobuf_pb2")
+    except ImportError:
         return None
-    for name in names:
-        if not hasattr(message, name):
-            continue
-        try:
-            return getattr(message, name) if message.HasField(name) else None
-        except (ValueError, AttributeError):
-            value = getattr(message, name, None)
-            return value if value is not None else None
-    return None
+
+
+def _present(message, name):
+    """Return a present field from the PascalCase BlueProtobuf generator."""
+    if message is None or not hasattr(message, name):
+        return None
+    try:
+        return getattr(message, name) if message.HasField(name) else None
+    except (ValueError, AttributeError):
+        value = getattr(message, name, None)
+        return value if value is not None else None
 
 
 def _decode_varint(data):
@@ -234,50 +224,47 @@ class GamePacketParser:
             logger.debug("failed to decode %s: %s", message_name, exc)
             return False
         if method_id == MSG_SYNC_CONTAINER_DATA:
-            data = _present(message, "v_data", "VData")
-            char_id = _present(data, "char_id", "CharId")
+            data = _present(message, "VData")
+            char_id = _present(data, "CharId")
             if char_id is not None and not isinstance(char_id, int):
                 char_id = char_id[0] if len(char_id) == 1 else None
             if char_id:
                 self.local_player_uuid = (int(char_id) << 16) | (ENTITY_TYPE_CHAR << 6)
             return False
         if method_id == MSG_SYNC_TO_ME_DELTA_INFO:
-            delta_info = _present(message, "delta_info", "DeltaInfo")
+            delta_info = _present(message, "DeltaInfo")
             if delta_info is None:
                 return False
-            uuid = _present(delta_info, "uuid", "Uuid")
+            uuid = _present(delta_info, "Uuid")
             if uuid:
                 self.local_player_uuid = int(uuid)
-            return self._decode_delta(_present(delta_info, "base_delta", "BaseDelta"), force_local=True)
+            return self._decode_delta(_present(delta_info, "BaseDelta"), force_local=True)
         changed = False
-        deltas = _present(message, "delta_infos", "DeltaInfos") or ()
+        deltas = _present(message, "DeltaInfos") or ()
         for delta in deltas:
-            if self.local_player_uuid and _present(delta, "uuid", "Uuid") == self.local_player_uuid:
+            if self.local_player_uuid and _present(delta, "Uuid") == self.local_player_uuid:
                 changed |= self._decode_delta(delta, force_local=True)
         return changed
 
     def _decode_delta(self, delta, force_local=False):
         if delta is None:
             return False
-        uuid = _present(delta, "uuid", "Uuid")
+        uuid = _present(delta, "Uuid")
         if not force_local and (not self.local_player_uuid or uuid != self.local_player_uuid):
             return False
-        attrs = _present(delta, "attrs", "Attrs")
+        attrs = _present(delta, "Attrs")
         changed = False
-        attr_items = _present(attrs, "attrs", "Attrs") or ()
+        attr_items = _present(attrs, "Attrs") or ()
         for attr in attr_items:
-            attr_id = _present(attr, "id", "Id")
-            raw = _present(attr, "raw_data", "RawData")
+            attr_id = _present(attr, "Id")
+            raw = _present(attr, "RawData")
             if attr_id == ATTR_POSITION and raw:
                 position_class = getattr(self._proto, "Position", None)
                 if position_class is not None:
                     position = position_class()
                     try:
                         position.ParseFromString(raw)
-                        values = tuple(
-                            float(_present(position, axis, axis.upper()) or 0.0)
-                            for axis in ("x", "y", "z")
-                        )
+                        values = tuple(float(_present(position, axis) or 0.0) for axis in ("X", "Y", "Z"))
                         if values != self.position:
                             self.position = values
                             changed = True

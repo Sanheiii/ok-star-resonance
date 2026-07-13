@@ -383,3 +383,48 @@ msgstr "已完成"
 
 msgid "Offset (ms)"
 msgstr "偏移（毫秒）"
+
+msgid "Packet Capture"
+msgstr "抓包工具"
+
+msgid "Network adapter"
+msgstr "网卡"
+
+msgid "Refresh adapters"
+msgstr "刷新网卡"
+
+msgid "Start capture"
+msgstr "开始抓包"
+
+msgid "Stop capture"
+msgstr "结束抓包"
+
+msgid "Capture has not started"
+msgstr "未开始抓包"
+
+msgid "Select an adapter and start capture"
+msgstr "请选择网卡并开始抓包"
+
+msgid "Select a network adapter first"
+msgstr "请先选择网卡"
+
+msgid "Capturing"
+msgstr "正在抓包"
+
+msgid "Capture stopped"
+msgstr "已结束抓包"
+
+msgid "Position: Unknown"
+msgstr "位置：未知"
+
+msgid "Position: "
+msgstr "位置："
+
+msgid "Facing: Unknown"
+msgstr "面向：未知"
+
+msgid "Facing: "
+msgstr "面向："
+
+msgid "Copy position"
+msgstr "复制位置"

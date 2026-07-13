@@ -1,10 +1,11 @@
 import threading
+from collections import Counter
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, ComboBox, FluentIcon, PrimaryPushButton, PushButton
 
-from ok import og
+from ok import Config, og
 from ok.gui.widget.CustomTab import CustomTab
 from src.packet_capture import NpcapCapture, list_devices
 from src.packet_capture.parser import GamePacketParser
@@ -19,14 +20,17 @@ class PacketCaptureTab(CustomTab):
         self._stop_requested = False
         self._capture_error = None
         self._parser = GamePacketParser()
+        self._config = Config("packet_capture", {"device_name": ""})
+        self._refreshing_devices = False
+        og.packet_capture_tool = self
 
         controls = QWidget(self.view)
         controls_layout = QHBoxLayout(controls)
         controls_layout.setContentsMargins(0, 0, 0, 0)
         self.device_combo = ComboBox(controls)
-        self.refresh_button = PushButton(FluentIcon.SYNC, self.tr("刷新网卡"), controls)
-        self.capture_button = PrimaryPushButton(self.tr("开始抓包"), controls)
-        controls_layout.addWidget(BodyLabel(self.tr("网卡"), controls))
+        self.refresh_button = PushButton(FluentIcon.SYNC, og.app.tr("Refresh adapters"), controls)
+        self.capture_button = PrimaryPushButton(og.app.tr("Start capture"), controls)
+        controls_layout.addWidget(BodyLabel(og.app.tr("Network adapter"), controls))
         controls_layout.addWidget(self.device_combo, 1)
         controls_layout.addWidget(self.refresh_button)
         controls_layout.addWidget(self.capture_button)
@@ -35,10 +39,10 @@ class PacketCaptureTab(CustomTab):
         state = QWidget(self.view)
         state_layout = QVBoxLayout(state)
         state_layout.setContentsMargins(0, 12, 0, 0)
-        self.status_label = BodyLabel(self.tr("未开始抓包"), state)
-        self.position_label = QLabel(self.tr("位置：未知"), state)
-        self.facing_label = QLabel(self.tr("面向：未知"), state)
-        self.copy_button = PushButton(FluentIcon.COPY, self.tr("复制位置"), state)
+        self.status_label = BodyLabel(og.app.tr("Capture has not started"), state)
+        self.position_label = QLabel(og.app.tr("Position: Unknown"), state)
+        self.facing_label = QLabel(og.app.tr("Facing: Unknown"), state)
+        self.copy_button = PushButton(FluentIcon.COPY, og.app.tr("Copy position"), state)
         self.copy_button.setEnabled(False)
         state_layout.addWidget(self.status_label)
         state_layout.addWidget(self.position_label)
@@ -48,6 +52,7 @@ class PacketCaptureTab(CustomTab):
         self.add_widget(state, 1)
 
         self.refresh_button.clicked.connect(self._refresh_devices)
+        self.device_combo.currentIndexChanged.connect(self._save_selected_device)
         self.capture_button.clicked.connect(self._toggle_capture)
         self.copy_button.clicked.connect(self._copy_position)
         self._timer = QTimer(self)
@@ -57,35 +62,68 @@ class PacketCaptureTab(CustomTab):
 
     @property
     def name(self):
-        return self.tr("抓包工具")
+        return og.app.tr("Packet Capture")
 
     @property
     def icon(self):
         return FluentIcon.DEVELOPER_TOOLS
 
+    @property
+    def is_capturing(self):
+        return bool(self._capture_thread and self._capture_thread.is_alive() and not self._stop_requested)
+
     def _refresh_devices(self):
         try:
+            self._refreshing_devices = True
             self._devices = list_devices()
             self.device_combo.clear()
-            self.device_combo.addItems([device.display_name for device in self._devices])
-            self.status_label.setText(self.tr("请选择网卡并开始抓包"))
+            self.device_combo.addItems(self._device_labels(self._devices))
+            saved_name = self._config.get("device_name")
+            saved_index = next((i for i, device in enumerate(self._devices) if device.name == saved_name), -1)
+            if saved_index >= 0:
+                self.device_combo.setCurrentIndex(saved_index)
+            self.status_label.setText(og.app.tr("Select an adapter and start capture"))
         except Exception as exc:
             self._devices = []
             self.device_combo.clear()
             self.status_label.setText(str(exc))
+        finally:
+            self._refreshing_devices = False
+
+    @staticmethod
+    def _device_labels(devices):
+        """Return unique labels because ComboBox resolves clicks by displayed text."""
+        display_names = [(device.display_name or device.name).strip() for device in devices]
+        duplicate_counts = Counter(display_names)
+        labels = []
+        used_labels = set()
+        for device, display_name in zip(devices, display_names):
+            label = f"{display_name} ({device.name})" if duplicate_counts[display_name] > 1 else display_name
+            unique_label = label
+            suffix = 2
+            while unique_label in used_labels:
+                unique_label = f"{label} #{suffix}"
+                suffix += 1
+            used_labels.add(unique_label)
+            labels.append(unique_label)
+        return labels
+
+    def _save_selected_device(self, index):
+        if not self._refreshing_devices and 0 <= index < len(self._devices):
+            self._config["device_name"] = self._devices[index].name
 
     def _toggle_capture(self):
-        if self.capture_button.text() == self.tr("结束抓包"):
+        if self.capture_button.text() == og.app.tr("Stop capture"):
             self._stop_capture()
             return
         index = self.device_combo.currentIndex()
         if index < 0 or index >= len(self._devices):
-            self.status_label.setText(self.tr("请先选择网卡"))
+            self.status_label.setText(og.app.tr("Select a network adapter first"))
             return
         self.device_combo.setEnabled(False)
         self.refresh_button.setEnabled(False)
-        self.capture_button.setText(self.tr("结束抓包"))
-        self.status_label.setText(self.tr("正在抓包"))
+        self.capture_button.setText(og.app.tr("Stop capture"))
+        self.status_label.setText(og.app.tr("Capturing"))
         self._stop_requested = False
         self._capture_error = None
         self._capture_thread = threading.Thread(
@@ -98,7 +136,6 @@ class PacketCaptureTab(CustomTab):
             self._capture = NpcapCapture(device_name)
             if self._stop_requested:
                 self._capture.stop()
-            self._parser.set_datalink(self._capture.datalink)
             self._parser.set_datalink(self._capture.datalink)
             self._capture.run(self._on_packet)
         except Exception as exc:
@@ -113,39 +150,41 @@ class PacketCaptureTab(CustomTab):
         transform = self._parser.feed_packet(packet)
         if transform:
             position, facing = transform
-            og.my_app.update_player_transform(position, facing)
+            og.packet_capture_data.update_transform(position, facing)
 
     def _stop_capture(self):
         self._stop_requested = True
         if self._capture:
             self._capture.stop()
-        self._set_idle(self.tr("已结束抓包"))
+        self._set_idle(og.app.tr("Capture stopped"))
 
     def _capture_failed(self, message):
         self._set_idle(message)
 
     def _set_idle(self, message):
-        self.capture_button.setText(self.tr("开始抓包"))
+        self.capture_button.setText(og.app.tr("Start capture"))
         self.device_combo.setEnabled(True)
         self.refresh_button.setEnabled(True)
         self.status_label.setText(message)
 
     def _refresh_transform(self):
         if (self._capture_thread and not self._capture_thread.is_alive()
-                and self.capture_button.text() == self.tr("结束抓包")):
-            self._set_idle(self._capture_error or self.tr("已结束抓包"))
-        position, facing = og.my_app.get_player_transform()
+                and self.capture_button.text() == og.app.tr("Stop capture")):
+            self._set_idle(self._capture_error or og.app.tr("Capture stopped"))
+        position, facing = og.packet_capture_data.get_transform()
         if position is None:
-            self.position_label.setText(self.tr("位置：未知"))
+            self.position_label.setText(og.app.tr("Position: Unknown"))
             self.copy_button.setEnabled(False)
         else:
             text = ", ".join(f"{value:.3f}" for value in position)
-            self.position_label.setText(self.tr("位置：") + text)
+            self.position_label.setText(og.app.tr("Position: ") + text)
             self.copy_button.setEnabled(True)
-        self.facing_label.setText(self.tr("面向：未知") if facing is None else self.tr("面向：") + f"{facing:.2f}°")
+        self.facing_label.setText(
+            og.app.tr("Facing: Unknown") if facing is None else og.app.tr("Facing: ") + f"{facing:.2f}°"
+        )
 
     def _copy_position(self):
-        position, _ = og.my_app.get_player_transform()
+        position, _ = og.packet_capture_data.get_transform()
         if position is not None:
             QApplication.clipboard().setText(", ".join(f"{value:.3f}" for value in position))
 
