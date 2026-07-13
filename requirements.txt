@@ -28,9 +28,9 @@ numpy==2.2.6
     #   opencv-python
     #   openvino
     #   shapely
-ok-script==1.0.151
+ok-script==1.0.162
     # via -r requirements.in
-onnxocr-ppocrv5==0.0.14
+onnxocr-ppocrv5==0.0.18
     # via -r requirements.in
 onnxruntime-directml==1.24.4
     # via -r requirements.in
@@ -53,7 +53,7 @@ psutil==7.0.0
     # via
     #   ok-script
     #   pycaw
-pyappify==1.0.4
+pyappify==1.0.5
     # via ok-script
 pycaw==20240210
     # via ok-script
