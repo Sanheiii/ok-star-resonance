@@ -74,6 +74,7 @@ config = {
     },
     'version': version, #版本
     'my_app': ['src.globals', 'Globals'], # 全局单例对象, 可以存放加载的模型, 使用og.my_app调用
+    'custom_tabs': [["src.gui.PacketCaptureTab", "PacketCaptureTab"]],
     'onetime_tasks': [  # tasks to execute
         ["ok", "DiagnosisTask"],
         ["src.tasks.GuildHuntAssistTask", "GuildHuntAssistTask"],

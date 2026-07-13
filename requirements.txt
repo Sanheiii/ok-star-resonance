@@ -105,4 +105,5 @@ typing-extensions==4.14.1
     #   ok-script
     #   pydantic
 urllib3==2.5.0
+zstandard>=0.23.0
     # via requests
