@@ -6,6 +6,7 @@ output in ``src/packet_capture/proto``; see that directory's README.
 
 from __future__ import annotations
 
+import io
 import importlib
 import struct
 import time
@@ -233,7 +234,11 @@ class GamePacketParser:
     def _decompress(data):
         try:
             import zstandard
-            return zstandard.ZstdDecompressor().decompress(data)
+            # Game frames do not always advertise their decompressed size.
+            # stream_reader handles those frames, unlike decompress(), which
+            # raises "could not determine content size in frame header".
+            with zstandard.ZstdDecompressor().stream_reader(io.BytesIO(data)) as reader:
+                return reader.read()
         except Exception as exc:
             logger.warning(f"zstd decompression failed: {exc}")
             return None
