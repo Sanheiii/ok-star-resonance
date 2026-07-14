@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package zproto;
+
+// Minimal wire-compatible subset extracted from the AGPL-3.0 project:
+// https://github.com/yuzeis/StarResonanceMITMServer
+// Sources: zproto/stru_position.proto, stru_scene_data.proto,
+// stru_char_serialize.proto, and serv_world_ntf.proto.
+message Position {
+  float x = 1 [json_name = "x"];
+  float y = 2 [json_name = "y"];
+  float z = 3 [json_name = "z"];
+  float dir = 4 [json_name = "dir"];
+}
+
+message SceneData {
+  uint32 mapId = 1 [json_name = "mapId"];
+  uint32 channelId = 2 [json_name = "channelId"];
+  Position pos = 3 [json_name = "pos"];
+}
+
+message CharSerialize {
+  int64 charId = 1 [json_name = "charId"];
+  SceneData sceneData = 3 [json_name = "sceneData"];
+}
+
+message Attr {
+  optional int32 id = 1 [json_name = "id"];
+  optional bytes rawData = 2 [json_name = "rawData"];
+}
+
+message AttrCollection {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  repeated Attr attrs = 2 [json_name = "attrs"];
+}
+
+// Minimal EnterScene subset reconstructed from resonance-logs-cn's
+// prost-generated Rust declarations. Unknown Entity fields are intentionally
+// omitted; protobuf keeps this subset wire-compatible with the full message.
+message Entity {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  optional int32 entType = 2 [json_name = "entType"];
+  optional AttrCollection attrs = 3 [json_name = "attrs"];
+}
+
+message EnterSceneInfo {
+  optional AttrCollection sceneAttrs = 1 [json_name = "sceneAttrs"];
+  optional Entity playerEnt = 2 [json_name = "playerEnt"];
+  optional string sceneGuid = 3 [json_name = "sceneGuid"];
+  optional string connectGuid = 4 [json_name = "connectGuid"];
+  optional AttrCollection subsceneAttrs = 5 [json_name = "subsceneAttrs"];
+}
+
+message AoiSyncDelta {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  optional AttrCollection attrs = 2 [json_name = "attrs"];
+}
+
+message AoiSyncToMeDelta {
+  optional AoiSyncDelta baseDelta = 1 [json_name = "baseDelta"];
+  repeated int64 syncHateIds = 2 [json_name = "syncHateIds"];
+  optional int64 uuid = 5 [json_name = "uuid"];
+}
+
+message WorldNtf {
+  message EnterScene {
+    optional EnterSceneInfo enterSceneInfo = 1 [json_name = "enterSceneInfo"];
+  }
+
+  message SyncContainerData {
+    CharSerialize vData = 1 [json_name = "vData"];
+  }
+
+  message SyncNearDeltaInfo {
+    repeated AoiSyncDelta deltaInfos = 1 [json_name = "deltaInfos"];
+  }
+
+  message SyncToMeDeltaInfo {
+    AoiSyncToMeDelta deltaInfo = 1 [json_name = "deltaInfo"];
+  }
+}
