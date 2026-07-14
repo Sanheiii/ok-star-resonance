@@ -7,12 +7,13 @@ output in ``src/packet_capture/proto``; see that directory's README.
 from __future__ import annotations
 
 import importlib
-import logging
 import struct
 import time
 from dataclasses import dataclass, field
 
-logger = logging.getLogger(__name__)
+from ok import Logger
+
+logger = Logger.get_logger(__name__)
 
 WORLD_NTF_SERVICE_ID = 1_664_308_034
 MSG_ENTER_SCENE = 0x03
@@ -218,11 +219,10 @@ class GamePacketParser:
                 body = payload[16:]
                 body = self._decompress(body) if compressed else body
                 if service_id == WORLD_NTF_SERVICE_ID:
+                    body_size = len(body) if body is not None else None
                     logger.info(
-                        "WorldNtf notify: method_id=%s compressed=%s body_size=%s",
-                        method_id,
-                        compressed,
-                        len(body) if body is not None else None,
+                        f"WorldNtf notify: method_id={method_id} "
+                        f"compressed={compressed} body_size={body_size}"
                     )
                     if body is not None:
                         changed |= self._decode_notify(method_id, body)
@@ -235,7 +235,7 @@ class GamePacketParser:
             import zstandard
             return zstandard.ZstdDecompressor().decompress(data)
         except Exception as exc:
-            logger.warning("zstd decompression failed: %s", exc)
+            logger.warning(f"zstd decompression failed: {exc}")
             return None
 
     def _decode_notify(self, method_id, body):
@@ -252,7 +252,7 @@ class GamePacketParser:
         try:
             message.ParseFromString(body)
         except Exception as exc:
-            logger.warning("failed to decode %s: %s", message_name, exc)
+            logger.warning(f"failed to decode {message_name}: {exc}")
             return False
         if method_id == MSG_ENTER_SCENE:
             return self._decode_enter_scene(message)
@@ -292,7 +292,7 @@ class GamePacketParser:
 
     def _decode_enter_scene(self, message):
         has_info = message.HasField("enterSceneInfo")
-        logger.info("EnterScene decoded: has_info=%s", has_info)
+        logger.info(f"EnterScene decoded: has_info={has_info}")
         if not has_info:
             return False
         info = message.enterSceneInfo
@@ -302,9 +302,8 @@ class GamePacketParser:
             if has_scene_attrs else []
         )
         logger.info(
-            "EnterScene info: has_scene_attrs=%s attr_ids=%s",
-            has_scene_attrs,
-            attr_ids,
+            f"EnterScene info: has_scene_attrs={has_scene_attrs} "
+            f"attr_ids={attr_ids}"
         )
         self.nearby_entities.clear()
         self.scene_guid = info.sceneGuid if info.HasField("sceneGuid") else None
@@ -314,11 +313,11 @@ class GamePacketParser:
             scene_id = self._find_varint_attr(info.sceneAttrs, ATTR_SCENE_BASIC_ID)
             if scene_id is not None:
                 self.scene_id = int(scene_id)
-                logger.info("EnterScene scene_id=%s", self.scene_id)
+                logger.info(f"EnterScene scene_id={self.scene_id}")
             else:
                 logger.warning(
-                    "EnterScene sceneAttrs does not contain AttrSceneBasicId(%s)",
-                    ATTR_SCENE_BASIC_ID,
+                    "EnterScene sceneAttrs does not contain "
+                    f"AttrSceneBasicId({ATTR_SCENE_BASIC_ID})"
                 )
 
         changed = False
@@ -352,7 +351,7 @@ class GamePacketParser:
                     position.ParseFromString(raw)
                     changed |= self._apply_position(position)
                 except Exception as exc:
-                    logger.debug("failed to decode position: %s", exc)
+                    logger.debug(f"failed to decode position: {exc}")
             elif attr_id == ATTR_FACING and raw is not None:
                 raw_facing = _decode_varint(raw)
                 if raw_facing is not None:
@@ -409,7 +408,7 @@ class GamePacketParser:
                     position = (float(value.x), float(value.y), float(value.z))
                     changed = True
                 except Exception as exc:
-                    logger.debug("failed to decode entity position: %s", exc)
+                    logger.debug(f"failed to decode entity position: {exc}")
             elif attr.id == ATTR_FACING:
                 raw_facing = _decode_varint(attr.rawData)
                 if raw_facing is not None:
