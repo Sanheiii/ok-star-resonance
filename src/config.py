@@ -81,6 +81,7 @@ config = {
         ["src.tasks.MidiPlayerTask", "MidiPlayerTask"],
         ["src.tasks.MahjongTask", "MahjongTask"],
         ["src.tasks.TutorialTask", "TutorialTask"],
+        ["src.tasks.MinimapSectorAngleTestTask", "MinimapSectorAngleTestTask"],
         ["src.tasks.SeaRingedReefTask", "SeaRingedReefTask"],
     ],
     'trigger_tasks':[

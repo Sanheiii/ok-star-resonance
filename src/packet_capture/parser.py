@@ -62,6 +62,10 @@ def _load_proto_module():
 
 
 def _decode_varint(data):
+    # Attribute values use the protobuf default representation for zero: an
+    # explicitly present rawData field may therefore contain no bytes.
+    if not data:
+        return 0
     value = 0
     for index, byte in enumerate(data[:10]):
         value |= (byte & 0x7F) << (index * 7)
@@ -332,7 +336,9 @@ class GamePacketParser:
                 self.local_player_uuid = int(player.uuid)
                 self.player_id = self.local_player_uuid >> ENTITY_UID_SHIFT
             if player.HasField("attrs"):
-                changed |= self._decode_transform_attrs(player.attrs)
+                changed |= self._decode_transform_attrs(
+                    player.attrs, include_position_direction=True
+                )
             self._store_entity(self.local_player_uuid, self.position, self.facing)
         self.metadata_revision += 1
         return changed
@@ -345,8 +351,13 @@ class GamePacketParser:
                 return _decode_varint(attr.rawData)
         return None
 
-    def _decode_transform_attrs(self, collection):
+    def _decode_transform_attrs(self, collection, include_position_direction=False):
         changed = False
+        has_facing_attr = any(
+            attr.HasField("id") and attr.id == ATTR_FACING
+            and attr.HasField("rawData")
+            for attr in collection.attrs
+        )
         for attr in collection.attrs:
             attr_id = attr.id if attr.HasField("id") else None
             raw = attr.rawData if attr.HasField("rawData") else None
@@ -354,7 +365,10 @@ class GamePacketParser:
                 position = self._proto.Position()
                 try:
                     position.ParseFromString(raw)
-                    changed |= self._apply_position(position)
+                    changed |= self._apply_position(
+                        position,
+                        include_direction=(include_position_direction and not has_facing_attr),
+                    )
                 except Exception as exc:
                     logger.debug(f"failed to decode position: {exc}")
             elif attr_id == ATTR_FACING and raw is not None:
