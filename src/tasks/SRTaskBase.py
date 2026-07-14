@@ -51,6 +51,22 @@ class SRTaskBase(BaseTask):
     def last_refresh_time(self):
         return self.last_position_update_time
 
+    @property
+    def scene_id(self):
+        return og.packet_capture_data.scene_id
+
+    @property
+    def player_id(self):
+        return og.packet_capture_data.player_id
+
+    @property
+    def player_uuid(self):
+        return og.packet_capture_data.player_uuid
+
+    @property
+    def nearby_entities(self):
+        return og.packet_capture_data.get_world()[3]
+
     def _require_packet_capture(self):
         tool = self.packet_capture_tool
         if tool is None or not tool.is_capturing:

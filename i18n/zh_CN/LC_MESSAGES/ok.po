@@ -434,3 +434,99 @@ msgstr "移动速度："
 
 msgid "Copy position"
 msgstr "复制位置"
+
+msgid "XZ: Unknown"
+msgstr "XZ：未知"
+
+msgid "XZ: "
+msgstr "XZ："
+
+msgid "Y: Unknown"
+msgstr "Y：未知"
+
+msgid "Y: "
+msgstr "Y："
+
+msgid "Character ID: Unknown"
+msgstr "角色 ID：未知"
+
+msgid "Character ID: "
+msgstr "角色 ID："
+
+msgid "Scene ID: Unknown"
+msgstr "场景 ID：未知"
+
+msgid "Scene ID: "
+msgstr "场景 ID："
+
+msgid "Nearby entities"
+msgstr "附近实体"
+
+msgid "No nearby entities"
+msgstr "暂无附近实体"
+
+msgid "Entity {id}: Type {type} ({type_id}){flags}, XZ ({x}, {z}), Y {y}, Distance {distance}"
+msgstr "实体 {id}：类型 {type} ({type_id}){flags}，XZ ({x}, {z})，Y {y}，距离 {distance}"
+
+msgid "Unknown"
+msgstr "未知"
+
+msgid "Monster"
+msgstr "怪物"
+
+msgid "NPC"
+msgstr "NPC"
+
+msgid "Scene object"
+msgstr "场景物体"
+
+msgid "Zone"
+msgstr "区域"
+
+msgid "Bullet"
+msgstr "弹体"
+
+msgid "Client bullet"
+msgstr "客户端弹体"
+
+msgid "Pet"
+msgstr "宠物"
+
+msgid "Player"
+msgstr "玩家"
+
+msgid "Dummy"
+msgstr "假人"
+
+msgid "Drop"
+msgstr "掉落物"
+
+msgid "Field"
+msgstr "场域"
+
+msgid "Trap"
+msgstr "陷阱"
+
+msgid "Collection"
+msgstr "采集物"
+
+msgid "Static object"
+msgstr "静态物体"
+
+msgid "Vehicle"
+msgstr "载具"
+
+msgid "Toy"
+msgstr "玩具"
+
+msgid "Community house"
+msgstr "家园房屋"
+
+msgid "House item"
+msgstr "家园物品"
+
+msgid "Summoned"
+msgstr "召唤实例"
+
+msgid "Client-created"
+msgstr "客户端实例"

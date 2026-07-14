@@ -5,12 +5,12 @@ from collections import Counter, deque
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, ComboBox, FluentIcon, PrimaryPushButton, PushButton
+from qfluentwidgets import BodyLabel, ComboBox, FluentIcon, PlainTextEdit, PrimaryPushButton, PushButton
 
 from ok import Config, og
 from ok.gui.widget.CustomTab import CustomTab
 from src.packet_capture import NpcapCapture, list_devices
-from src.packet_capture.parser import GamePacketParser
+from src.packet_capture.parser import ENTITY_TYPE_NAMES, GamePacketParser
 
 
 class PacketCaptureTab(CustomTab):
@@ -22,6 +22,7 @@ class PacketCaptureTab(CustomTab):
         self._stop_requested = False
         self._capture_error = None
         self._parser = GamePacketParser()
+        self._metadata_revision = -1
         self._config = Config("packet_capture", {"device_name": ""})
         self._refreshing_devices = False
         self._speed_samples = deque()
@@ -44,16 +45,29 @@ class PacketCaptureTab(CustomTab):
         state_layout = QVBoxLayout(state)
         state_layout.setContentsMargins(0, 12, 0, 0)
         self.status_label = BodyLabel(og.app.tr("Capture has not started"), state)
-        self.position_label = BodyLabel(og.app.tr("Position: Unknown"), state)
+        self.position_label = BodyLabel(og.app.tr("XZ: Unknown"), state)
+        self.height_label = BodyLabel(og.app.tr("Y: Unknown"), state)
         self.facing_label = BodyLabel(og.app.tr("Facing: Unknown"), state)
         self.speed_label = BodyLabel(og.app.tr("Speed: Unknown"), state)
+        self.player_id_label = BodyLabel(og.app.tr("Character ID: Unknown"), state)
+        self.scene_id_label = BodyLabel(og.app.tr("Scene ID: Unknown"), state)
+        self.nearby_title = BodyLabel(og.app.tr("Nearby entities"), state)
+        self.nearby_entities = PlainTextEdit(state)
+        self.nearby_entities.setReadOnly(True)
+        self.nearby_entities.setMinimumHeight(180)
+        self.nearby_entities.setPlainText(og.app.tr("No nearby entities"))
         self.copy_button = PushButton(FluentIcon.COPY, og.app.tr("Copy position"), state)
         self.copy_button.setEnabled(False)
         state_layout.addWidget(self.status_label)
         state_layout.addWidget(self.position_label)
+        state_layout.addWidget(self.height_label)
         state_layout.addWidget(self.facing_label)
         state_layout.addWidget(self.speed_label)
+        state_layout.addWidget(self.player_id_label)
+        state_layout.addWidget(self.scene_id_label)
         state_layout.addWidget(self.copy_button)
+        state_layout.addWidget(self.nearby_title)
+        state_layout.addWidget(self.nearby_entities)
         state_layout.addStretch(1)
         self.add_widget(state, 1)
 
@@ -160,6 +174,9 @@ class PacketCaptureTab(CustomTab):
         if transform:
             position, facing = transform
             og.packet_capture_data.update_transform(position, facing)
+        if self._metadata_revision != self._parser.metadata_revision:
+            og.packet_capture_data.update_world(*self._parser.world_state())
+            self._metadata_revision = self._parser.metadata_revision
 
     def _stop_capture(self):
         self._stop_requested = True
@@ -183,17 +200,65 @@ class PacketCaptureTab(CustomTab):
         position, facing = og.packet_capture_data.get_transform()
         update_time = og.packet_capture_data.update_time
         if position is None:
-            self.position_label.setText(og.app.tr("Position: Unknown"))
+            self.position_label.setText(og.app.tr("XZ: Unknown"))
+            self.height_label.setText(og.app.tr("Y: Unknown"))
             self.copy_button.setEnabled(False)
         else:
-            text = ", ".join(f"{value:.3f}" for value in position)
-            self.position_label.setText(og.app.tr("Position: ") + text)
+            self.position_label.setText(og.app.tr("XZ: ") + f"{position[0]:.3f}, {position[2]:.3f}")
+            self.height_label.setText(og.app.tr("Y: ") + f"{position[1]:.3f}")
             self.copy_button.setEnabled(True)
         self.facing_label.setText(
             og.app.tr("Facing: Unknown") if facing is None
             else og.app.tr("Facing: ") + f"{facing:.2f}\N{DEGREE SIGN}"
         )
+        self._refresh_world_state(position)
         self._record_speed_sample(position, update_time)
+
+    def _refresh_world_state(self, player_position):
+        scene_id, player_id, player_uuid, entities = og.packet_capture_data.get_world()
+        self.player_id_label.setText(
+            og.app.tr("Character ID: Unknown") if player_id is None
+            else og.app.tr("Character ID: ") + str(player_id)
+        )
+        self.scene_id_label.setText(
+            og.app.tr("Scene ID: Unknown") if scene_id is None
+            else og.app.tr("Scene ID: ") + str(scene_id)
+        )
+        rows = []
+        if player_position is not None:
+            for entity_id, entity in entities.items():
+                entity_position = entity.get("position")
+                if entity_id == player_uuid or entity_position is None:
+                    continue
+                distance = math.hypot(
+                    entity_position[0] - player_position[0],
+                    entity_position[2] - player_position[2],
+                )
+                entity_type = entity.get("entity_type", 0)
+                type_name = ENTITY_TYPE_NAMES.get(entity_type, "Unknown")
+                translated_type = og.app.tr(type_name)
+                flags = []
+                if entity.get("is_summoned"):
+                    flags.append(og.app.tr("Summoned"))
+                if entity.get("is_client_created"):
+                    flags.append(og.app.tr("Client-created"))
+                flag_text = f" [{', '.join(flags)}]" if flags else ""
+                rows.append((distance, og.app.tr(
+                    "Entity {id}: Type {type} ({type_id}){flags}, XZ ({x}, {z}), Y {y}, Distance {distance}"
+                ).format(
+                    id=entity_id,
+                    type=translated_type,
+                    type_id=entity_type,
+                    flags=flag_text,
+                    x=f"{entity_position[0]:.3f}",
+                    z=f"{entity_position[2]:.3f}",
+                    y=f"{entity_position[1]:.3f}",
+                    distance=f"{distance:.3f}",
+                )))
+        rows.sort(key=lambda item: item[0])
+        text = "\n".join(row for _, row in rows) if rows else og.app.tr("No nearby entities")
+        if self.nearby_entities.toPlainText() != text:
+            self.nearby_entities.setPlainText(text)
 
     def _record_speed_sample(self, position, update_time):
         if position is not None and update_time > self._last_speed_sample_time:
@@ -235,7 +300,7 @@ class PacketCaptureTab(CustomTab):
     def _copy_position(self):
         position, _ = og.packet_capture_data.get_transform()
         if position is not None:
-            QApplication.clipboard().setText(", ".join(f"{value:.3f}" for value in position))
+            QApplication.clipboard().setText(f"{position[0]:.3f}, {position[2]:.3f}")
 
     def closeEvent(self, event):
         self._stop_capture()

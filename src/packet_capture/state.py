@@ -10,6 +10,10 @@ class PacketCaptureData:
         self.position = None
         self.facing = None
         self.update_time = 0.0
+        self.scene_id = None
+        self.player_id = None
+        self.player_uuid = None
+        self.nearby_entities = {}
 
     def update_transform(self, position=None, facing=None):
         with self._lock:
@@ -22,3 +26,14 @@ class PacketCaptureData:
     def get_transform(self):
         with self._lock:
             return self.position, self.facing
+
+    def update_world(self, scene_id, player_id, player_uuid, nearby_entities):
+        with self._lock:
+            self.scene_id = scene_id
+            self.player_id = player_id
+            self.player_uuid = player_uuid
+            self.nearby_entities = nearby_entities
+
+    def get_world(self):
+        with self._lock:
+            return self.scene_id, self.player_id, self.player_uuid, dict(self.nearby_entities)

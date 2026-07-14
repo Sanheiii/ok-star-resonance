@@ -21,6 +21,31 @@ MSG_SYNC_TO_ME_DELTA_INFO = 0x2E
 ATTR_FACING = 0x32
 ATTR_POSITION = 0x34
 ENTITY_TYPE_CHAR = 10
+ENTITY_TYPE_SHIFT = 6
+ENTITY_TYPE_MASK = 0xFF
+ENTITY_SUMMON_BIT = 15
+ENTITY_CLIENT_BIT = 14
+ENTITY_TYPE_NAMES = {
+    0: "Unknown",
+    1: "Monster",
+    2: "NPC",
+    3: "Scene object",
+    5: "Zone",
+    6: "Bullet",
+    7: "Client bullet",
+    8: "Pet",
+    10: "Player",
+    11: "Dummy",
+    12: "Drop",
+    14: "Field",
+    15: "Trap",
+    16: "Collection",
+    18: "Static object",
+    19: "Vehicle",
+    20: "Toy",
+    21: "Community house",
+    22: "House item",
+}
 MAX_FRAME_SIZE = 10 * 1024 * 1024
 
 
@@ -29,17 +54,6 @@ def _load_proto_module():
         return importlib.import_module("src.packet_capture.proto.BlueProtobuf_pb2")
     except ImportError:
         return None
-
-
-def _present(message, name):
-    """Return a present field from the PascalCase BlueProtobuf generator."""
-    if message is None or not hasattr(message, name):
-        return None
-    try:
-        return getattr(message, name) if message.HasField(name) else None
-    except (ValueError, AttributeError):
-        value = getattr(message, name, None)
-        return value if value is not None else None
 
 
 def _decode_varint(data):
@@ -101,6 +115,10 @@ class GamePacketParser:
         self.datalink = 1  # DLT_EN10MB
         self.streams = {}
         self.local_player_uuid = None
+        self.player_id = None
+        self.scene_id = None
+        self.nearby_entities = {}
+        self.metadata_revision = 0
         self.position = None
         self.facing = None
         self._proto = _load_proto_module()
@@ -214,7 +232,7 @@ class GamePacketParser:
             MSG_SYNC_TO_ME_DELTA_INFO: "SyncToMeDeltaInfo",
             MSG_SYNC_NEAR_DELTA_INFO: "SyncNearDeltaInfo",
         }.get(method_id)
-        message_class = getattr(self._proto, message_name, None) if message_name else None
+        message_class = getattr(self._proto.WorldNtf, message_name, None) if self._proto and message_name else None
         if message_class is None:
             return False
         message = message_class()
@@ -224,50 +242,58 @@ class GamePacketParser:
             logger.debug("failed to decode %s: %s", message_name, exc)
             return False
         if method_id == MSG_SYNC_CONTAINER_DATA:
-            data = _present(message, "VData")
-            char_id = _present(data, "CharId")
-            if char_id is not None and not isinstance(char_id, int):
-                char_id = char_id[0] if len(char_id) == 1 else None
+            data = message.vData
+            char_id = data.charId
             if char_id:
+                self.player_id = int(char_id)
                 self.local_player_uuid = (int(char_id) << 16) | (ENTITY_TYPE_CHAR << 6)
-            scene_data = _present(data, "SceneData")
-            return self._apply_position(_present(scene_data, "Pos"), include_direction=True)
-        if method_id == MSG_SYNC_TO_ME_DELTA_INFO:
-            delta_info = _present(message, "DeltaInfo")
-            if delta_info is None:
+            if data.HasField("sceneData"):
+                next_scene_id = int(data.sceneData.mapId)
+                if self.scene_id is not None and next_scene_id != self.scene_id:
+                    self.nearby_entities.clear()
+                self.scene_id = next_scene_id
+                self.metadata_revision += 1
+            if not data.HasField("sceneData") or not data.sceneData.HasField("pos"):
                 return False
-            uuid = _present(delta_info, "Uuid")
-            if uuid:
-                self.local_player_uuid = int(uuid)
-            return self._decode_delta(_present(delta_info, "BaseDelta"), force_local=True)
+            changed = self._apply_position(data.sceneData.pos, include_direction=True)
+            self._store_entity(self.local_player_uuid, self.position, self.facing)
+            return changed
+        if method_id == MSG_SYNC_TO_ME_DELTA_INFO:
+            if not message.HasField("deltaInfo"):
+                return False
+            delta_info = message.deltaInfo
+            if delta_info.HasField("uuid") and delta_info.uuid:
+                self.local_player_uuid = int(delta_info.uuid)
+            if not delta_info.HasField("baseDelta"):
+                return False
+            self._record_entity_delta(delta_info.baseDelta)
+            return self._decode_delta(delta_info.baseDelta, force_local=True)
         changed = False
-        deltas = _present(message, "DeltaInfos") or ()
-        for delta in deltas:
-            if self.local_player_uuid and _present(delta, "Uuid") == self.local_player_uuid:
+        for delta in message.deltaInfos:
+            self._record_entity_delta(delta)
+            if self.local_player_uuid and delta.HasField("uuid") and delta.uuid == self.local_player_uuid:
                 changed |= self._decode_delta(delta, force_local=True)
         return changed
 
     def _decode_delta(self, delta, force_local=False):
         if delta is None:
             return False
-        uuid = _present(delta, "Uuid")
+        uuid = delta.uuid if delta.HasField("uuid") else None
         if not force_local and (not self.local_player_uuid or uuid != self.local_player_uuid):
             return False
-        attrs = _present(delta, "Attrs")
         changed = False
-        attr_items = _present(attrs, "Attrs") or ()
-        for attr in attr_items:
-            attr_id = _present(attr, "Id")
-            raw = _present(attr, "RawData")
+        if not delta.HasField("attrs"):
+            return changed
+        for attr in delta.attrs.attrs:
+            attr_id = attr.id if attr.HasField("id") else None
+            raw = attr.rawData if attr.HasField("rawData") else None
             if attr_id == ATTR_POSITION and raw:
-                position_class = getattr(self._proto, "Position", None)
-                if position_class is not None:
-                    position = position_class()
-                    try:
-                        position.ParseFromString(raw)
-                        changed |= self._apply_position(position)
-                    except Exception as exc:
-                        logger.debug("failed to decode position: %s", exc)
+                position = self._proto.Position()
+                try:
+                    position.ParseFromString(raw)
+                    changed |= self._apply_position(position)
+                except Exception as exc:
+                    logger.debug("failed to decode position: %s", exc)
             elif attr_id == ATTR_FACING and raw is not None:
                 raw_facing = _decode_varint(raw)
                 if raw_facing is not None:
@@ -280,19 +306,66 @@ class GamePacketParser:
     def _apply_position(self, position, include_direction=False):
         if position is None:
             return False
-        coordinates = tuple(_present(position, axis) for axis in ("X", "Y", "Z"))
-        if any(value is None for value in coordinates):
-            return False
-        changed = False
-        values = tuple(float(value) for value in coordinates)
-        if values != self.position:
-            self.position = values
-            changed = True
+        coordinates = (position.x, position.y, position.z)
+        changed = self._set_position(coordinates)
         if include_direction:
-            direction = _present(position, "Dir")
-            if direction is not None:
-                facing = float(direction) % 360.0
-                if facing != self.facing:
-                    self.facing = facing
-                    changed = True
+            facing = float(position.dir) % 360.0
+            if facing != self.facing:
+                self.facing = facing
+                changed = True
         return changed
+
+    def _set_position(self, coordinates):
+        values = tuple(float(value) for value in coordinates)
+        if values == self.position:
+            return False
+        self.position = values
+        return True
+
+    def _record_entity_delta(self, delta):
+        if not delta.HasField("uuid") or not delta.HasField("attrs"):
+            return
+        entity_uuid = int(delta.uuid)
+        previous = self.nearby_entities.get(entity_uuid, {})
+        position = previous.get("position")
+        facing = previous.get("facing")
+        changed = False
+        for attr in delta.attrs.attrs:
+            if not attr.HasField("id") or not attr.HasField("rawData"):
+                continue
+            if attr.id == ATTR_POSITION and attr.rawData:
+                value = self._proto.Position()
+                try:
+                    value.ParseFromString(attr.rawData)
+                    position = (float(value.x), float(value.y), float(value.z))
+                    changed = True
+                except Exception as exc:
+                    logger.debug("failed to decode entity position: %s", exc)
+            elif attr.id == ATTR_FACING:
+                raw_facing = _decode_varint(attr.rawData)
+                if raw_facing is not None:
+                    facing = (raw_facing / 100.0) % 360.0
+                    changed = True
+        if changed:
+            self._store_entity(entity_uuid, position, facing)
+
+    def _store_entity(self, entity_uuid, position, facing):
+        if not entity_uuid:
+            return
+        entity_uuid = int(entity_uuid)
+        entity_type = (entity_uuid >> ENTITY_TYPE_SHIFT) & ENTITY_TYPE_MASK
+        self.nearby_entities[entity_uuid] = {
+            "position": position,
+            "facing": facing,
+            "entity_type": entity_type,
+            "entity_type_name": ENTITY_TYPE_NAMES.get(entity_type, "Unknown"),
+            "is_summoned": bool(entity_uuid & (1 << ENTITY_SUMMON_BIT)),
+            "is_client_created": bool(entity_uuid & (1 << ENTITY_CLIENT_BIT)),
+            "updated_at": time.time(),
+        }
+        self.metadata_revision += 1
+
+    def world_state(self):
+        return self.scene_id, self.player_id, self.local_player_uuid, {
+            uuid: dict(entity) for uuid, entity in self.nearby_entities.items()
+        }

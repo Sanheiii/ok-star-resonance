@@ -1,10 +1,23 @@
 # Protobuf files required by packet capture
 
-Compile the game protocol with Python's protobuf generator and place the output
-in this directory as `BlueProtobuf_pb2.py`.
+`BlueProtobuf_pb2.py` is generated from the wire-compatible subset in
+`BlueProtobuf.proto`, extracted from StarResonanceMITMServer's zproto
+schemas. It provides `WorldNtf.SyncContainerData.vData.sceneData.pos`.
 
-The generated module must expose these messages (including their referenced
-child messages):
+The missing AOI delta definitions verified against resonance-logs-cn have been
+added to the repository subset, so this generated module now handles both full
+container sync and incremental movement. No legacy pb2 module is required.
+
+Regenerate the repository module from the workspace root with:
+
+```powershell
+.\.venv\Scripts\python.exe -m grpc_tools.protoc `
+  --proto_path=src\packet_capture\proto `
+  --python_out=src\packet_capture\proto `
+  src\packet_capture\proto\BlueProtobuf.proto
+```
+
+The generated module supplies these incremental messages:
 
 - `SyncContainerData`
 - `SyncToMeDeltaInfo`
@@ -14,7 +27,5 @@ child messages):
 - `Attr`
 - `Position`
 
-The parser reloads the module when capture packets arrive, so no other source
-changes are required after adding it. The generated fields must retain their
-PascalCase names: `Position.X/Y/Z`, `Attr.Id/RawData`, `AoiSyncDelta.Uuid/Attrs`,
-`SyncToMeDeltaInfo.DeltaInfo`, and `SyncNearDeltaInfo.DeltaInfos`.
+All fields use the source repository's lowerCamelCase style and the notify
+wrappers are nested under `WorldNtf`.
