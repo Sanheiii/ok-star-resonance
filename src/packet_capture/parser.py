@@ -217,8 +217,15 @@ class GamePacketParser:
                 method_id = int.from_bytes(payload[12:16], "big")
                 body = payload[16:]
                 body = self._decompress(body) if compressed else body
-                if service_id == WORLD_NTF_SERVICE_ID and body is not None:
-                    changed |= self._decode_notify(method_id, body)
+                if service_id == WORLD_NTF_SERVICE_ID:
+                    logger.info(
+                        "WorldNtf notify: method_id=%s compressed=%s body_size=%s",
+                        method_id,
+                        compressed,
+                        len(body) if body is not None else None,
+                    )
+                    if body is not None:
+                        changed |= self._decode_notify(method_id, body)
             offset += size
         return changed
 
@@ -228,7 +235,7 @@ class GamePacketParser:
             import zstandard
             return zstandard.ZstdDecompressor().decompress(data)
         except Exception as exc:
-            logger.debug("zstd decompression failed: %s", exc)
+            logger.warning("zstd decompression failed: %s", exc)
             return None
 
     def _decode_notify(self, method_id, body):
@@ -245,7 +252,7 @@ class GamePacketParser:
         try:
             message.ParseFromString(body)
         except Exception as exc:
-            logger.debug("failed to decode %s: %s", message_name, exc)
+            logger.warning("failed to decode %s: %s", message_name, exc)
             return False
         if method_id == MSG_ENTER_SCENE:
             return self._decode_enter_scene(message)
@@ -284,17 +291,35 @@ class GamePacketParser:
         return changed
 
     def _decode_enter_scene(self, message):
-        if not message.HasField("enterSceneInfo"):
+        has_info = message.HasField("enterSceneInfo")
+        logger.info("EnterScene decoded: has_info=%s", has_info)
+        if not has_info:
             return False
         info = message.enterSceneInfo
+        has_scene_attrs = info.HasField("sceneAttrs")
+        attr_ids = (
+            [attr.id for attr in info.sceneAttrs.attrs if attr.HasField("id")]
+            if has_scene_attrs else []
+        )
+        logger.info(
+            "EnterScene info: has_scene_attrs=%s attr_ids=%s",
+            has_scene_attrs,
+            attr_ids,
+        )
         self.nearby_entities.clear()
         self.scene_guid = info.sceneGuid if info.HasField("sceneGuid") else None
         self.connect_guid = info.connectGuid if info.HasField("connectGuid") else None
 
-        if info.HasField("sceneAttrs"):
+        if has_scene_attrs:
             scene_id = self._find_varint_attr(info.sceneAttrs, ATTR_SCENE_BASIC_ID)
             if scene_id is not None:
                 self.scene_id = int(scene_id)
+                logger.info("EnterScene scene_id=%s", self.scene_id)
+            else:
+                logger.warning(
+                    "EnterScene sceneAttrs does not contain AttrSceneBasicId(%s)",
+                    ATTR_SCENE_BASIC_ID,
+                )
 
         changed = False
         if info.HasField("playerEnt"):
