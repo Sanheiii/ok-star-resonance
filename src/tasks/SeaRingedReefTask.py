@@ -1,11 +1,11 @@
-from src.tasks.DungeonBaseTask import DungeonBaseTask, Difficulty
+from src.tasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class SeaRingedReefTask(DungeonBaseTask):
+class SeaRingedReefTask(DungeonTaskBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.name = "Sea-Ringed Reef"
+        self.name = "Sea-Ringed Reef - M1"
         self.difficulty = Difficulty.MASTER1
 
     def run(self):

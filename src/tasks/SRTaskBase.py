@@ -10,6 +10,7 @@ class PacketCaptureRequiredError(RuntimeError):
 class SRTaskBase(BaseTask):
     """Shared Star Resonance helpers for one-shot and trigger tasks."""
 
+    # 以镜头朝向为基准，每 45 度对应一个移动方向；斜向移动需要同时按下两个键。
     _MOVE_KEYS = (
         ("w",), ("w", "d"), ("d",), ("s", "d"),
         ("s",), ("s", "a"), ("a",), ("w", "a"),
@@ -59,18 +60,19 @@ class SRTaskBase(BaseTask):
     def detect_camera_direction(self):
         """Walk forward briefly and use the resulting character facing as camera yaw."""
         self._require_packet_capture()
-        if not self.camera_direction:
-            self.camera_direction = og.packet_capture_data.facing or 0
+        # 首次没有可用镜头朝向时默认是角色面向。
+        if self.camera_direction is not None and (facing:=self.facing) is not None:
+            self.camera_direction = facing % 360.0
             return self.camera_direction
-        self.send_key_down("w")
-        try:
-            self.sleep(0.5)
-        finally:
-            self.send_key_up("w")
-        facing = self.facing
-        if facing is None:
-            raise PacketCaptureRequiredError("Player facing has not been received from packet capture.")
-        self.camera_direction = facing % 360.0
+        # 如果没有抓到角色面向尝试前后两步以更新数据
+        else:
+            self.send_key('s', 0.2)
+            self.send_key('w', 1)
+            self.sleep(3)
+            facing = self.facing
+            if facing is None:
+                raise PacketCaptureRequiredError("Player facing has not been received from packet capture.")
+            self.camera_direction = facing % 360.0
         return self.camera_direction
 
     def set_camera_direction(self, direction):
@@ -91,6 +93,7 @@ class SRTaskBase(BaseTask):
         line_x, line_z = target_x - start_x, target_z - start_z
         line_length_squared = line_x * line_x + line_z * line_z
         if line_length_squared:
+            # 将当前位置投影到规划线段上：先回到路线附近，再沿路线前往终点，减少累计偏移。
             projection = ((current_x - start_x) * line_x + (current_z - start_z) * line_z) / line_length_squared
             projection = max(0.0, min(1.0, projection))
             line_position = (start_x + projection * line_x, start_z + projection * line_z)
@@ -112,6 +115,7 @@ class SRTaskBase(BaseTask):
     def _move_direct(self, target_position, tolerance):
         target_x, target_z = self._xz(target_position)
 
+        # 每轮只执行一次短移动，并在移动后用服务端坐标修正本地估算。
         while True:
             self._require_packet_capture()
             current = self._movement_position()
@@ -127,6 +131,7 @@ class SRTaskBase(BaseTask):
 
             target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
             relative = self._angle_delta(target_heading, self.camera_direction)
+            # 将目标相对镜头的角度量化为最近的八方向按键组合。
             direction_index = round(relative / 45.0) % 8
             keys = self._MOVE_KEYS[direction_index]
             expected_heading = (self.camera_direction + direction_index * 45.0) % 360.0
@@ -143,10 +148,12 @@ class SRTaskBase(BaseTask):
             position_updated = (after_position is not None and
                                 server_update_time > self._last_server_update_time)
             if position_updated:
+                # 抓包数据优先级最高，同时用连续的服务端采样更新实际移动速度。
                 self._accept_server_position(after_position, server_update_time)
                 after_x, after_z = self._estimated_position
 
             if not position_updated:
+                # 服务端坐标尚未刷新时，根据最近速度暂时推算位置，避免移动流程停顿。
                 heading_radians = math.radians(expected_heading)
                 estimated_distance = self._last_move_speed * self._MOVE_DURATION
                 after_x = current_x + math.sin(heading_radians) * estimated_distance
@@ -154,6 +161,7 @@ class SRTaskBase(BaseTask):
 
             self._estimated_position = (after_x, after_z)
             self._estimated_position_confirmed = position_updated
+            # 短移动可能跨过目标点，因此检查整段轨迹，而不只检查移动后的端点。
             if self._segment_reaches_target(
                     (current_x, current_z), (after_x, after_z), (target_x, target_z), tolerance):
                 if position_updated:
@@ -171,6 +179,7 @@ class SRTaskBase(BaseTask):
     def _accept_server_position(self, server_position, update_time):
         """Use a fresh server position and derive speed only from consecutive server samples."""
         server_x, server_z = self._xz(server_position)
+        # 只有两个真实服务端采样点才能用于测速，避免把本地估算误差带入速度。
         if self._last_server_position is not None and self._last_server_update_time:
             previous_x, previous_z = self._xz(self._last_server_position)
             elapsed = update_time - self._last_server_update_time
@@ -186,6 +195,7 @@ class SRTaskBase(BaseTask):
     def _wait_for_server_position(self):
         """Tap each movement key until a fresh server position confirms or corrects the estimate."""
         previous_update_time = self._last_server_update_time
+        # 依次轻点移动键以触发位置包，直到服务端确认或纠正当前估算位置。
         while True:
             for key in ("w", "a", "s", "d"):
                 self._require_packet_capture()

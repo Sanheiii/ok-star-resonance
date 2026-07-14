@@ -230,7 +230,8 @@ class GamePacketParser:
                 char_id = char_id[0] if len(char_id) == 1 else None
             if char_id:
                 self.local_player_uuid = (int(char_id) << 16) | (ENTITY_TYPE_CHAR << 6)
-            return False
+            scene_data = _present(data, "SceneData")
+            return self._apply_position(_present(scene_data, "Pos"), include_direction=True)
         if method_id == MSG_SYNC_TO_ME_DELTA_INFO:
             delta_info = _present(message, "DeltaInfo")
             if delta_info is None:
@@ -264,10 +265,7 @@ class GamePacketParser:
                     position = position_class()
                     try:
                         position.ParseFromString(raw)
-                        values = tuple(float(_present(position, axis) or 0.0) for axis in ("X", "Y", "Z"))
-                        if values != self.position:
-                            self.position = values
-                            changed = True
+                        changed |= self._apply_position(position)
                     except Exception as exc:
                         logger.debug("failed to decode position: %s", exc)
             elif attr_id == ATTR_FACING and raw is not None:
@@ -277,4 +275,24 @@ class GamePacketParser:
                     if facing != self.facing:
                         self.facing = facing
                         changed = True
+        return changed
+
+    def _apply_position(self, position, include_direction=False):
+        if position is None:
+            return False
+        coordinates = tuple(_present(position, axis) for axis in ("X", "Y", "Z"))
+        if any(value is None for value in coordinates):
+            return False
+        changed = False
+        values = tuple(float(value) for value in coordinates)
+        if values != self.position:
+            self.position = values
+            changed = True
+        if include_direction:
+            direction = _present(position, "Dir")
+            if direction is not None:
+                facing = float(direction) % 360.0
+                if facing != self.facing:
+                    self.facing = facing
+                    changed = True
         return changed

@@ -3,10 +3,11 @@ from enum import Enum
 from src.tasks.SRTask import SRTask
 
 
-class DungeonBaseTask(SRTask):
+class DungeonTaskBase(SRTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.info['entry_count'] = 0
 
     def run(self):
         self._require_packet_capture()
@@ -17,9 +18,6 @@ class DungeonBaseTask(SRTask):
 
     def investigate(self, pos):
         self.sleep(1)
-        self.send_key('s', down_time=0.2)
-        self.send_key('w', down_time=1)
-        self.sleep(3)
         self.move_to_position(self.position,pos)
         self.send_key('f')
         self.sleep(1)
@@ -70,8 +68,15 @@ class DungeonBaseTask(SRTask):
         self.sleep(1)
         # 等待副本UI
         if not self.wait_feature('loading'):
-            return True
-        return self.wait_feature('dungeon_scene_icon', time_out=60) is not None
+            self.log_error('没有找到加载页面')
+            return False
+        while self.find_one('loading'):
+            self.sleep(1)
+        if not  self.wait_feature('dungeon_scene_icon'):
+            self.log_error('加载完成后没有找到副本UI')
+            return False
+        self.info['entry_count'] += 1
+        return True
 
 
 class Difficulty(Enum):
