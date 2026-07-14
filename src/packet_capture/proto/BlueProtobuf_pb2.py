@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12\x42lueProtobuf.proto\x12\x06zproto\"F\n\x08Position\x12\x0c\n\x01x\x18\x01 \x01(\x02R\x01x\x12\x0c\n\x01y\x18\x02 \x01(\x02R\x01y\x12\x0c\n\x01z\x18\x03 \x01(\x02R\x01z\x12\x10\n\x03\x64ir\x18\x04 \x01(\x02R\x03\x64ir\"c\n\tSceneData\x12\x14\n\x05mapId\x18\x01 \x01(\rR\x05mapId\x12\x1c\n\tchannelId\x18\x02 \x01(\rR\tchannelId\x12\"\n\x03pos\x18\x03 \x01(\x0b\x32\x10.zproto.PositionR\x03pos\"X\n\rCharSerialize\x12\x16\n\x06\x63harId\x18\x01 \x01(\x03R\x06\x63harId\x12/\n\tsceneData\x18\x03 \x01(\x0b\x32\x11.zproto.SceneDataR\tsceneData\"M\n\x04\x41ttr\x12\x13\n\x02id\x18\x01 \x01(\x05H\x00R\x02id\x88\x01\x01\x12\x1d\n\x07rawData\x18\x02 \x01(\x0cH\x01R\x07rawData\x88\x01\x01\x42\x05\n\x03_idB\n\n\x08_rawData\"V\n\x0e\x41ttrCollection\x12\x17\n\x04uuid\x18\x01 \x01(\x03H\x00R\x04uuid\x88\x01\x01\x12\"\n\x05\x61ttrs\x18\x02 \x03(\x0b\x32\x0c.zproto.AttrR\x05\x61ttrsB\x07\n\x05_uuid\"m\n\x0c\x41oiSyncDelta\x12\x17\n\x04uuid\x18\x01 \x01(\x03H\x00R\x04uuid\x88\x01\x01\x12\x31\n\x05\x61ttrs\x18\x02 \x01(\x0b\x32\x16.zproto.AttrCollectionH\x01R\x05\x61ttrs\x88\x01\x01\x42\x07\n\x05_uuidB\x08\n\x06_attrs\"\x9d\x01\n\x10\x41oiSyncToMeDelta\x12\x37\n\tbaseDelta\x18\x01 \x01(\x0b\x32\x14.zproto.AoiSyncDeltaH\x00R\tbaseDelta\x88\x01\x01\x12 \n\x0bsyncHateIds\x18\x02 \x03(\x03R\x0bsyncHateIds\x12\x17\n\x04uuid\x18\x05 \x01(\x03H\x01R\x04uuid\x88\x01\x01\x42\x0c\n\n_baseDeltaB\x07\n\x05_uuid\"\xe4\x01\n\x08WorldNtf\x1a@\n\x11SyncContainerData\x12+\n\x05vData\x18\x01 \x01(\x0b\x32\x15.zproto.CharSerializeR\x05vData\x1aI\n\x11SyncNearDeltaInfo\x12\x34\n\ndeltaInfos\x18\x01 \x03(\x0b\x32\x14.zproto.AoiSyncDeltaR\ndeltaInfos\x1aK\n\x11SyncToMeDeltaInfo\x12\x36\n\tdeltaInfo\x18\x01 \x01(\x0b\x32\x18.zproto.AoiSyncToMeDeltaR\tdeltaInfob\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12\x42lueProtobuf.proto\x12\x06zproto\"F\n\x08Position\x12\x0c\n\x01x\x18\x01 \x01(\x02R\x01x\x12\x0c\n\x01y\x18\x02 \x01(\x02R\x01y\x12\x0c\n\x01z\x18\x03 \x01(\x02R\x01z\x12\x10\n\x03\x64ir\x18\x04 \x01(\x02R\x03\x64ir\"c\n\tSceneData\x12\x14\n\x05mapId\x18\x01 \x01(\rR\x05mapId\x12\x1c\n\tchannelId\x18\x02 \x01(\rR\tchannelId\x12\"\n\x03pos\x18\x03 \x01(\x0b\x32\x10.zproto.PositionR\x03pos\"X\n\rCharSerialize\x12\x16\n\x06\x63harId\x18\x01 \x01(\x03R\x06\x63harId\x12/\n\tsceneData\x18\x03 \x01(\x0b\x32\x11.zproto.SceneDataR\tsceneData\"M\n\x04\x41ttr\x12\x13\n\x02id\x18\x01 \x01(\x05H\x00R\x02id\x88\x01\x01\x12\x1d\n\x07rawData\x18\x02 \x01(\x0cH\x01R\x07rawData\x88\x01\x01\x42\x05\n\x03_idB\n\n\x08_rawData\"V\n\x0e\x41ttrCollection\x12\x17\n\x04uuid\x18\x01 \x01(\x03H\x00R\x04uuid\x88\x01\x01\x12\"\n\x05\x61ttrs\x18\x02 \x03(\x0b\x32\x0c.zproto.AttrR\x05\x61ttrsB\x07\n\x05_uuid\"\x92\x01\n\x06\x45ntity\x12\x17\n\x04uuid\x18\x01 \x01(\x03H\x00R\x04uuid\x88\x01\x01\x12\x1d\n\x07\x65ntType\x18\x02 \x01(\x05H\x01R\x07\x65ntType\x88\x01\x01\x12\x31\n\x05\x61ttrs\x18\x03 \x01(\x0b\x32\x16.zproto.AttrCollectionH\x02R\x05\x61ttrs\x88\x01\x01\x42\x07\n\x05_uuidB\n\n\x08_entTypeB\x08\n\x06_attrs\"\xda\x02\n\x0e\x45nterSceneInfo\x12;\n\nsceneAttrs\x18\x01 \x01(\x0b\x32\x16.zproto.AttrCollectionH\x00R\nsceneAttrs\x88\x01\x01\x12\x31\n\tplayerEnt\x18\x02 \x01(\x0b\x32\x0e.zproto.EntityH\x01R\tplayerEnt\x88\x01\x01\x12!\n\tsceneGuid\x18\x03 \x01(\tH\x02R\tsceneGuid\x88\x01\x01\x12%\n\x0b\x63onnectGuid\x18\x04 \x01(\tH\x03R\x0b\x63onnectGuid\x88\x01\x01\x12\x41\n\rsubsceneAttrs\x18\x05 \x01(\x0b\x32\x16.zproto.AttrCollectionH\x04R\rsubsceneAttrs\x88\x01\x01\x42\r\n\x0b_sceneAttrsB\x0c\n\n_playerEntB\x0c\n\n_sceneGuidB\x0e\n\x0c_connectGuidB\x10\n\x0e_subsceneAttrs\"m\n\x0c\x41oiSyncDelta\x12\x17\n\x04uuid\x18\x01 \x01(\x03H\x00R\x04uuid\x88\x01\x01\x12\x31\n\x05\x61ttrs\x18\x02 \x01(\x0b\x32\x16.zproto.AttrCollectionH\x01R\x05\x61ttrs\x88\x01\x01\x42\x07\n\x05_uuidB\x08\n\x06_attrs\"\x9d\x01\n\x10\x41oiSyncToMeDelta\x12\x37\n\tbaseDelta\x18\x01 \x01(\x0b\x32\x14.zproto.AoiSyncDeltaH\x00R\tbaseDelta\x88\x01\x01\x12 \n\x0bsyncHateIds\x18\x02 \x03(\x03R\x0bsyncHateIds\x12\x17\n\x04uuid\x18\x05 \x01(\x03H\x01R\x04uuid\x88\x01\x01\x42\x0c\n\n_baseDeltaB\x07\n\x05_uuid\"\xca\x02\n\x08WorldNtf\x1a\x64\n\nEnterScene\x12\x43\n\x0e\x65nterSceneInfo\x18\x01 \x01(\x0b\x32\x16.zproto.EnterSceneInfoH\x00R\x0e\x65nterSceneInfo\x88\x01\x01\x42\x11\n\x0f_enterSceneInfo\x1a@\n\x11SyncContainerData\x12+\n\x05vData\x18\x01 \x01(\x0b\x32\x15.zproto.CharSerializeR\x05vData\x1aI\n\x11SyncNearDeltaInfo\x12\x34\n\ndeltaInfos\x18\x01 \x03(\x0b\x32\x14.zproto.AoiSyncDeltaR\ndeltaInfos\x1aK\n\x11SyncToMeDeltaInfo\x12\x36\n\tdeltaInfo\x18\x01 \x01(\x0b\x32\x18.zproto.AoiSyncToMeDeltaR\tdeltaInfob\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -41,16 +41,22 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ATTR']._serialized_end=370
   _globals['_ATTRCOLLECTION']._serialized_start=372
   _globals['_ATTRCOLLECTION']._serialized_end=458
-  _globals['_AOISYNCDELTA']._serialized_start=460
-  _globals['_AOISYNCDELTA']._serialized_end=569
-  _globals['_AOISYNCTOMEDELTA']._serialized_start=572
-  _globals['_AOISYNCTOMEDELTA']._serialized_end=729
-  _globals['_WORLDNTF']._serialized_start=732
-  _globals['_WORLDNTF']._serialized_end=960
-  _globals['_WORLDNTF_SYNCCONTAINERDATA']._serialized_start=744
-  _globals['_WORLDNTF_SYNCCONTAINERDATA']._serialized_end=808
-  _globals['_WORLDNTF_SYNCNEARDELTAINFO']._serialized_start=810
-  _globals['_WORLDNTF_SYNCNEARDELTAINFO']._serialized_end=883
-  _globals['_WORLDNTF_SYNCTOMEDELTAINFO']._serialized_start=885
-  _globals['_WORLDNTF_SYNCTOMEDELTAINFO']._serialized_end=960
+  _globals['_ENTITY']._serialized_start=461
+  _globals['_ENTITY']._serialized_end=607
+  _globals['_ENTERSCENEINFO']._serialized_start=610
+  _globals['_ENTERSCENEINFO']._serialized_end=956
+  _globals['_AOISYNCDELTA']._serialized_start=958
+  _globals['_AOISYNCDELTA']._serialized_end=1067
+  _globals['_AOISYNCTOMEDELTA']._serialized_start=1070
+  _globals['_AOISYNCTOMEDELTA']._serialized_end=1227
+  _globals['_WORLDNTF']._serialized_start=1230
+  _globals['_WORLDNTF']._serialized_end=1560
+  _globals['_WORLDNTF_ENTERSCENE']._serialized_start=1242
+  _globals['_WORLDNTF_ENTERSCENE']._serialized_end=1342
+  _globals['_WORLDNTF_SYNCCONTAINERDATA']._serialized_start=1344
+  _globals['_WORLDNTF_SYNCCONTAINERDATA']._serialized_end=1408
+  _globals['_WORLDNTF_SYNCNEARDELTAINFO']._serialized_start=1410
+  _globals['_WORLDNTF_SYNCNEARDELTAINFO']._serialized_end=1483
+  _globals['_WORLDNTF_SYNCTOMEDELTAINFO']._serialized_start=1485
+  _globals['_WORLDNTF_SYNCTOMEDELTAINFO']._serialized_end=1560
 # @@protoc_insertion_point(module_scope)

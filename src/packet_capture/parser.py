@@ -15,13 +15,16 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 WORLD_NTF_SERVICE_ID = 1_664_308_034
+MSG_ENTER_SCENE = 0x03
 MSG_SYNC_CONTAINER_DATA = 0x15
 MSG_SYNC_NEAR_DELTA_INFO = 0x2D
 MSG_SYNC_TO_ME_DELTA_INFO = 0x2E
+ATTR_SCENE_BASIC_ID = 0x155
 ATTR_FACING = 0x32
 ATTR_POSITION = 0x34
 ENTITY_TYPE_CHAR = 10
 ENTITY_TYPE_SHIFT = 6
+ENTITY_UID_SHIFT = 16
 ENTITY_TYPE_MASK = 0xFF
 ENTITY_SUMMON_BIT = 15
 ENTITY_CLIENT_BIT = 14
@@ -117,6 +120,8 @@ class GamePacketParser:
         self.local_player_uuid = None
         self.player_id = None
         self.scene_id = None
+        self.scene_guid = None
+        self.connect_guid = None
         self.nearby_entities = {}
         self.metadata_revision = 0
         self.position = None
@@ -228,6 +233,7 @@ class GamePacketParser:
 
     def _decode_notify(self, method_id, body):
         message_name = {
+            MSG_ENTER_SCENE: "EnterScene",
             MSG_SYNC_CONTAINER_DATA: "SyncContainerData",
             MSG_SYNC_TO_ME_DELTA_INFO: "SyncToMeDeltaInfo",
             MSG_SYNC_NEAR_DELTA_INFO: "SyncNearDeltaInfo",
@@ -241,6 +247,8 @@ class GamePacketParser:
         except Exception as exc:
             logger.debug("failed to decode %s: %s", message_name, exc)
             return False
+        if method_id == MSG_ENTER_SCENE:
+            return self._decode_enter_scene(message)
         if method_id == MSG_SYNC_CONTAINER_DATA:
             data = message.vData
             char_id = data.charId
@@ -275,16 +283,42 @@ class GamePacketParser:
                 changed |= self._decode_delta(delta, force_local=True)
         return changed
 
-    def _decode_delta(self, delta, force_local=False):
-        if delta is None:
+    def _decode_enter_scene(self, message):
+        if not message.HasField("enterSceneInfo"):
             return False
-        uuid = delta.uuid if delta.HasField("uuid") else None
-        if not force_local and (not self.local_player_uuid or uuid != self.local_player_uuid):
-            return False
+        info = message.enterSceneInfo
+        self.nearby_entities.clear()
+        self.scene_guid = info.sceneGuid if info.HasField("sceneGuid") else None
+        self.connect_guid = info.connectGuid if info.HasField("connectGuid") else None
+
+        if info.HasField("sceneAttrs"):
+            scene_id = self._find_varint_attr(info.sceneAttrs, ATTR_SCENE_BASIC_ID)
+            if scene_id is not None:
+                self.scene_id = int(scene_id)
+
         changed = False
-        if not delta.HasField("attrs"):
-            return changed
-        for attr in delta.attrs.attrs:
+        if info.HasField("playerEnt"):
+            player = info.playerEnt
+            if player.HasField("uuid") and player.uuid:
+                self.local_player_uuid = int(player.uuid)
+                self.player_id = self.local_player_uuid >> ENTITY_UID_SHIFT
+            if player.HasField("attrs"):
+                changed |= self._decode_transform_attrs(player.attrs)
+            self._store_entity(self.local_player_uuid, self.position, self.facing)
+        self.metadata_revision += 1
+        return changed
+
+    @staticmethod
+    def _find_varint_attr(collection, attr_id):
+        for attr in collection.attrs:
+            if (attr.HasField("id") and attr.id == attr_id
+                    and attr.HasField("rawData")):
+                return _decode_varint(attr.rawData)
+        return None
+
+    def _decode_transform_attrs(self, collection):
+        changed = False
+        for attr in collection.attrs:
             attr_id = attr.id if attr.HasField("id") else None
             raw = attr.rawData if attr.HasField("rawData") else None
             if attr_id == ATTR_POSITION and raw:
@@ -302,6 +336,16 @@ class GamePacketParser:
                         self.facing = facing
                         changed = True
         return changed
+
+    def _decode_delta(self, delta, force_local=False):
+        if delta is None:
+            return False
+        uuid = delta.uuid if delta.HasField("uuid") else None
+        if not force_local and (not self.local_player_uuid or uuid != self.local_player_uuid):
+            return False
+        if not delta.HasField("attrs"):
+            return False
+        return self._decode_transform_attrs(delta.attrs)
 
     def _apply_position(self, position, include_direction=False):
         if position is None:

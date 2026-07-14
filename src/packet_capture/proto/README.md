@@ -2,7 +2,9 @@
 
 `BlueProtobuf_pb2.py` is generated from the wire-compatible subset in
 `BlueProtobuf.proto`, extracted from StarResonanceMITMServer's zproto
-schemas. It provides `WorldNtf.SyncContainerData.vData.sceneData.pos`.
+schemas. It provides `WorldNtf.SyncContainerData.vData.sceneData.pos` and the
+minimal `WorldNtf.EnterScene` subset reconstructed from resonance-logs-cn's
+prost-generated Rust declarations.
 
 The missing AOI delta definitions verified against resonance-logs-cn have been
 added to the repository subset, so this generated module now handles both full
@@ -20,6 +22,9 @@ Regenerate the repository module from the workspace root with:
 The generated module supplies these incremental messages:
 
 - `SyncContainerData`
+- `EnterScene`
+- `EnterSceneInfo`
+- `Entity`
 - `SyncToMeDeltaInfo`
 - `SyncNearDeltaInfo`
 - `AoiSyncDelta`
