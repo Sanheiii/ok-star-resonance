@@ -54,6 +54,10 @@ class SRTaskBase(BaseTask):
         ("s",), ("s", "a"), ("a",), ("w", "a"),
     )
     _MOVE_DURATION = 0.05
+    _CAMERA_CORRECTION_THRESHOLD = 5
+    _SPRINT_PROMPT_POSITION = (0.628, 0.968)
+    _SPRINT_PROMPT_BGR = (0x35, 0xAE, 0xFF)
+    _SPRINT_COOLDOWN = 2
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -130,7 +134,6 @@ class SRTaskBase(BaseTask):
         """Join the start/target line first, then follow it to the target."""
         start_x, start_z = self._xz(start_position)
         target_x, target_z = self._xz(target_position)
-        segment_distance = math.hypot(target_x - start_x, target_z - start_z)
         self._begin_movement_session()
         try:
             self._require_packet_capture()
@@ -151,7 +154,6 @@ class SRTaskBase(BaseTask):
                 target_tolerance,
                 line_start=start_position,
                 line_tolerance=line_tolerance,
-                sprint=segment_distance > 5,
             )
         finally:
             self._end_movement_session()
@@ -190,14 +192,12 @@ class SRTaskBase(BaseTask):
             self.send_key_up(key)
         self._held_move_keys = ()
 
-    def _move_direct(self, target_position, tolerance, line_start=None, line_tolerance=None,
-                     sprint=False):
+    def _move_direct(self, target_position, tolerance, line_start=None, line_tolerance=None):
         target_x, target_z = self._xz(target_position)
         line_start_xz = self._xz(line_start) if line_start is not None else None
         previous_position = None
         line_correction_done = False
-        forward_frame_count = 0
-        sprint_triggered = False
+        last_sprint_at = float("-inf")
         last_camera_correction_at = float("-inf")
         camera_deviation_frame_count = 0
 
@@ -243,8 +243,13 @@ class SRTaskBase(BaseTask):
 
             target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
             relative = self._angle_delta(target_heading, self.camera_direction)
+            camera_aligned = (
+                self._camera_direction_detected
+                and abs(relative) < self._CAMERA_CORRECTION_THRESHOLD
+            )
             now = time.monotonic()
-            if not self._camera_direction_detected or abs(relative) <= 5:
+            if (not self._camera_direction_detected
+                    or abs(relative) <= self._CAMERA_CORRECTION_THRESHOLD):
                 camera_deviation_frame_count = 0
             else:
                 camera_deviation_frame_count += 1
@@ -277,14 +282,22 @@ class SRTaskBase(BaseTask):
             for key in keys:
                 self.send_key_down(key)
             self._held_move_keys = keys
-            if not sprint_triggered and line_correction_done and keys == ("w",):
-                forward_frame_count += 1
-                if sprint and forward_frame_count == 2:
-                    self.send_key("shift", 0.1)
-                    sprint_triggered = True
-            else:
-                forward_frame_count = 0
+            sprint_prompt_visible = self._sprint_prompt_visible()
+            if (sprint_prompt_visible and remaining_distance > 5
+                    and camera_aligned and keys == ("w",)
+                    and now - last_sprint_at >= self._SPRINT_COOLDOWN):
+                self.send_key("shift", 0.1)
+                last_sprint_at = now
             self.sleep(self._MOVE_DURATION)
+
+    def _sprint_prompt_visible(self):
+        if self.frame is None or self.frame.size == 0:
+            return False
+        height, width = self.frame.shape[:2]
+        x_ratio, y_ratio = self._SPRINT_PROMPT_POSITION
+        x = min(width - 1, max(0, int(width * x_ratio)))
+        y = min(height - 1, max(0, int(height * y_ratio)))
+        return tuple(int(channel) for channel in self.frame[y, x][:3]) == self._SPRINT_PROMPT_BGR
 
     @staticmethod
     def _xz(position):

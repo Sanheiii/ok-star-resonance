@@ -49,7 +49,7 @@ class DungeonTaskBase(SRTask):
                 self.click(0.092,0.344)
                 self.sleep(1)
                 self.swipe(self.width_of_screen(0.370),self.height_of_screen(0.922),self.width_of_screen(0.999),self.height_of_screen(0.922))
-                self.sleep(0.1)
+                self.sleep(0.5)
                 self.swipe(self.width_of_screen(0.370),self.height_of_screen(0.922),self.width_of_screen(0.999),self.height_of_screen(0.922))
                 self.sleep(1)
                 pass
