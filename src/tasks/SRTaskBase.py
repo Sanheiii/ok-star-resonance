@@ -28,6 +28,10 @@ class SRTaskBase(BaseTask):
         self._last_server_position = None
         self._last_server_update_time = 0.0
         self._last_move_speed = self._DEFAULT_MOVE_SPEED
+        self._movement_session_depth = 0
+        self._move_frame_count = 0
+        self._shift_on_second_move_frame = False
+        self._held_move_keys = ()
 
     @property
     def packet_capture_tool(self):
@@ -80,35 +84,66 @@ class SRTaskBase(BaseTask):
 
     def move_to_position(self, start_position, target_position, line_tolerance=0.5, target_tolerance=1):
         """Join the start/target line first, then follow it to the target."""
-        self._require_packet_capture()
         start_x, start_z = self._xz(start_position)
         target_x, target_z = self._xz(target_position)
-
-        current = self._movement_position()
-        if current is None:
-            raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
-        current_x, current_z = self._xz(current)
-        line_x, line_z = target_x - start_x, target_z - start_z
-        line_length_squared = line_x * line_x + line_z * line_z
-        if line_length_squared:
-            # 将当前位置投影到规划线段上：先回到路线附近，再沿路线前往终点，减少累计偏移。
-            projection = ((current_x - start_x) * line_x + (current_z - start_z) * line_z) / line_length_squared
-            projection = max(0.0, min(1.0, projection))
-            line_position = (start_x + projection * line_x, start_z + projection * line_z)
-            self._move_direct(line_position, line_tolerance)
-        return self._move_direct(target_position, target_tolerance)
+        self._begin_movement_session(math.hypot(target_x - start_x, target_z - start_z))
+        try:
+            self._require_packet_capture()
+            current = self._movement_position()
+            if current is None:
+                raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
+            current_x, current_z = self._xz(current)
+            line_x, line_z = target_x - start_x, target_z - start_z
+            line_length_squared = line_x * line_x + line_z * line_z
+            if line_length_squared:
+                # 将当前位置投影到规划线段上：先回到路线附近，再沿路线前往终点，减少累计偏移。
+                projection = ((current_x - start_x) * line_x + (current_z - start_z) * line_z) / line_length_squared
+                projection = max(0.0, min(1.0, projection))
+                line_position = (start_x + projection * line_x, start_z + projection * line_z)
+                self._move_direct(line_position, line_tolerance)
+            return self._move_direct(target_position, target_tolerance)
+        finally:
+            self._end_movement_session()
 
     def move_to_positions(self, positions, line_tolerance=0.5, node_tolerance=1):
         """Move through positions, using the player's position for the first segment."""
-        previous = None
-        for target in positions:
-            start = previous if previous is not None else self._movement_position()
-            if start is None:
-                raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
-            self.move_to_position(start, target, line_tolerance=line_tolerance,
-                                  target_tolerance=node_tolerance)
-            previous = target
-        return self._movement_position()
+        positions = list(positions)
+        start = self._movement_position()
+        if start is None:
+            raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
+        route_points = [start, *positions]
+        total_distance = sum(
+            math.hypot(self._xz(end)[0] - self._xz(begin)[0],
+                       self._xz(end)[1] - self._xz(begin)[1])
+            for begin, end in zip(route_points, route_points[1:])
+        )
+        self._begin_movement_session(total_distance)
+        try:
+            previous = None
+            for target in positions:
+                segment_start = previous if previous is not None else start
+                self.move_to_position(segment_start, target, line_tolerance=line_tolerance,
+                                      target_tolerance=node_tolerance)
+                previous = target
+            return self._movement_position()
+        finally:
+            self._end_movement_session()
+
+    def _begin_movement_session(self, total_distance):
+        if self._movement_session_depth == 0:
+            self._move_frame_count = 0
+            self._shift_on_second_move_frame = total_distance > 10
+        self._movement_session_depth += 1
+
+    def _end_movement_session(self):
+        self._movement_session_depth -= 1
+        if self._movement_session_depth == 0:
+            self._release_move_keys()
+
+    def _release_move_keys(self):
+        for key in reversed(self._held_move_keys):
+            self.send_key_up(key)
+        self._held_move_keys = ()
 
     def _move_direct(self, target_position, tolerance):
         target_x, target_z = self._xz(target_position)
@@ -118,6 +153,8 @@ class SRTaskBase(BaseTask):
             self._require_packet_capture()
             self.next_frame()
             self.detect_camera_direction()
+            # 上一轮的方向键保持到新一帧采集完成，缩短松开与重新按下之间的停顿。
+            self._release_move_keys()
             current = self._movement_position()
             if current is None:
                 raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
@@ -137,11 +174,11 @@ class SRTaskBase(BaseTask):
             expected_heading = (self.camera_direction + direction_index * 45.0) % 360.0
             for key in keys:
                 self.send_key_down(key)
-            try:
-                self.sleep(self._MOVE_DURATION)
-            finally:
-                for key in reversed(keys):
-                    self.send_key_up(key)
+            self._held_move_keys = keys
+            self._move_frame_count += 1
+            if self._shift_on_second_move_frame and self._move_frame_count == 2:
+                self.send_key("shift", 0.1)
+            self.sleep(self._MOVE_DURATION)
 
             after_position = self.position
             server_update_time = self.last_position_update_time
