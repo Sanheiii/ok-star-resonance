@@ -414,62 +414,23 @@ msgstr "正在抓包"
 msgid "Capture stopped"
 msgstr "已结束抓包"
 
-msgid "Position: Unknown"
-msgstr "位置：未知"
+msgid "Character facing: {facing}"
+msgstr "角色面向：{facing}"
 
-msgid "Position: "
-msgstr "位置："
+msgid "Copy local position XY"
+msgstr "复制本地位置 XY"
 
-msgid "Facing: Unknown"
-msgstr "面向：未知"
+msgid "Server position: {position}"
+msgstr "服务器位置：{position}"
 
-msgid "Facing: "
-msgstr "面向："
+msgid "Local position: {position}"
+msgstr "本地位置：{position}"
 
-msgid "Speed: Unknown"
-msgstr "移动速度：未知"
+msgid "Character ID: {id}"
+msgstr "角色 ID：{id}"
 
-msgid "Speed: "
-msgstr "移动速度："
-
-msgid "Copy position"
-msgstr "复制位置"
-
-msgid "XZ: Unknown"
-msgstr "XZ：未知"
-
-msgid "XZ: "
-msgstr "XZ："
-
-msgid "Server position: Unknown"
-msgstr "服务器位置：未知"
-
-msgid "Server position XZ: {x}, {z}"
-msgstr "服务器位置 XZ：{x}, {z}"
-
-msgid "Local position: Unknown"
-msgstr "本地位置：未知"
-
-msgid "Local position XZ: {x}, {z}, Y: {y}"
-msgstr "本地位置 XZ：{x}, {z}，Y：{y}"
-
-msgid "Y: Unknown"
-msgstr "Y：未知"
-
-msgid "Y: "
-msgstr "Y："
-
-msgid "Character ID: Unknown"
-msgstr "角色 ID：未知"
-
-msgid "Character ID: "
-msgstr "角色 ID："
-
-msgid "Scene ID: Unknown"
-msgstr "场景 ID：未知"
-
-msgid "Scene ID: "
-msgstr "场景 ID："
+msgid "Scene ID: {id}"
+msgstr "场景 ID：{id}"
 
 msgid "Nearby entities"
 msgstr "附近实体"

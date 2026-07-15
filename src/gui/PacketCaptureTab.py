@@ -1,7 +1,6 @@
 import math
 import threading
-import time
-from collections import Counter, deque
+from collections import Counter
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
@@ -26,8 +25,6 @@ class PacketCaptureTab(CustomTab):
         self._local_position_revision = -1
         self._config = Config("packet_capture", {"device_name": ""})
         self._refreshing_devices = False
-        self._speed_samples = deque()
-        self._last_speed_sample_time = 0.0
         og.packet_capture_tool = self
 
         controls = QWidget(self.view)
@@ -46,26 +43,35 @@ class PacketCaptureTab(CustomTab):
         state_layout = QVBoxLayout(state)
         state_layout.setContentsMargins(0, 12, 0, 0)
         self.status_label = BodyLabel(og.app.tr("Capture has not started"), state)
-        self.server_position_label = BodyLabel(og.app.tr("Server position: Unknown"), state)
-        self.local_position_label = BodyLabel(og.app.tr("Local position: Unknown"), state)
-        self.height_label = BodyLabel(og.app.tr("Y: Unknown"), state)
-        self.facing_label = BodyLabel(og.app.tr("Facing: Unknown"), state)
-        self.speed_label = BodyLabel(og.app.tr("Speed: Unknown"), state)
-        self.player_id_label = BodyLabel(og.app.tr("Character ID: Unknown"), state)
-        self.scene_id_label = BodyLabel(og.app.tr("Scene ID: Unknown"), state)
+        unknown = og.app.tr("Unknown")
+        self.server_position_label = BodyLabel(
+            og.app.tr("Server position: {position}").format(position=unknown), state
+        )
+        self.local_position_label = BodyLabel(
+            og.app.tr("Local position: {position}").format(position=unknown), state
+        )
+        self.facing_label = BodyLabel(
+            og.app.tr("Character facing: {facing}").format(facing=unknown), state
+        )
+        self.player_id_label = BodyLabel(
+            og.app.tr("Character ID: {id}").format(id=unknown), state
+        )
+        self.scene_id_label = BodyLabel(
+            og.app.tr("Scene ID: {id}").format(id=unknown), state
+        )
         self.nearby_title = BodyLabel(og.app.tr("Nearby entities"), state)
         self.nearby_entities = PlainTextEdit(state)
         self.nearby_entities.setReadOnly(True)
         self.nearby_entities.setMinimumHeight(180)
         self.nearby_entities.setPlainText(og.app.tr("No nearby entities"))
-        self.copy_button = PushButton(FluentIcon.COPY, og.app.tr("Copy position"), state)
+        self.copy_button = PushButton(
+            FluentIcon.COPY, og.app.tr("Copy local position XY"), state
+        )
         self.copy_button.setEnabled(False)
         state_layout.addWidget(self.status_label)
         state_layout.addWidget(self.server_position_label)
         state_layout.addWidget(self.local_position_label)
-        state_layout.addWidget(self.height_label)
         state_layout.addWidget(self.facing_label)
-        state_layout.addWidget(self.speed_label)
         state_layout.addWidget(self.player_id_label)
         state_layout.addWidget(self.scene_id_label)
         state_layout.addWidget(self.copy_button)
@@ -81,9 +87,6 @@ class PacketCaptureTab(CustomTab):
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._refresh_transform)
         self._timer.start(200)
-        self._speed_timer = QTimer(self)
-        self._speed_timer.timeout.connect(self._refresh_speed)
-        self._speed_timer.start(1000)
         QTimer.singleShot(0, self._refresh_devices)
 
     @property
@@ -206,41 +209,52 @@ class PacketCaptureTab(CustomTab):
             self._set_idle(self._capture_error or og.app.tr("Capture stopped"))
         server_position, facing = og.packet_capture_data.get_server_transform()
         local_position = og.packet_capture_data.get_local_position()
-        update_time = og.packet_capture_data.server_update_time
+        unknown = og.app.tr("Unknown")
         if server_position is None:
-            self.server_position_label.setText(og.app.tr("Server position: Unknown"))
-            self.height_label.setText(og.app.tr("Y: Unknown"))
-            self.copy_button.setEnabled(False)
+            server_position_text = unknown
         else:
-            self.server_position_label.setText(
-                og.app.tr("Server position XZ: {x}, {z}").format(
-                    x=f"{server_position[0]:.3f}", z=f"{server_position[2]:.3f}"
-                )
+            server_position_text = "XZ: {x}, {z}, Y: {y}".format(
+                x=f"{server_position[0]:.3f}",
+                z=f"{server_position[2]:.3f}",
+                y=f"{server_position[1]:.3f}",
             )
-            self.height_label.setText(og.app.tr("Y: ") + f"{server_position[1]:.3f}")
-            self.copy_button.setEnabled(True)
+        self.server_position_label.setText(
+            og.app.tr("Server position: {position}").format(
+                position=server_position_text
+            )
+        )
+        self.copy_button.setEnabled(local_position is not None)
         self.facing_label.setText(
-            og.app.tr("Facing: Unknown") if facing is None
-            else og.app.tr("Facing: ") + f"{facing:.2f}\N{DEGREE SIGN}"
+            og.app.tr("Character facing: {facing}").format(
+                facing=unknown if facing is None
+                else f"{facing:.2f}\N{DEGREE SIGN}"
+            )
+        )
+        local_position_text = unknown if local_position is None else (
+            "XZ: {x}, {z}, Y: {y}".format(
+                x=f"{local_position[0]:.3f}",
+                z=f"{local_position[2]:.3f}",
+                y=f"{local_position[1]:.3f}",
+            )
         )
         self.local_position_label.setText(
-            og.app.tr("Local position: Unknown") if local_position is None
-            else og.app.tr("Local position XZ: {x}, {z}, Y: {y}").format(
-                x=f"{local_position[0]:.3f}", z=f"{local_position[2]:.3f}", y=f"{local_position[1]:.3f}"
+            og.app.tr("Local position: {position}").format(
+                position=local_position_text
             )
         )
         self._refresh_world_state(server_position)
-        self._record_speed_sample(server_position, update_time)
 
     def _refresh_world_state(self, player_position):
         scene_id, player_id, player_uuid, entities = og.packet_capture_data.get_world()
         self.player_id_label.setText(
-            og.app.tr("Character ID: Unknown") if player_id is None
-            else og.app.tr("Character ID: ") + str(player_id)
+            og.app.tr("Character ID: {id}").format(
+                id=og.app.tr("Unknown") if player_id is None else player_id
+            )
         )
         self.scene_id_label.setText(
-            og.app.tr("Scene ID: Unknown") if scene_id is None
-            else og.app.tr("Scene ID: ") + str(scene_id)
+            og.app.tr("Scene ID: {id}").format(
+                id=og.app.tr("Unknown") if scene_id is None else scene_id
+            )
         )
         rows = []
         if player_position is not None:
@@ -278,47 +292,10 @@ class PacketCaptureTab(CustomTab):
         if self.nearby_entities.toPlainText() != text:
             self.nearby_entities.setPlainText(text)
 
-    def _record_speed_sample(self, position, update_time):
-        if position is not None and update_time > self._last_speed_sample_time:
-            self._speed_samples.append((update_time, position))
-            self._last_speed_sample_time = update_time
-
-    def _refresh_speed(self):
-        if not self._speed_samples:
-            self.speed_label.setText(og.app.tr("Speed: Unknown"))
-            return
-
-        now = time.time()
-        cutoff = now - 1.0
-        while len(self._speed_samples) > 1 and self._speed_samples[1][0] <= cutoff:
-            self._speed_samples.popleft()
-
-        samples = list(self._speed_samples)
-        if samples[-1][0] <= cutoff:
-            speed = 0.0
-        else:
-            if samples[0][0] < cutoff:
-                before_time, before_position = samples[0]
-                after_time, after_position = samples[1]
-                ratio = (cutoff - before_time) / (after_time - before_time)
-                cutoff_position = tuple(
-                    before + (after - before) * ratio
-                    for before, after in zip(before_position, after_position)
-                )
-                samples[0] = (cutoff, cutoff_position)
-            samples.append((now, samples[-1][1]))
-            distance = sum(
-                math.hypot(current[1][0] - previous[1][0], current[1][2] - previous[1][2])
-                for previous, current in zip(samples, samples[1:])
-            )
-            elapsed = max(now - samples[0][0], 0.001)
-            speed = distance / elapsed
-        self.speed_label.setText(og.app.tr("Speed: ") + f"{speed:.2f} u/s")
-
     def _copy_position(self):
-        position, _ = og.packet_capture_data.get_server_transform()
+        position = og.packet_capture_data.get_local_position()
         if position is not None:
-            QApplication.clipboard().setText(f"{position[0]:.3f}, {position[2]:.3f}")
+            QApplication.clipboard().setText(f"{position[0]:.3f}, {position[1]:.3f}")
 
     def closeEvent(self, event):
         self._stop_capture()
