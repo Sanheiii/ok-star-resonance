@@ -3,6 +3,8 @@ import math
 import time
 from ctypes import wintypes
 
+import cv2
+import numpy as np
 from ok import og, BaseTask
 
 from src.MinimapSectorAngleDetector import MinimapSectorAngleDetector
@@ -192,6 +194,13 @@ class SRTaskBase(BaseTask):
             self.send_key_up(key)
         self._held_move_keys = ()
 
+    def is_colorful(self, box, min_saturation=50):
+        roi = box.crop_frame(self.frame)
+        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        s_channel = hsv[:, :, 1]
+        avg_saturation = np.mean(s_channel)
+        return avg_saturation > min_saturation
+
     def _move_direct(self, target_position, tolerance, line_start=None, line_tolerance=None):
         target_x, target_z = self._xz(target_position)
         line_start_xz = self._xz(line_start) if line_start is not None else None
@@ -219,6 +228,23 @@ class SRTaskBase(BaseTask):
         while True:
             self._require_packet_capture()
             self.next_frame()
+            if self._handle_dungeon_death():
+                previous_position = None
+                line_correction_done = False
+                camera_deviation_frame_count = 0
+                last_camera_correction_at = float("-inf")
+                self.next_frame()
+                self.detect_camera_direction()
+                current = self.position
+                if current is None:
+                    raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
+                current_x, current_z = self._xz(current)
+                dx, dz = target_x - current_x, target_z - current_z
+                if math.hypot(dx, dz) > tolerance:
+                    target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
+                    self.rotate_camera(self._angle_delta(target_heading, self.camera_direction))
+                    last_camera_correction_at = time.monotonic()
+                continue
             self.detect_camera_direction()
             current = self.position
             if current is None:
@@ -289,6 +315,24 @@ class SRTaskBase(BaseTask):
                 self.send_key("shift", 0.1)
                 last_sprint_at = now
             self.sleep(self._MOVE_DURATION)
+
+    def _handle_dungeon_death(self):
+        if not self.find_one("leave_dungeon"):
+            return False
+
+        self._release_move_keys()
+        revive_clicked = False
+        while self.find_one("leave_dungeon"):
+            if (not revive_clicked
+                    and (revive_box := self.find_one("dungeon_revive"))
+                    and self.is_colorful(revive_box)):
+                self.click(revive_box)
+                revive_clicked = True
+            self.sleep(self._MOVE_DURATION)
+            self.next_frame()
+
+        self.sleep(3)
+        return True
 
     def _sprint_prompt_visible(self):
         if self.frame is None or self.frame.size == 0:

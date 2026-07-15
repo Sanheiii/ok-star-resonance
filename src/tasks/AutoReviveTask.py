@@ -1,19 +1,7 @@
-import cv2
-import numpy as np
-import ok
-
 from src.tasks.SRTriggerTask import SRTriggerTask
 
 
 class AutoReviveTask(SRTriggerTask):
-
-    def is_colorful(self, box: ok.Box, min_saturation=50):
-        roi = box.crop_frame(self.frame)
-        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-        s_channel = hsv[:, :, 1]
-        avg_saturation = np.mean(s_channel)
-        return avg_saturation > min_saturation
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "Auto Revive"
