@@ -224,9 +224,17 @@ class GamePacketParser:
                     changed |= self._process_fragments(nested)
             elif kind == 1 and len(payload) >= 20:
                 service_id = int.from_bytes(payload[:8], "big")
+                stub_id = int.from_bytes(payload[8:12], "big")
+                call_id = int.from_bytes(payload[12:16], "big")
                 method_id = int.from_bytes(payload[16:20], "big")
                 body = payload[20:]
                 body = self._decompress(body) if compressed else body
+                body_size = len(body) if body is not None else None
+                logger.info(
+                    f"Call: service_id={service_id} stub_id={stub_id} "
+                    f"call_id={call_id} method_id={method_id} "
+                    f"compressed={compressed} body_size={body_size}"
+                )
                 if (service_id == WORLD_CALL_SERVICE_ID and method_id == MSG_NEW_MOVE
                         and body is not None):
                     self._decode_new_move(body)
@@ -236,11 +244,6 @@ class GamePacketParser:
                 body = payload[16:]
                 body = self._decompress(body) if compressed else body
                 if service_id == WORLD_NTF_SERVICE_ID:
-                    body_size = len(body) if body is not None else None
-                    logger.info(
-                        f"WorldNtf notify: method_id={method_id} "
-                        f"compressed={compressed} body_size={body_size}"
-                    )
                     if body is not None:
                         changed |= self._decode_notify(method_id, body)
             offset += size
@@ -254,10 +257,17 @@ class GamePacketParser:
             logger.warning(f"failed to decode NewMove: {exc}")
             return False
         if not message.HasField("info") or not message.info.HasField("destPos"):
+            logger.info(
+                f"NewMove decoded without destPos: has_info={message.HasField('info')}"
+            )
             return False
         position = message.info.destPos
         self.destination_position = (float(position.x), float(position.y), float(position.z))
         self.destination_revision += 1
+        timestamp = message.info.timeStamp if message.info.HasField("timeStamp") else None
+        logger.info(
+            f"NewMove destination: position={self.destination_position} timestamp={timestamp}"
+        )
         return True
 
     @staticmethod
