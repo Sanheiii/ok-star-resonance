@@ -297,6 +297,8 @@ class GamePacketParser:
         if method_id == MSG_ENTER_SCENE:
             return self._decode_enter_scene(message)
         if method_id == MSG_SYNC_NEAR_ENTITIES:
+            for entity in message.appear:
+                self._record_appeared_entity(entity)
             removed = False
             for entity in message.disappear:
                 if entity.HasField("uuid") and entity.uuid:
@@ -424,6 +426,33 @@ class GamePacketParser:
             return False
         return self._decode_transform_attrs(delta.attrs)
 
+    def _record_appeared_entity(self, entity):
+        if not entity.HasField("uuid") or not entity.uuid:
+            return
+        entity_uuid = int(entity.uuid)
+        previous = self.nearby_entities.get(entity_uuid, {})
+        position = previous.get("position")
+        facing = previous.get("facing")
+        if entity.HasField("attrs"):
+            for attr in entity.attrs.attrs:
+                if not attr.HasField("id") or not attr.HasField("rawData"):
+                    continue
+                if attr.id == ATTR_POSITION and attr.rawData:
+                    value = self._proto.Position()
+                    try:
+                        value.ParseFromString(attr.rawData)
+                        position = (
+                            float(value.x), float(value.y), float(value.z)
+                        )
+                    except Exception as exc:
+                        logger.debug(f"failed to decode appeared entity position: {exc}")
+                elif attr.id == ATTR_FACING:
+                    raw_facing = _decode_varint(attr.rawData)
+                    if raw_facing is not None:
+                        facing = (raw_facing / 100.0) % 360.0
+        entity_type = int(entity.entType) if entity.HasField("entType") else None
+        self._store_entity(entity_uuid, position, facing, entity_type)
+
     def _apply_position(self, position, include_direction=False):
         if position is None:
             return False
@@ -470,11 +499,12 @@ class GamePacketParser:
         if changed:
             self._store_entity(entity_uuid, position, facing)
 
-    def _store_entity(self, entity_uuid, position, facing):
+    def _store_entity(self, entity_uuid, position, facing, entity_type=None):
         if not entity_uuid:
             return
         entity_uuid = int(entity_uuid)
-        entity_type = (entity_uuid >> ENTITY_TYPE_SHIFT) & ENTITY_TYPE_MASK
+        if entity_type is None:
+            entity_type = (entity_uuid >> ENTITY_TYPE_SHIFT) & ENTITY_TYPE_MASK
         self.nearby_entities[entity_uuid] = {
             "position": position,
             "facing": facing,

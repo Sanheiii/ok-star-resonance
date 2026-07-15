@@ -127,6 +127,31 @@ class GamePacketParserTest(unittest.TestCase):
         self.assertIn(retained_uuid, parser.nearby_entities)
         self.assertEqual(parser.metadata_revision, revision + 1)
 
+    def test_sync_near_entities_adds_appeared_collection(self):
+        parser = GamePacketParser()
+        entity_uuid = 789 << 16
+        message = parser._proto.SyncNearEntities()
+        appeared = message.appear.add()
+        appeared.uuid = entity_uuid
+        appeared.entType = 16
+        position_attr = appeared.attrs.attrs.add()
+        position_attr.id = ATTR_POSITION
+        position_attr.rawData = parser._proto.Position(
+            x=10.0, y=20.0, z=30.0
+        ).SerializeToString()
+        facing_attr = appeared.attrs.attrs.add()
+        facing_attr.id = ATTR_FACING
+        facing_attr.rawData = b"\xb0\x04"
+
+        self.assertFalse(
+            parser._decode_notify(MSG_SYNC_NEAR_ENTITIES, message.SerializeToString())
+        )
+        entity = parser.nearby_entities[entity_uuid]
+        self.assertEqual(entity["entity_type"], 16)
+        self.assertEqual(entity["entity_type_name"], "Collection")
+        self.assertEqual(entity["position"], (10.0, 20.0, 30.0))
+        self.assertEqual(entity["facing"], 5.6)
+
     @unittest.skipUnless(zstandard is not None, "zstandard is not installed")
     def test_decompresses_zstd_frame_without_content_size(self):
         expected = b"compressed EnterScene payload"
