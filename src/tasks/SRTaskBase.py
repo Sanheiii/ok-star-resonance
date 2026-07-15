@@ -1,8 +1,42 @@
+import ctypes
 import math
+from ctypes import wintypes
 
 from ok import og, BaseTask
 
 from src.MinimapSectorAngleDetector import MinimapSectorAngleDetector
+
+
+_INPUT_MOUSE = 0
+_MOUSEEVENTF_MOVE = 0x0001
+
+
+class _MouseInput(ctypes.Structure):
+    _fields_ = (
+        ("dx", wintypes.LONG),
+        ("dy", wintypes.LONG),
+        ("mouse_data", wintypes.DWORD),
+        ("flags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("extra_info", ctypes.c_size_t),
+    )
+
+
+class _InputUnion(ctypes.Union):
+    _fields_ = (("mouse", _MouseInput),)
+
+
+class _Input(ctypes.Structure):
+    _anonymous_ = ("data",)
+    _fields_ = (
+        ("type", wintypes.DWORD),
+        ("data", _InputUnion),
+    )
+
+
+_user32 = ctypes.WinDLL("user32", use_last_error=True)
+_user32.SendInput.argtypes = (wintypes.UINT, ctypes.POINTER(_Input), ctypes.c_int)
+_user32.SendInput.restype = wintypes.UINT
 
 
 class PacketCaptureRequiredError(RuntimeError):
@@ -12,6 +46,7 @@ class PacketCaptureRequiredError(RuntimeError):
 class SRTaskBase(BaseTask):
     """Shared Star Resonance helpers for one-shot and trigger tasks."""
 
+    _CAMERA_PIXELS_PER_DEGREE = 10
     # 以镜头朝向为基准，每 45 度对应一个移动方向；斜向移动需要同时按下两个键。
     _MOVE_KEYS = (
         ("w",), ("w", "d"), ("d",), ("s", "d"),
@@ -67,6 +102,28 @@ class SRTaskBase(BaseTask):
         if result is not None:
             self.camera_direction = result[0]
         return self.camera_direction
+
+    def rotate_camera(self, degrees):
+        """Rotate the camera horizontally; positive values turn right."""
+        pixels = round(float(degrees) * self._CAMERA_PIXELS_PER_DEGREE)
+        self._move_mouse_relative(pixels, 0)
+
+    @staticmethod
+    def _move_mouse_relative(dx, dy):
+        event = _Input(
+            type=_INPUT_MOUSE,
+            mouse=_MouseInput(
+                dx=dx,
+                dy=dy,
+                mouse_data=0,
+                flags=_MOUSEEVENTF_MOVE,
+                time=0,
+                extra_info=0,
+            ),
+        )
+        sent = _user32.SendInput(1, ctypes.byref(event), ctypes.sizeof(_Input))
+        if sent != 1:
+            raise ctypes.WinError(ctypes.get_last_error())
 
     def move_to_position(self, start_position, target_position, line_tolerance=0.5, target_tolerance=1):
         """Join the start/target line first, then follow it to the target."""
