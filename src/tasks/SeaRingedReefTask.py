@@ -12,6 +12,6 @@ class SeaRingedReefTask(DungeonTaskBase):
         if not super().run():
             return
         # 开本仪器
-        self.investigate((81.9,17))
+        self.investigate((81.94,17.12))
         # 路线
         self.move_to_positions([(47,27),(36,40),(31,81),(-4,83),(-50,87),(-54,95),(-54,27)])

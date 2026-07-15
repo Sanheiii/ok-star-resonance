@@ -18,8 +18,8 @@ class DungeonTaskBase(SRTask):
 
     def investigate(self, pos):
         self.sleep(2)
-        self.move_to_position(self.position,pos)
-        self.sleep(1)
+        self.move_to_position(self.position,pos, target_tolerance=1.5)
+        self.sleep(2)
         self.send_key('f')
         self.sleep(1)
         self.click(0.632,0.857)
@@ -49,7 +49,9 @@ class DungeonTaskBase(SRTask):
                 self.click(0.092,0.344)
                 self.sleep(1)
                 self.swipe(self.width_of_screen(0.370),self.height_of_screen(0.922),self.width_of_screen(0.999),self.height_of_screen(0.922))
-                self.sleep(2)
+                self.sleep(0.1)
+                self.swipe(self.width_of_screen(0.370),self.height_of_screen(0.922),self.width_of_screen(0.999),self.height_of_screen(0.922))
+                self.sleep(1)
                 pass
                 if difficulty is Difficulty.MASTER1:
                     self.click(0.361,0.919)
