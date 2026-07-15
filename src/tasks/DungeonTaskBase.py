@@ -7,10 +7,10 @@ class DungeonTaskBase(SRTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.info['entry_count'] = 0
 
     def run(self):
         self._require_packet_capture()
+        self.info['entry_count'] = 0
         if not self.enter(self.difficulty):
             self.log_error('进入副本失败')
             return False
@@ -70,8 +70,9 @@ class DungeonTaskBase(SRTask):
         if not self.wait_feature('loading'):
             self.log_error('没有找到加载页面')
             return False
-        while self.find_one('loading'):
+        while self.frame is None or self.find_one('loading'):
             self.sleep(1)
+            self.next_frame()
         if not  self.wait_feature('dungeon_scene_icon'):
             self.log_error('加载完成后没有找到副本UI')
             return False
