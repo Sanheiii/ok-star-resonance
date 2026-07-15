@@ -17,7 +17,7 @@ class SRTaskBase(BaseTask):
         ("w",), ("w", "d"), ("d",), ("s", "d"),
         ("s",), ("s", "a"), ("a",), ("w", "a"),
     )
-    _MOVE_DURATION = 0.2
+    _MOVE_DURATION = 0.05
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -138,14 +138,16 @@ class SRTaskBase(BaseTask):
             self._require_packet_capture()
             self.next_frame()
             self.detect_camera_direction()
-            # 上一轮的方向键保持到新一帧采集完成，缩短松开与重新按下之间的停顿。
-            self._release_move_keys()
             current = self.position
             if current is None:
                 raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
             current_x, current_z = self._xz(current)
             dx, dz = target_x - current_x, target_z - current_z
-            if math.hypot(dx, dz) <= tolerance:
+            remaining_distance = math.hypot(dx, dz)
+            self.info["Current Position"] = f"({current_x:.2f}, {current_z:.2f})"
+            self.info["Target Position"] = f"({target_x:.2f}, {target_z:.2f})"
+            self.info["Remaining Distance"] = f"{remaining_distance:.2f}"
+            if remaining_distance <= tolerance:
                 return current
 
             target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
@@ -153,6 +155,7 @@ class SRTaskBase(BaseTask):
             # 将目标相对镜头的角度量化为最近的八方向按键组合。
             direction_index = round(relative / 45.0) % 8
             keys = self._MOVE_KEYS[direction_index]
+            self._release_move_keys()
             for key in keys:
                 self.send_key_down(key)
             self._held_move_keys = keys
