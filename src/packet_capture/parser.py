@@ -218,26 +218,35 @@ class GamePacketParser:
             kind = fragment_type & 0x7FFF
             payload = frame[offset + 6:offset + size]
             if kind in (5, 6):
+                if kind == 5:
+                    logger.info(
+                        f"FrameUp: compressed={compressed} payload_size={len(payload)}"
+                    )
                 nested = payload[4:] if len(payload) >= 4 else b""
                 nested = self._decompress(nested) if compressed else nested
                 if nested is not None:
                     changed |= self._process_fragments(nested)
-            elif kind == 1 and len(payload) >= 20:
-                service_id = int.from_bytes(payload[:8], "big")
-                stub_id = int.from_bytes(payload[8:12], "big")
-                call_id = int.from_bytes(payload[12:16], "big")
-                method_id = int.from_bytes(payload[16:20], "big")
-                body = payload[20:]
-                body = self._decompress(body) if compressed else body
-                body_size = len(body) if body is not None else None
-                logger.info(
-                    f"Call: service_id={service_id} stub_id={stub_id} "
-                    f"call_id={call_id} method_id={method_id} "
-                    f"compressed={compressed} body_size={body_size}"
-                )
-                if (service_id == WORLD_CALL_SERVICE_ID and method_id == MSG_NEW_MOVE
-                        and body is not None):
-                    self._decode_new_move(body)
+            elif kind == 1:
+                if len(payload) < 20:
+                    logger.info(
+                        f"Call: truncated header payload_size={len(payload)} compressed={compressed}"
+                    )
+                else:
+                    service_id = int.from_bytes(payload[:8], "big")
+                    stub_id = int.from_bytes(payload[8:12], "big")
+                    call_id = int.from_bytes(payload[12:16], "big")
+                    method_id = int.from_bytes(payload[16:20], "big")
+                    body = payload[20:]
+                    body = self._decompress(body) if compressed else body
+                    body_size = len(body) if body is not None else None
+                    logger.info(
+                        f"Call: service_id={service_id} stub_id={stub_id} "
+                        f"call_id={call_id} method_id={method_id} "
+                        f"compressed={compressed} body_size={body_size}"
+                    )
+                    if (service_id == WORLD_CALL_SERVICE_ID and method_id == MSG_NEW_MOVE
+                            and body is not None):
+                        self._decode_new_move(body)
             elif kind == 2 and len(payload) >= 16:
                 service_id = int.from_bytes(payload[:8], "big")
                 method_id = int.from_bytes(payload[12:16], "big")
@@ -246,6 +255,11 @@ class GamePacketParser:
                 if service_id == WORLD_NTF_SERVICE_ID:
                     if body is not None:
                         changed |= self._decode_notify(method_id, body)
+            elif kind not in (3, 4):
+                logger.info(
+                    f"Unknown fragment: kind={kind} compressed={compressed} "
+                    f"payload_size={len(payload)}"
+                )
             offset += size
         return changed
 
