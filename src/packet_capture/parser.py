@@ -206,12 +206,19 @@ class GamePacketParser:
         flow = (source, source_port, destination, destination_port)
         return flow, sequence, packet[tcp_offset + tcp_header:ip_end], bool(flags & 0x02), bool(flags & 0x05)
 
-    def _process_fragments(self, frame):
+    def _process_fragments(self, frame, context="root"):
         changed = False
         offset = 0
         while offset + 6 <= len(frame):
             size = int.from_bytes(frame[offset:offset + 4], "big")
             if size < 6 or offset + size > len(frame):
+                if context != "root":
+                    fragment_type = int.from_bytes(frame[offset + 4:offset + 6], "big")
+                    logger.info(
+                        f"{context} invalid nested header: available={len(frame) - offset} "
+                        f"declared_size={size} fragment_type=0x{fragment_type:04x} "
+                        f"prefix={frame[offset:offset + 64].hex()}"
+                    )
                 break
             fragment_type = int.from_bytes(frame[offset + 4:offset + 6], "big")
             compressed = bool(fragment_type & 0x8000)
@@ -219,13 +226,23 @@ class GamePacketParser:
             payload = frame[offset + 6:offset + size]
             if kind in (5, 6):
                 if kind == 5:
+                    sequence = int.from_bytes(payload[:4], "big") if len(payload) >= 4 else None
+                    nested = payload[4:] if len(payload) >= 4 else b""
+                    nested_size = int.from_bytes(nested[:4], "big") if len(nested) >= 4 else None
+                    nested_type = int.from_bytes(nested[4:6], "big") if len(nested) >= 6 else None
                     logger.info(
-                        f"FrameUp: compressed={compressed} payload_size={len(payload)}"
+                        f"FrameUp: sequence={sequence} compressed={compressed} "
+                        f"payload_size={len(payload)} nested_size={nested_size} "
+                        f"nested_type={None if nested_type is None else f'0x{nested_type:04x}'} "
+                        f"nested_prefix={nested[:64].hex()}"
                     )
-                nested = payload[4:] if len(payload) >= 4 else b""
+                else:
+                    nested = payload[4:] if len(payload) >= 4 else b""
                 nested = self._decompress(nested) if compressed else nested
                 if nested is not None:
-                    changed |= self._process_fragments(nested)
+                    changed |= self._process_fragments(
+                        nested, context="FrameUp" if kind == 5 else "FrameDown"
+                    )
             elif kind == 1:
                 if len(payload) < 20:
                     logger.info(
