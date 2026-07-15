@@ -245,6 +245,18 @@
             "file_name": "images/0.png",
             "width": 1920,
             "height": 1080
+        },
+        {
+            "id": 41,
+            "file_name": "images/4.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 42,
+            "file_name": "images/0.png",
+            "width": 1920,
+            "height": 1080
         }
     ],
     "categories": [
@@ -684,6 +696,21 @@
             "id": 102,
             "name": "dungeon_scene_icon",
             "supercategory": ""
+        },
+        {
+            "id": 103,
+            "name": "leave_dungeon",
+            "supercategory": ""
+        },
+        {
+            "id": 104,
+            "name": "dungeon_revive",
+            "supercategory": ""
+        },
+        {
+            "id": 105,
+            "name": "dungeon_timeout",
+            "supercategory": ""
         }
     ],
     "annotations": [
@@ -796,16 +823,14 @@
             "id": 7,
             "image_id": 6,
             "category_id": 15,
-            "segmentation": [],
             "bbox": [
-                1103,
-                988,
-                49,
-                26
+                1104,
+                989,
+                48,
+                25
             ],
-            "ignore": 0,
-            "iscrowd": 0,
-            "area": 1274
+            "area": 1200,
+            "iscrowd": 0
         },
         {
             "id": 8,
@@ -1636,12 +1661,12 @@
             "image_id": 26,
             "category_id": 61,
             "bbox": [
-                1358,
-                577,
-                130,
-                52
+                1373,
+                586,
+                115,
+                43
             ],
-            "area": 6760,
+            "area": 4945,
             "iscrowd": 0
         },
         {
@@ -2092,6 +2117,45 @@
                 18
             ],
             "area": 234,
+            "iscrowd": 0
+        },
+        {
+            "id": 103,
+            "image_id": 41,
+            "category_id": 104,
+            "bbox": [
+                1677,
+                922,
+                42,
+                39
+            ],
+            "area": 1638,
+            "iscrowd": 0
+        },
+        {
+            "id": 104,
+            "image_id": 42,
+            "category_id": 105,
+            "bbox": [
+                790,
+                705,
+                339,
+                11
+            ],
+            "area": 3729,
+            "iscrowd": 0
+        },
+        {
+            "id": 105,
+            "image_id": 41,
+            "category_id": 103,
+            "bbox": [
+                1720,
+                52,
+                36,
+                6
+            ],
+            "area": 216,
             "iscrowd": 0
         }
     ],
