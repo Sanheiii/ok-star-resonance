@@ -2,7 +2,6 @@ from enum import Enum
 
 from src.tasks.SRTask import SRTask
 
-
 class DungeonTaskBase(SRTask):
 
     def __init__(self, *args, **kwargs):
@@ -48,9 +47,7 @@ class DungeonTaskBase(SRTask):
             elif difficulty in (Difficulty.MASTER1, Difficulty.MASTER6):
                 self.click(0.092,0.344)
                 self.sleep(1)
-                self.swipe(self.width_of_screen(0.370),self.height_of_screen(0.922),self.width_of_screen(0.999),self.height_of_screen(0.922))
-                self.sleep(0.5)
-                self.swipe(self.width_of_screen(0.370),self.height_of_screen(0.922),self.width_of_screen(0.999),self.height_of_screen(0.922))
+                self.scroll(self.width_of_screen(0.370),self.height_of_screen(0.922),-3000)
                 self.sleep(1)
                 pass
                 if difficulty is Difficulty.MASTER1:
