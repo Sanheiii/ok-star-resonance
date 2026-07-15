@@ -269,10 +269,12 @@ class GamePacketParser:
                 method_id = int.from_bytes(payload[12:16], "big")
                 body = payload[16:]
                 body = self._decompress(body) if compressed else body
-                if service_id == WORLD_NTF_SERVICE_ID:
-                    if body is not None:
+                if body is not None:
+                    if service_id == WORLD_NTF_SERVICE_ID:
                         changed |= self._decode_notify(method_id, body)
-            elif kind not in (3, 4):
+                    elif service_id == WORLD_CALL_SERVICE_ID and method_id == MSG_NEW_MOVE:
+                        self._decode_new_move(body)
+            elif kind not in (3, 4, 7, 8):
                 logger.info(
                     f"Unknown fragment: kind={kind} compressed={compressed} "
                     f"payload_size={len(payload)}"

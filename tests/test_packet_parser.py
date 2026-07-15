@@ -16,6 +16,26 @@ except ImportError:
 
 
 class GamePacketParserTest(unittest.TestCase):
+    def test_new_move_notify_updates_destination_without_changing_server_position(self):
+        parser = GamePacketParser()
+        parser.position = (1.0, 2.0, 3.0)
+        message = parser._proto.NewMove()
+        message.info.destPos.x = 11.0
+        message.info.destPos.y = 21.0
+        message.info.destPos.z = 31.0
+        payload = (
+            WORLD_CALL_SERVICE_ID.to_bytes(8, "big")
+            + (1).to_bytes(4, "big")
+            + MSG_NEW_MOVE.to_bytes(4, "big")
+            + message.SerializeToString()
+        )
+        fragment = (len(payload) + 6).to_bytes(4, "big") + (2).to_bytes(2, "big") + payload
+
+        self.assertFalse(parser._process_fragments(fragment))
+        self.assertEqual(parser.destination_position, (11.0, 21.0, 31.0))
+        self.assertEqual(parser.destination_revision, 1)
+        self.assertEqual(parser.position, (1.0, 2.0, 3.0))
+
     def test_new_move_call_updates_destination_without_changing_server_position(self):
         parser = GamePacketParser()
         parser.position = (1.0, 2.0, 3.0)
