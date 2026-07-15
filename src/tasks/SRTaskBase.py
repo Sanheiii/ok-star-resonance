@@ -133,6 +133,7 @@ class SRTaskBase(BaseTask):
 
     def _move_direct(self, target_position, tolerance):
         target_x, target_z = self._xz(target_position)
+        previous_position = None
 
         while True:
             self._require_packet_capture()
@@ -147,8 +148,17 @@ class SRTaskBase(BaseTask):
             self.info["Current Position"] = f"({current_x:.2f}, {current_z:.2f})"
             self.info["Target Position"] = f"({target_x:.2f}, {target_z:.2f})"
             self.info["Remaining Distance"] = f"{remaining_distance:.2f}"
-            if remaining_distance <= tolerance:
+            reached_target = remaining_distance <= tolerance
+            if previous_position is not None:
+                reached_target = reached_target or self._segment_reaches_target(
+                    previous_position,
+                    (current_x, current_z),
+                    (target_x, target_z),
+                    tolerance,
+                )
+            if reached_target:
                 return current
+            previous_position = (current_x, current_z)
 
             target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
             relative = self._angle_delta(target_heading, self.camera_direction)
@@ -171,6 +181,26 @@ class SRTaskBase(BaseTask):
         if len(position) == 2:
             return float(position[0]), float(position[1])
         raise ValueError("position must contain X/Z or X/Y/Z")
+
+    @staticmethod
+    def _segment_reaches_target(start, end, target, tolerance):
+        closest = SRTaskBase._closest_point_on_segment(target, start, end)
+        return math.hypot(target[0] - closest[0], target[1] - closest[1]) <= tolerance
+
+    @staticmethod
+    def _closest_point_on_segment(point, start, end):
+        segment_x = end[0] - start[0]
+        segment_z = end[1] - start[1]
+        segment_length_squared = segment_x * segment_x + segment_z * segment_z
+        if segment_length_squared == 0:
+            return start
+
+        projection = (
+            (point[0] - start[0]) * segment_x
+            + (point[1] - start[1]) * segment_z
+        ) / segment_length_squared
+        projection = max(0.0, min(1.0, projection))
+        return start[0] + projection * segment_x, start[1] + projection * segment_z
 
     @staticmethod
     def _angle_delta(target, origin):

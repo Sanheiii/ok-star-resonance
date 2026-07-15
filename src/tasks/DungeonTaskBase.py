@@ -19,6 +19,7 @@ class DungeonTaskBase(SRTask):
     def investigate(self, pos):
         self.sleep(2)
         self.move_to_position(self.position,pos)
+        self.sleep(1)
         self.send_key('f')
         self.sleep(1)
         self.click(0.632,0.857)
