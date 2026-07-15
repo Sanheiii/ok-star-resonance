@@ -17,7 +17,7 @@ class DungeonTaskBase(SRTask):
         return True
 
     def investigate(self, pos):
-        self.sleep(1)
+        self.sleep(2)
         self.move_to_position(self.position,pos)
         self.send_key('f')
         self.sleep(1)

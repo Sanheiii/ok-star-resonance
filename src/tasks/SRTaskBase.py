@@ -2,6 +2,8 @@ import math
 
 from ok import og, BaseTask
 
+from src.MinimapSectorAngleDetector import MinimapSectorAngleDetector
+
 
 class PacketCaptureRequiredError(RuntimeError):
     pass
@@ -20,7 +22,7 @@ class SRTaskBase(BaseTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.camera_direction = None
+        self.camera_direction = 0
         self._estimated_position = None
         self._estimated_position_confirmed = False
         self._last_server_position = None
@@ -38,10 +40,6 @@ class SRTaskBase(BaseTask):
     @property
     def position(self):
         return og.packet_capture_data.get_transform()[0]
-
-    @property
-    def facing(self):
-        return og.packet_capture_data.get_transform()[1]
 
     @property
     def last_position_update_time(self):
@@ -74,31 +72,15 @@ class SRTaskBase(BaseTask):
         return tool
 
     def detect_camera_direction(self):
-        """Walk forward briefly and use the resulting character facing as camera yaw."""
-        self._require_packet_capture()
-        # 首次没有可用镜头朝向时默认是角色面向。
-        if self.camera_direction is not None and (facing:=self.facing) is not None:
-            self.camera_direction = facing % 360.0
-            return self.camera_direction
-        # 如果没有抓到角色面向尝试前后两步以更新数据
-        else:
-            self.send_key('s', 0.2)
-            self.send_key('w', 1)
-            self.sleep(3)
-            facing = self.facing
-            if facing is None:
-                raise PacketCaptureRequiredError("Player facing has not been received from packet capture.")
-            self.camera_direction = facing % 360.0
+        """Detect camera yaw from the translucent sector in the current minimap."""
+        result = MinimapSectorAngleDetector.detect(self.frame)
+        if result is not None:
+            self.camera_direction = result[0]
         return self.camera_direction
-
-    def set_camera_direction(self, direction):
-        self.camera_direction = float(direction) % 360.0
 
     def move_to_position(self, start_position, target_position, line_tolerance=0.5, target_tolerance=1):
         """Join the start/target line first, then follow it to the target."""
         self._require_packet_capture()
-        if self.camera_direction is None:
-            self.detect_camera_direction()
         start_x, start_z = self._xz(start_position)
         target_x, target_z = self._xz(target_position)
 
@@ -134,6 +116,8 @@ class SRTaskBase(BaseTask):
         # 每轮只执行一次短移动，并在移动后用服务端坐标修正本地估算。
         while True:
             self._require_packet_capture()
+            self.next_frame()
+            self.detect_camera_direction()
             current = self._movement_position()
             if current is None:
                 raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
