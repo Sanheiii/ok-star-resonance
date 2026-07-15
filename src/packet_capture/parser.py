@@ -17,6 +17,8 @@ from ok import Logger
 logger = Logger.get_logger(__name__)
 
 WORLD_NTF_SERVICE_ID = 1_664_308_034
+WORLD_CALL_SERVICE_ID = 103_198_054
+MSG_NEW_MOVE = 0x20005
 MSG_ENTER_SCENE = 0x03
 MSG_SYNC_CONTAINER_DATA = 0x15
 MSG_SYNC_NEAR_DELTA_INFO = 0x2D
@@ -132,6 +134,8 @@ class GamePacketParser:
         self.metadata_revision = 0
         self.position = None
         self.facing = None
+        self.destination_position = None
+        self.destination_revision = 0
         self._proto = _load_proto_module()
         self._warned_proto = False
 
@@ -218,6 +222,14 @@ class GamePacketParser:
                 nested = self._decompress(nested) if compressed else nested
                 if nested is not None:
                     changed |= self._process_fragments(nested)
+            elif kind == 1 and len(payload) >= 20:
+                service_id = int.from_bytes(payload[:8], "big")
+                method_id = int.from_bytes(payload[16:20], "big")
+                body = payload[20:]
+                body = self._decompress(body) if compressed else body
+                if (service_id == WORLD_CALL_SERVICE_ID and method_id == MSG_NEW_MOVE
+                        and body is not None):
+                    self._decode_new_move(body)
             elif kind == 2 and len(payload) >= 16:
                 service_id = int.from_bytes(payload[:8], "big")
                 method_id = int.from_bytes(payload[12:16], "big")
@@ -233,6 +245,20 @@ class GamePacketParser:
                         changed |= self._decode_notify(method_id, body)
             offset += size
         return changed
+
+    def _decode_new_move(self, body):
+        message = self._proto.NewMove()
+        try:
+            message.ParseFromString(body)
+        except Exception as exc:
+            logger.warning(f"failed to decode NewMove: {exc}")
+            return False
+        if not message.HasField("info") or not message.info.HasField("destPos"):
+            return False
+        position = message.info.destPos
+        self.destination_position = (float(position.x), float(position.y), float(position.z))
+        self.destination_revision += 1
+        return True
 
     @staticmethod
     def _decompress(data):

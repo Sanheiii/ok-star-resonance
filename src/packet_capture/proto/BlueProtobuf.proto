@@ -13,6 +13,39 @@ message Position {
   float dir = 4 [json_name = "dir"];
 }
 
+message Vector2 {
+  optional float x = 1 [json_name = "x"];
+  optional float y = 2 [json_name = "y"];
+}
+
+message Vector3 {
+  optional float x = 1 [json_name = "x"];
+  optional float y = 2 [json_name = "y"];
+  optional float z = 3 [json_name = "z"];
+}
+
+// Client-to-server movement request payload used by world.NewMove (0x20005).
+message UserControlInfo {
+  optional bool isBegin = 1 [json_name = "isBegin"];
+  optional int32 type = 2 [json_name = "type"];
+  optional int32 secondaryType = 3 [json_name = "secondaryType"];
+  optional float remainTime = 4 [json_name = "remainTime"];
+  optional int32 step = 5 [json_name = "step"];
+  optional float horVelocity = 6 [json_name = "horVelocity"];
+  optional float verVelocity = 7 [json_name = "verVelocity"];
+  optional float pitchAngle = 8 [json_name = "pitchAngle"];
+  optional int64 timeStamp = 9 [json_name = "timeStamp"];
+  optional Vector2 runDir = 10 [json_name = "runDir"];
+  optional Vector3 normal = 11 [json_name = "normal"];
+  optional Position curPos = 12 [json_name = "curPos"];
+  optional Position destPos = 13 [json_name = "destPos"];
+  optional int32 moveVersion = 14 [json_name = "moveVersion"];
+}
+
+message NewMove {
+  optional UserControlInfo info = 1 [json_name = "info"];
+}
+
 message SceneData {
   uint32 mapId = 1 [json_name = "mapId"];
   uint32 channelId = 2 [json_name = "channelId"];

@@ -4,6 +4,8 @@ from src.packet_capture.parser import (
     ATTR_FACING,
     ATTR_POSITION,
     MSG_SYNC_CONTAINER_DATA,
+    MSG_NEW_MOVE,
+    WORLD_CALL_SERVICE_ID,
     GamePacketParser,
 )
 
@@ -14,6 +16,27 @@ except ImportError:
 
 
 class GamePacketParserTest(unittest.TestCase):
+    def test_new_move_call_updates_destination_without_changing_server_position(self):
+        parser = GamePacketParser()
+        parser.position = (1.0, 2.0, 3.0)
+        message = parser._proto.NewMove()
+        message.info.destPos.x = 10.0
+        message.info.destPos.y = 20.0
+        message.info.destPos.z = 30.0
+        payload = (
+            WORLD_CALL_SERVICE_ID.to_bytes(8, "big")
+            + (0).to_bytes(4, "big")
+            + (7).to_bytes(4, "big")
+            + MSG_NEW_MOVE.to_bytes(4, "big")
+            + message.SerializeToString()
+        )
+        fragment = (len(payload) + 6).to_bytes(4, "big") + (1).to_bytes(2, "big") + payload
+
+        self.assertFalse(parser._process_fragments(fragment))
+        self.assertEqual(parser.destination_position, (10.0, 20.0, 30.0))
+        self.assertEqual(parser.destination_revision, 1)
+        self.assertEqual(parser.position, (1.0, 2.0, 3.0))
+
     def test_empty_facing_value_updates_to_zero(self):
         parser = GamePacketParser()
         self.assertIsNotNone(parser._proto)

@@ -10,6 +10,8 @@ class PacketCaptureData:
         self.position = None
         self.facing = None
         self.update_time = 0.0
+        self.destination_position = None
+        self.destination_update_time = 0.0
         self.scene_id = None
         self.player_id = None
         self.player_uuid = None
@@ -26,6 +28,15 @@ class PacketCaptureData:
     def get_transform(self):
         with self._lock:
             return self.position, self.facing
+
+    def update_destination(self, position):
+        with self._lock:
+            self.destination_position = tuple(float(value) for value in position)
+            self.destination_update_time = time.time()
+
+    def get_destination(self):
+        with self._lock:
+            return self.destination_position
 
     def update_world(self, scene_id, player_id, player_uuid, nearby_entities):
         with self._lock:

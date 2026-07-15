@@ -23,6 +23,7 @@ class PacketCaptureTab(CustomTab):
         self._capture_error = None
         self._parser = GamePacketParser()
         self._metadata_revision = -1
+        self._destination_revision = -1
         self._config = Config("packet_capture", {"device_name": ""})
         self._refreshing_devices = False
         self._speed_samples = deque()
@@ -46,6 +47,7 @@ class PacketCaptureTab(CustomTab):
         state_layout.setContentsMargins(0, 12, 0, 0)
         self.status_label = BodyLabel(og.app.tr("Capture has not started"), state)
         self.position_label = BodyLabel(og.app.tr("XZ: Unknown"), state)
+        self.destination_label = BodyLabel(og.app.tr("Destination: Unknown"), state)
         self.height_label = BodyLabel(og.app.tr("Y: Unknown"), state)
         self.facing_label = BodyLabel(og.app.tr("Facing: Unknown"), state)
         self.speed_label = BodyLabel(og.app.tr("Speed: Unknown"), state)
@@ -60,6 +62,7 @@ class PacketCaptureTab(CustomTab):
         self.copy_button.setEnabled(False)
         state_layout.addWidget(self.status_label)
         state_layout.addWidget(self.position_label)
+        state_layout.addWidget(self.destination_label)
         state_layout.addWidget(self.height_label)
         state_layout.addWidget(self.facing_label)
         state_layout.addWidget(self.speed_label)
@@ -177,6 +180,10 @@ class PacketCaptureTab(CustomTab):
         if self._metadata_revision != self._parser.metadata_revision:
             og.packet_capture_data.update_world(*self._parser.world_state())
             self._metadata_revision = self._parser.metadata_revision
+        if self._destination_revision != self._parser.destination_revision:
+            if self._parser.destination_position is not None:
+                og.packet_capture_data.update_destination(self._parser.destination_position)
+            self._destination_revision = self._parser.destination_revision
 
     def _stop_capture(self):
         self._stop_requested = True
@@ -198,6 +205,7 @@ class PacketCaptureTab(CustomTab):
                 and self.capture_button.text() == og.app.tr("Stop capture")):
             self._set_idle(self._capture_error or og.app.tr("Capture stopped"))
         position, facing = og.packet_capture_data.get_transform()
+        destination = og.packet_capture_data.get_destination()
         update_time = og.packet_capture_data.update_time
         if position is None:
             self.position_label.setText(og.app.tr("XZ: Unknown"))
@@ -210,6 +218,12 @@ class PacketCaptureTab(CustomTab):
         self.facing_label.setText(
             og.app.tr("Facing: Unknown") if facing is None
             else og.app.tr("Facing: ") + f"{facing:.2f}\N{DEGREE SIGN}"
+        )
+        self.destination_label.setText(
+            og.app.tr("Destination: Unknown") if destination is None
+            else og.app.tr("Destination XZ: {x}, {z}, Y: {y}").format(
+                x=f"{destination[0]:.3f}", z=f"{destination[2]:.3f}", y=f"{destination[1]:.3f}"
+            )
         )
         self._refresh_world_state(position)
         self._record_speed_sample(position, update_time)

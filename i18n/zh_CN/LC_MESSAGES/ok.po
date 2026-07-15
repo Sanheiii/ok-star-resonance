@@ -441,6 +441,12 @@ msgstr "XZ：未知"
 msgid "XZ: "
 msgstr "XZ："
 
+msgid "Destination: Unknown"
+msgstr "目标位置：未知"
+
+msgid "Destination XZ: {x}, {z}, Y: {y}"
+msgstr "目标位置 XZ：{x}, {z}，Y：{y}"
+
 msgid "Y: Unknown"
 msgstr "Y：未知"
 

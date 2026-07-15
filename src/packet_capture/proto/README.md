@@ -4,7 +4,8 @@
 `BlueProtobuf.proto`, extracted from StarResonanceMITMServer's zproto
 schemas. It provides `WorldNtf.SyncContainerData.vData.sceneData.pos` and the
 minimal `WorldNtf.EnterScene` subset reconstructed from resonance-logs-cn's
-prost-generated Rust declarations.
+prost-generated Rust declarations, plus the client-to-server `world.NewMove`
+payload used to expose `UserControlInfo.destPos`.
 
 The missing AOI delta definitions verified against resonance-logs-cn have been
 added to the repository subset, so this generated module now handles both full
@@ -31,6 +32,10 @@ The generated module supplies these incremental messages:
 - `AttrCollection`
 - `Attr`
 - `Position`
+- `NewMove`
+- `UserControlInfo`
+- `Vector2`
+- `Vector3`
 
 All fields use the source repository's lowerCamelCase style and the notify
 wrappers are nested under `WorldNtf`.
