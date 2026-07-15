@@ -20,6 +20,7 @@ WORLD_NTF_SERVICE_ID = 1_664_308_034
 WORLD_CALL_SERVICE_ID = 103_198_054
 MSG_NEW_MOVE = 0x20005
 MSG_ENTER_SCENE = 0x03
+MSG_SYNC_NEAR_ENTITIES = 0x06
 MSG_SYNC_CONTAINER_DATA = 0x15
 MSG_SYNC_NEAR_DELTA_INFO = 0x2D
 MSG_SYNC_TO_ME_DELTA_INFO = 0x2E
@@ -271,13 +272,20 @@ class GamePacketParser:
             return None
 
     def _decode_notify(self, method_id, body):
-        message_name = {
-            MSG_ENTER_SCENE: "EnterScene",
-            MSG_SYNC_CONTAINER_DATA: "SyncContainerData",
-            MSG_SYNC_TO_ME_DELTA_INFO: "SyncToMeDeltaInfo",
-            MSG_SYNC_NEAR_DELTA_INFO: "SyncNearDeltaInfo",
-        }.get(method_id)
-        message_class = getattr(self._proto.WorldNtf, message_name, None) if self._proto and message_name else None
+        if method_id == MSG_SYNC_NEAR_ENTITIES:
+            message_class = getattr(self._proto, "SyncNearEntities", None)
+            message_name = "SyncNearEntities"
+        else:
+            message_name = {
+                MSG_ENTER_SCENE: "EnterScene",
+                MSG_SYNC_CONTAINER_DATA: "SyncContainerData",
+                MSG_SYNC_TO_ME_DELTA_INFO: "SyncToMeDeltaInfo",
+                MSG_SYNC_NEAR_DELTA_INFO: "SyncNearDeltaInfo",
+            }.get(method_id)
+            message_class = (
+                getattr(self._proto.WorldNtf, message_name, None)
+                if self._proto and message_name else None
+            )
         if message_class is None:
             return False
         message = message_class()
@@ -288,6 +296,16 @@ class GamePacketParser:
             return False
         if method_id == MSG_ENTER_SCENE:
             return self._decode_enter_scene(message)
+        if method_id == MSG_SYNC_NEAR_ENTITIES:
+            removed = False
+            for entity in message.disappear:
+                if entity.HasField("uuid") and entity.uuid:
+                    removed |= (
+                        self.nearby_entities.pop(int(entity.uuid), None) is not None
+                    )
+            if removed:
+                self.metadata_revision += 1
+            return False
         if method_id == MSG_SYNC_CONTAINER_DATA:
             data = message.vData
             char_id = data.charId

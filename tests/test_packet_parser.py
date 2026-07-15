@@ -4,6 +4,7 @@ from src.packet_capture.parser import (
     ATTR_FACING,
     ATTR_POSITION,
     MSG_SYNC_CONTAINER_DATA,
+    MSG_SYNC_NEAR_ENTITIES,
     MSG_NEW_MOVE,
     WORLD_CALL_SERVICE_ID,
     GamePacketParser,
@@ -105,6 +106,26 @@ class GamePacketParserTest(unittest.TestCase):
         self.assertEqual(parser.local_position, (4.0, 5.0, 6.0))
         self.assertEqual(parser.local_position_revision, 1)
         self.assertEqual(parser.facing, 0.0)
+
+    def test_sync_near_entities_removes_disappeared_entities(self):
+        parser = GamePacketParser()
+        removed_uuid = (123 << 16) | (1 << 6)
+        retained_uuid = (456 << 16) | (1 << 6)
+        parser._store_entity(removed_uuid, (1.0, 2.0, 3.0), 0.0)
+        parser._store_entity(retained_uuid, (4.0, 5.0, 6.0), 0.0)
+        revision = parser.metadata_revision
+
+        message = parser._proto.SyncNearEntities()
+        disappeared = message.disappear.add()
+        disappeared.uuid = removed_uuid
+        disappeared.type = parser._proto.EDisappearDead
+
+        self.assertFalse(
+            parser._decode_notify(MSG_SYNC_NEAR_ENTITIES, message.SerializeToString())
+        )
+        self.assertNotIn(removed_uuid, parser.nearby_entities)
+        self.assertIn(retained_uuid, parser.nearby_entities)
+        self.assertEqual(parser.metadata_revision, revision + 1)
 
     @unittest.skipUnless(zstandard is not None, "zstandard is not installed")
     def test_decompresses_zstd_frame_without_content_size(self):

@@ -69,6 +69,24 @@ message Entity {
   optional AttrCollection attrs = 3 [json_name = "attrs"];
 }
 
+enum EDisappearType {
+  EDisappearNone = 0;
+  EDisappearDead = 1;
+  EDisappearDestroy = 2;
+  EDisappearTransferLeave = 3;
+  EDisappearTransferPassLineLeave = 4;
+}
+
+message DisappearEntity {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  optional EDisappearType type = 2 [json_name = "type"];
+}
+
+message SyncNearEntities {
+  repeated Entity appear = 1 [json_name = "appear"];
+  repeated DisappearEntity disappear = 2 [json_name = "disappear"];
+}
+
 message EnterSceneInfo {
   optional AttrCollection sceneAttrs = 1 [json_name = "sceneAttrs"];
   optional Entity playerEnt = 2 [json_name = "playerEnt"];
