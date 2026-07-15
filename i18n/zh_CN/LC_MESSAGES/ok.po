@@ -441,11 +441,17 @@ msgstr "XZ：未知"
 msgid "XZ: "
 msgstr "XZ："
 
-msgid "Destination: Unknown"
-msgstr "目标位置：未知"
+msgid "Server position: Unknown"
+msgstr "服务器位置：未知"
 
-msgid "Destination XZ: {x}, {z}, Y: {y}"
-msgstr "目标位置 XZ：{x}, {z}，Y：{y}"
+msgid "Server position XZ: {x}, {z}"
+msgstr "服务器位置 XZ：{x}, {z}"
+
+msgid "Local position: Unknown"
+msgstr "本地位置：未知"
+
+msgid "Local position XZ: {x}, {z}, Y: {y}"
+msgstr "本地位置 XZ：{x}, {z}，Y：{y}"
 
 msgid "Y: Unknown"
 msgstr "Y：未知"

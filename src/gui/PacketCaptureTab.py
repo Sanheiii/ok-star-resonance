@@ -19,13 +19,11 @@ class PacketCaptureTab(CustomTab):
         self._devices = []
         self._capture = None
         self._capture_thread = None
-        self._keyboard_listener = None
-        self._w_pressed = False
         self._stop_requested = False
         self._capture_error = None
         self._parser = GamePacketParser()
         self._metadata_revision = -1
-        self._destination_revision = -1
+        self._local_position_revision = -1
         self._config = Config("packet_capture", {"device_name": ""})
         self._refreshing_devices = False
         self._speed_samples = deque()
@@ -48,8 +46,8 @@ class PacketCaptureTab(CustomTab):
         state_layout = QVBoxLayout(state)
         state_layout.setContentsMargins(0, 12, 0, 0)
         self.status_label = BodyLabel(og.app.tr("Capture has not started"), state)
-        self.position_label = BodyLabel(og.app.tr("XZ: Unknown"), state)
-        self.destination_label = BodyLabel(og.app.tr("Destination: Unknown"), state)
+        self.server_position_label = BodyLabel(og.app.tr("Server position: Unknown"), state)
+        self.local_position_label = BodyLabel(og.app.tr("Local position: Unknown"), state)
         self.height_label = BodyLabel(og.app.tr("Y: Unknown"), state)
         self.facing_label = BodyLabel(og.app.tr("Facing: Unknown"), state)
         self.speed_label = BodyLabel(og.app.tr("Speed: Unknown"), state)
@@ -63,8 +61,8 @@ class PacketCaptureTab(CustomTab):
         self.copy_button = PushButton(FluentIcon.COPY, og.app.tr("Copy position"), state)
         self.copy_button.setEnabled(False)
         state_layout.addWidget(self.status_label)
-        state_layout.addWidget(self.position_label)
-        state_layout.addWidget(self.destination_label)
+        state_layout.addWidget(self.server_position_label)
+        state_layout.addWidget(self.local_position_label)
         state_layout.addWidget(self.height_label)
         state_layout.addWidget(self.facing_label)
         state_layout.addWidget(self.speed_label)
@@ -157,38 +155,7 @@ class PacketCaptureTab(CustomTab):
         self._capture_thread = threading.Thread(
             target=self._capture_loop, args=(self._devices[index].name,), daemon=True, name="NpcapCapture"
         )
-        self._start_keyboard_diagnostics()
         self._capture_thread.start()
-
-    def _start_keyboard_diagnostics(self):
-        if self._keyboard_listener is not None:
-            return
-        try:
-            from pynput import keyboard
-
-            def on_press(key):
-                char = getattr(key, "char", None)
-                if isinstance(char, str) and char.lower() == "w" and not self._w_pressed:
-                    self._w_pressed = True
-                    self.logger.info(f"Input: W down monotonic={time.monotonic():.6f}")
-
-            def on_release(key):
-                char = getattr(key, "char", None)
-                if isinstance(char, str) and char.lower() == "w" and self._w_pressed:
-                    self._w_pressed = False
-                    self.logger.info(f"Input: W up monotonic={time.monotonic():.6f}")
-
-            self._keyboard_listener = keyboard.Listener(on_press=on_press, on_release=on_release)
-            self._keyboard_listener.start()
-        except Exception as exc:
-            self.logger.warning(f"Failed to start W key diagnostics: {exc}")
-
-    def _stop_keyboard_diagnostics(self):
-        listener = self._keyboard_listener
-        self._keyboard_listener = None
-        self._w_pressed = False
-        if listener is not None:
-            listener.stop()
 
     def _capture_loop(self, device_name):
         try:
@@ -204,24 +171,22 @@ class PacketCaptureTab(CustomTab):
             if self._capture:
                 self._capture.close()
             self._capture = None
-            self._stop_keyboard_diagnostics()
 
     def _on_packet(self, packet):
         transform = self._parser.feed_packet(packet)
         if transform:
             position, facing = transform
-            og.packet_capture_data.update_transform(position, facing)
+            og.packet_capture_data.update_server_transform(position, facing)
         if self._metadata_revision != self._parser.metadata_revision:
             og.packet_capture_data.update_world(*self._parser.world_state())
             self._metadata_revision = self._parser.metadata_revision
-        if self._destination_revision != self._parser.destination_revision:
-            if self._parser.destination_position is not None:
-                og.packet_capture_data.update_destination(self._parser.destination_position)
-            self._destination_revision = self._parser.destination_revision
+        if self._local_position_revision != self._parser.local_position_revision:
+            if self._parser.local_position is not None:
+                og.packet_capture_data.update_local_position(self._parser.local_position)
+            self._local_position_revision = self._parser.local_position_revision
 
     def _stop_capture(self):
         self._stop_requested = True
-        self._stop_keyboard_diagnostics()
         if self._capture:
             self._capture.stop()
         self._set_idle(og.app.tr("Capture stopped"))
@@ -239,29 +204,33 @@ class PacketCaptureTab(CustomTab):
         if (self._capture_thread and not self._capture_thread.is_alive()
                 and self.capture_button.text() == og.app.tr("Stop capture")):
             self._set_idle(self._capture_error or og.app.tr("Capture stopped"))
-        position, facing = og.packet_capture_data.get_transform()
-        destination = og.packet_capture_data.get_destination()
-        update_time = og.packet_capture_data.update_time
-        if position is None:
-            self.position_label.setText(og.app.tr("XZ: Unknown"))
+        server_position, facing = og.packet_capture_data.get_server_transform()
+        local_position = og.packet_capture_data.get_local_position()
+        update_time = og.packet_capture_data.server_update_time
+        if server_position is None:
+            self.server_position_label.setText(og.app.tr("Server position: Unknown"))
             self.height_label.setText(og.app.tr("Y: Unknown"))
             self.copy_button.setEnabled(False)
         else:
-            self.position_label.setText(og.app.tr("XZ: ") + f"{position[0]:.3f}, {position[2]:.3f}")
-            self.height_label.setText(og.app.tr("Y: ") + f"{position[1]:.3f}")
+            self.server_position_label.setText(
+                og.app.tr("Server position XZ: {x}, {z}").format(
+                    x=f"{server_position[0]:.3f}", z=f"{server_position[2]:.3f}"
+                )
+            )
+            self.height_label.setText(og.app.tr("Y: ") + f"{server_position[1]:.3f}")
             self.copy_button.setEnabled(True)
         self.facing_label.setText(
             og.app.tr("Facing: Unknown") if facing is None
             else og.app.tr("Facing: ") + f"{facing:.2f}\N{DEGREE SIGN}"
         )
-        self.destination_label.setText(
-            og.app.tr("Destination: Unknown") if destination is None
-            else og.app.tr("Destination XZ: {x}, {z}, Y: {y}").format(
-                x=f"{destination[0]:.3f}", z=f"{destination[2]:.3f}", y=f"{destination[1]:.3f}"
+        self.local_position_label.setText(
+            og.app.tr("Local position: Unknown") if local_position is None
+            else og.app.tr("Local position XZ: {x}, {z}, Y: {y}").format(
+                x=f"{local_position[0]:.3f}", z=f"{local_position[2]:.3f}", y=f"{local_position[1]:.3f}"
             )
         )
-        self._refresh_world_state(position)
-        self._record_speed_sample(position, update_time)
+        self._refresh_world_state(server_position)
+        self._record_speed_sample(server_position, update_time)
 
     def _refresh_world_state(self, player_position):
         scene_id, player_id, player_uuid, entities = og.packet_capture_data.get_world()
@@ -347,7 +316,7 @@ class PacketCaptureTab(CustomTab):
         self.speed_label.setText(og.app.tr("Speed: ") + f"{speed:.2f} u/s")
 
     def _copy_position(self):
-        position, _ = og.packet_capture_data.get_transform()
+        position, _ = og.packet_capture_data.get_server_transform()
         if position is not None:
             QApplication.clipboard().setText(f"{position[0]:.3f}, {position[2]:.3f}")
 

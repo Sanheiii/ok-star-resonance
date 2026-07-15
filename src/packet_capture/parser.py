@@ -132,10 +132,10 @@ class GamePacketParser:
         self.connect_guid = None
         self.nearby_entities = {}
         self.metadata_revision = 0
-        self.position = None
+        self.server_position = None
         self.facing = None
-        self.destination_position = None
-        self.destination_revision = 0
+        self.local_position = None
+        self.local_position_revision = 0
         self._proto = _load_proto_module()
         self._warned_proto = False
 
@@ -164,7 +164,7 @@ class GamePacketParser:
         if len(self.streams) > 128:
             cutoff = time.monotonic() - 90
             self.streams = {key: value for key, value in self.streams.items() if value.last_seen >= cutoff}
-        return (self.position, self.facing) if changed and self.position is not None else None
+        return (self.server_position, self.facing) if changed and self.server_position is not None else None
 
     def _tcp_payload(self, packet):
         if self.datalink == 1:  # Ethernet, including one or more VLAN tags
@@ -206,64 +206,30 @@ class GamePacketParser:
         flow = (source, source_port, destination, destination_port)
         return flow, sequence, packet[tcp_offset + tcp_header:ip_end], bool(flags & 0x02), bool(flags & 0x05)
 
-    def _process_fragments(self, frame, context="root"):
+    def _process_fragments(self, frame):
         changed = False
         offset = 0
         while offset + 6 <= len(frame):
             size = int.from_bytes(frame[offset:offset + 4], "big")
             if size < 6 or offset + size > len(frame):
-                if context != "root":
-                    fragment_type = int.from_bytes(frame[offset + 4:offset + 6], "big")
-                    logger.info(
-                        f"{context} invalid nested header: available={len(frame) - offset} "
-                        f"declared_size={size} fragment_type=0x{fragment_type:04x} "
-                        f"prefix={frame[offset:offset + 64].hex()}"
-                    )
                 break
             fragment_type = int.from_bytes(frame[offset + 4:offset + 6], "big")
             compressed = bool(fragment_type & 0x8000)
             kind = fragment_type & 0x7FFF
             payload = frame[offset + 6:offset + size]
             if kind in (5, 6):
-                if kind == 5:
-                    sequence = int.from_bytes(payload[:4], "big") if len(payload) >= 4 else None
-                    nested = payload[4:] if len(payload) >= 4 else b""
-                    nested_size = int.from_bytes(nested[:4], "big") if len(nested) >= 4 else None
-                    nested_type = int.from_bytes(nested[4:6], "big") if len(nested) >= 6 else None
-                    logger.info(
-                        f"FrameUp: sequence={sequence} compressed={compressed} "
-                        f"payload_size={len(payload)} nested_size={nested_size} "
-                        f"nested_type={None if nested_type is None else f'0x{nested_type:04x}'} "
-                        f"nested_prefix={nested[:64].hex()}"
-                    )
-                else:
-                    nested = payload[4:] if len(payload) >= 4 else b""
+                nested = payload[4:] if len(payload) >= 4 else b""
                 nested = self._decompress(nested) if compressed else nested
                 if nested is not None:
-                    changed |= self._process_fragments(
-                        nested, context="FrameUp" if kind == 5 else "FrameDown"
-                    )
-            elif kind == 1:
-                if len(payload) < 20:
-                    logger.info(
-                        f"Call: truncated header payload_size={len(payload)} compressed={compressed}"
-                    )
-                else:
-                    service_id = int.from_bytes(payload[:8], "big")
-                    stub_id = int.from_bytes(payload[8:12], "big")
-                    call_id = int.from_bytes(payload[12:16], "big")
-                    method_id = int.from_bytes(payload[16:20], "big")
-                    body = payload[20:]
-                    body = self._decompress(body) if compressed else body
-                    body_size = len(body) if body is not None else None
-                    logger.info(
-                        f"Call: service_id={service_id} stub_id={stub_id} "
-                        f"call_id={call_id} method_id={method_id} "
-                        f"compressed={compressed} body_size={body_size}"
-                    )
-                    if (service_id == WORLD_CALL_SERVICE_ID and method_id == MSG_NEW_MOVE
-                            and body is not None):
-                        self._decode_new_move(body)
+                    changed |= self._process_fragments(nested)
+            elif kind == 1 and len(payload) >= 20:
+                service_id = int.from_bytes(payload[:8], "big")
+                method_id = int.from_bytes(payload[16:20], "big")
+                body = payload[20:]
+                body = self._decompress(body) if compressed else body
+                if (service_id == WORLD_CALL_SERVICE_ID and method_id == MSG_NEW_MOVE
+                        and body is not None):
+                    self._decode_new_move(body)
             elif kind == 2 and len(payload) >= 16:
                 service_id = int.from_bytes(payload[:8], "big")
                 method_id = int.from_bytes(payload[12:16], "big")
@@ -274,11 +240,6 @@ class GamePacketParser:
                         changed |= self._decode_notify(method_id, body)
                     elif service_id == WORLD_CALL_SERVICE_ID and method_id == MSG_NEW_MOVE:
                         self._decode_new_move(body)
-            elif kind not in (3, 4, 7, 8):
-                logger.info(
-                    f"Unknown fragment: kind={kind} compressed={compressed} "
-                    f"payload_size={len(payload)}"
-                )
             offset += size
         return changed
 
@@ -290,17 +251,10 @@ class GamePacketParser:
             logger.warning(f"failed to decode NewMove: {exc}")
             return False
         if not message.HasField("info") or not message.info.HasField("destPos"):
-            logger.info(
-                f"NewMove decoded without destPos: has_info={message.HasField('info')}"
-            )
             return False
         position = message.info.destPos
-        self.destination_position = (float(position.x), float(position.y), float(position.z))
-        self.destination_revision += 1
-        timestamp = message.info.timeStamp if message.info.HasField("timeStamp") else None
-        logger.info(
-            f"NewMove destination: position={self.destination_position} timestamp={timestamp}"
-        )
+        self.local_position = (float(position.x), float(position.y), float(position.z))
+        self.local_position_revision += 1
         return True
 
     @staticmethod
@@ -349,7 +303,7 @@ class GamePacketParser:
             if not data.HasField("sceneData") or not data.sceneData.HasField("pos"):
                 return False
             changed = self._apply_position(data.sceneData.pos, include_direction=True)
-            self._store_entity(self.local_player_uuid, self.position, self.facing)
+            self._store_entity(self.local_player_uuid, self.server_position, self.facing)
             return changed
         if method_id == MSG_SYNC_TO_ME_DELTA_INFO:
             if not message.HasField("deltaInfo"):
@@ -370,19 +324,10 @@ class GamePacketParser:
 
     def _decode_enter_scene(self, message):
         has_info = message.HasField("enterSceneInfo")
-        logger.info(f"EnterScene decoded: has_info={has_info}")
         if not has_info:
             return False
         info = message.enterSceneInfo
         has_scene_attrs = info.HasField("sceneAttrs")
-        attr_ids = (
-            [attr.id for attr in info.sceneAttrs.attrs if attr.HasField("id")]
-            if has_scene_attrs else []
-        )
-        logger.info(
-            f"EnterScene info: has_scene_attrs={has_scene_attrs} "
-            f"attr_ids={attr_ids}"
-        )
         self.nearby_entities.clear()
         self.scene_guid = info.sceneGuid if info.HasField("sceneGuid") else None
         self.connect_guid = info.connectGuid if info.HasField("connectGuid") else None
@@ -391,7 +336,6 @@ class GamePacketParser:
             scene_id = self._find_varint_attr(info.sceneAttrs, ATTR_SCENE_BASIC_ID)
             if scene_id is not None:
                 self.scene_id = int(scene_id)
-                logger.info(f"EnterScene scene_id={self.scene_id}")
             else:
                 logger.warning(
                     "EnterScene sceneAttrs does not contain "
@@ -408,7 +352,10 @@ class GamePacketParser:
                 changed |= self._decode_transform_attrs(
                     player.attrs, include_position_direction=True
                 )
-            self._store_entity(self.local_player_uuid, self.position, self.facing)
+            self._store_entity(self.local_player_uuid, self.server_position, self.facing)
+        if self.server_position is not None:
+            self.local_position = self.server_position
+            self.local_position_revision += 1
         self.metadata_revision += 1
         return changed
 
@@ -463,7 +410,7 @@ class GamePacketParser:
         if position is None:
             return False
         coordinates = (position.x, position.y, position.z)
-        changed = self._set_position(coordinates)
+        changed = self._set_server_position(coordinates)
         if include_direction:
             facing = float(position.dir) % 360.0
             if facing != self.facing:
@@ -471,11 +418,11 @@ class GamePacketParser:
                 changed = True
         return changed
 
-    def _set_position(self, coordinates):
+    def _set_server_position(self, coordinates):
         values = tuple(float(value) for value in coordinates)
-        if values == self.position:
+        if values == self.server_position:
             return False
-        self.position = values
+        self.server_position = values
         return True
 
     def _record_entity_delta(self, delta):

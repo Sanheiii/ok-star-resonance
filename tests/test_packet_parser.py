@@ -16,9 +16,9 @@ except ImportError:
 
 
 class GamePacketParserTest(unittest.TestCase):
-    def test_new_move_notify_updates_destination_without_changing_server_position(self):
+    def test_new_move_notify_updates_local_without_changing_server_position(self):
         parser = GamePacketParser()
-        parser.position = (1.0, 2.0, 3.0)
+        parser.server_position = (1.0, 2.0, 3.0)
         message = parser._proto.NewMove()
         message.info.destPos.x = 11.0
         message.info.destPos.y = 21.0
@@ -32,13 +32,13 @@ class GamePacketParserTest(unittest.TestCase):
         fragment = (len(payload) + 6).to_bytes(4, "big") + (2).to_bytes(2, "big") + payload
 
         self.assertFalse(parser._process_fragments(fragment))
-        self.assertEqual(parser.destination_position, (11.0, 21.0, 31.0))
-        self.assertEqual(parser.destination_revision, 1)
-        self.assertEqual(parser.position, (1.0, 2.0, 3.0))
+        self.assertEqual(parser.local_position, (11.0, 21.0, 31.0))
+        self.assertEqual(parser.local_position_revision, 1)
+        self.assertEqual(parser.server_position, (1.0, 2.0, 3.0))
 
-    def test_new_move_call_updates_destination_without_changing_server_position(self):
+    def test_new_move_call_updates_local_without_changing_server_position(self):
         parser = GamePacketParser()
-        parser.position = (1.0, 2.0, 3.0)
+        parser.server_position = (1.0, 2.0, 3.0)
         message = parser._proto.NewMove()
         message.info.destPos.x = 10.0
         message.info.destPos.y = 20.0
@@ -53,9 +53,9 @@ class GamePacketParserTest(unittest.TestCase):
         fragment = (len(payload) + 6).to_bytes(4, "big") + (1).to_bytes(2, "big") + payload
 
         self.assertFalse(parser._process_fragments(fragment))
-        self.assertEqual(parser.destination_position, (10.0, 20.0, 30.0))
-        self.assertEqual(parser.destination_revision, 1)
-        self.assertEqual(parser.position, (1.0, 2.0, 3.0))
+        self.assertEqual(parser.local_position, (10.0, 20.0, 30.0))
+        self.assertEqual(parser.local_position_revision, 1)
+        self.assertEqual(parser.server_position, (1.0, 2.0, 3.0))
 
     def test_empty_facing_value_updates_to_zero(self):
         parser = GamePacketParser()
@@ -72,7 +72,7 @@ class GamePacketParserTest(unittest.TestCase):
     def test_scene_container_packet_updates_facing_to_zero(self):
         parser = GamePacketParser()
         self.assertIsNotNone(parser._proto)
-        parser.position = (1.0, 2.0, 3.0)
+        parser.server_position = (1.0, 2.0, 3.0)
         parser.facing = 90.0
         message = parser._proto.WorldNtf.SyncContainerData()
         message.vData.charId = 123
@@ -85,7 +85,7 @@ class GamePacketParserTest(unittest.TestCase):
         self.assertTrue(
             parser._decode_notify(MSG_SYNC_CONTAINER_DATA, message.SerializeToString())
         )
-        self.assertEqual(parser.position, (4.0, 5.0, 6.0))
+        self.assertEqual(parser.server_position, (4.0, 5.0, 6.0))
         self.assertEqual(parser.facing, 0.0)
 
     def test_enter_scene_position_updates_facing_to_zero(self):
@@ -101,7 +101,9 @@ class GamePacketParserTest(unittest.TestCase):
         attr.rawData = position.SerializeToString()
 
         self.assertTrue(parser._decode_enter_scene(message))
-        self.assertEqual(parser.position, (4.0, 5.0, 6.0))
+        self.assertEqual(parser.server_position, (4.0, 5.0, 6.0))
+        self.assertEqual(parser.local_position, (4.0, 5.0, 6.0))
+        self.assertEqual(parser.local_position_revision, 1)
         self.assertEqual(parser.facing, 0.0)
 
     @unittest.skipUnless(zstandard is not None, "zstandard is not installed")

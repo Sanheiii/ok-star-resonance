@@ -7,36 +7,36 @@ class PacketCaptureData:
 
     def __init__(self):
         self._lock = RLock()
-        self.position = None
+        self.server_position = None
         self.facing = None
-        self.update_time = 0.0
-        self.destination_position = None
-        self.destination_update_time = 0.0
+        self.server_update_time = 0.0
+        self.local_position = None
+        self.local_update_time = 0.0
         self.scene_id = None
         self.player_id = None
         self.player_uuid = None
         self.nearby_entities = {}
 
-    def update_transform(self, position=None, facing=None):
+    def update_server_transform(self, position=None, facing=None):
         with self._lock:
             if position is not None:
-                self.position = tuple(float(value) for value in position)
+                self.server_position = tuple(float(value) for value in position)
             if facing is not None:
                 self.facing = float(facing) % 360.0
-            self.update_time = time.time()
+            self.server_update_time = time.time()
 
-    def get_transform(self):
+    def get_server_transform(self):
         with self._lock:
-            return self.position, self.facing
+            return self.server_position, self.facing
 
-    def update_destination(self, position):
+    def update_local_position(self, position):
         with self._lock:
-            self.destination_position = tuple(float(value) for value in position)
-            self.destination_update_time = time.time()
+            self.local_position = tuple(float(value) for value in position)
+            self.local_update_time = time.time()
 
-    def get_destination(self):
+    def get_local_position(self):
         with self._lock:
-            return self.destination_position
+            return self.local_position
 
     def update_world(self, scene_id, player_id, player_uuid, nearby_entities):
         with self._lock:

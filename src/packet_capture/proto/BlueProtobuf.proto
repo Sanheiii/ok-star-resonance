@@ -2,10 +2,7 @@ syntax = "proto3";
 
 package zproto;
 
-// Minimal wire-compatible subset extracted from the AGPL-3.0 project:
-// https://github.com/yuzeis/StarResonanceMITMServer
-// Sources: zproto/stru_position.proto, stru_scene_data.proto,
-// stru_char_serialize.proto, and serv_world_ntf.proto.
+// Minimal protocol definition.
 message Position {
   float x = 1 [json_name = "x"];
   float y = 2 [json_name = "y"];
@@ -24,7 +21,6 @@ message Vector3 {
   optional float z = 3 [json_name = "z"];
 }
 
-// Client-to-server movement request payload used by world.NewMove (0x20005).
 message UserControlInfo {
   optional bool isBegin = 1 [json_name = "isBegin"];
   optional int32 type = 2 [json_name = "type"];
@@ -67,9 +63,6 @@ message AttrCollection {
   repeated Attr attrs = 2 [json_name = "attrs"];
 }
 
-// Minimal EnterScene subset reconstructed from resonance-logs-cn's
-// prost-generated Rust declarations. Unknown Entity fields are intentionally
-// omitted; protobuf keeps this subset wire-compatible with the full message.
 message Entity {
   optional int64 uuid = 1 [json_name = "uuid"];
   optional int32 entType = 2 [json_name = "entType"];

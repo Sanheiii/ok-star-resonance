@@ -5,7 +5,7 @@
 schemas. It provides `WorldNtf.SyncContainerData.vData.sceneData.pos` and the
 minimal `WorldNtf.EnterScene` subset reconstructed from resonance-logs-cn's
 prost-generated Rust declarations, plus the client-to-server `world.NewMove`
-payload used to expose `UserControlInfo.destPos`.
+payload used to expose `UserControlInfo.destPos` as the local position.
 
 The missing AOI delta definitions verified against resonance-logs-cn have been
 added to the repository subset, so this generated module now handles both full
