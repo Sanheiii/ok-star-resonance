@@ -113,12 +113,12 @@ class MahjongTask(SRTask):
             maj_auto_tsumogiri = 'maj_auto_tsumogiri_en'
             maj_east = 'maj_east_en'
 
-        if skip_box := self.find_one([maj_skip], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+        if skip_box := self.find_one([maj_skip], box=self.box_of_screen(0.40, 0.75, 0.89, 0.85)):
             self.sleep(0.2)
             self.next_frame()
-            if self.find_one([maj_riichi], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+            if self.find_one([maj_riichi], box=self.box_of_screen(0.40, 0.75, 0.89, 0.85)):
                 pass
-            elif box := self.find_one([maj_tsumo, maj_ron], box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+            elif box := self.find_one([maj_tsumo, maj_ron], box=self.box_of_screen(0.40, 0.75, 0.89, 0.85)):
                 self.click(box)
                 self.info_incr('Hora Count')
                 self.sleep(2)
@@ -251,7 +251,7 @@ class MahjongTask(SRTask):
                 else 'maj_riichi_jp' if lang == 'jp'
                 else 'maj_riichi_en'
             )
-            if box := self.find_one(maj_riichi, box=self.box_of_screen(0.48, 0.75, 0.89, 0.85)):
+            if box := self.find_one(maj_riichi, box=self.box_of_screen(0.40, 0.75, 0.89, 0.85)):
                 self.sleep(0.3)
                 self.click(box)
                 self.sleep(0.3)
