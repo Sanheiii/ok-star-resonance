@@ -9,7 +9,70 @@ from qfluentwidgets import BodyLabel, ComboBox, FluentIcon, PlainTextEdit, Prima
 from ok import Config, og
 from ok.gui.widget.CustomTab import CustomTab
 from src.packet_capture import NpcapCapture, list_devices
-from src.packet_capture.parser import ENTITY_TYPE_NAMES, GamePacketParser
+from src.packet_capture.parser import ActorState, GamePacketParser
+
+
+ACTOR_STATE_NAMES = {
+    ActorState.DEFAULT: "Default",
+    ActorState.SINGING: "Singing",
+    ActorState.SKILL: "Skill action",
+    ActorState.JUMP: "Jump",
+    ActorState.RUSH: "Rush",
+    ActorState.CLIMB: "Climb",
+    ActorState.SWIM: "Swim",
+    ActorState.FISHING: "Fishing",
+    ActorState.ACTION: "Action",
+    ActorState.DEAD: "Dead",
+    ActorState.STIFF: "Stiff",
+    ActorState.SWIM_STIFF: "Swim stiff",
+    ActorState.BORN: "Born",
+    ActorState.TELEPORT: "Teleport",
+    ActorState.FALL: "Fall",
+    ActorState.FLOW: "Flow",
+    ActorState.GLIDE: "Glide",
+    ActorState.PEDAL_WALL: "Pedal wall",
+    ActorState.FALL_TELEPORT: "Fall teleport",
+    ActorState.SELF_PHOTO: "Self photo",
+    ActorState.COLLECTION: "Collecting",
+    ActorState.RESET: "Reset",
+    ActorState.BREAKING: "Breaking",
+    ActorState.WEAKNESS: "Weakness",
+    ActorState.FRACTURE: "Fracture",
+    ActorState.ABNORMAL: "Abnormal",
+    ActorState.RESURRECTION: "Resurrection",
+    ActorState.INTERACTION: "Interaction",
+    ActorState.SCENE_INTERACTION: "Scene interaction",
+    ActorState.TUNNEL_FLY: "Tunnel fly",
+    ActorState.LEVITATION: "Levitation",
+    ActorState.HOMELAND_EDIT: "Homeland edit",
+    ActorState.RIDE: "Ride",
+    ActorState.RIDE_CONTROL: "Ride control",
+    ActorState.INSTRUMENT: "Instrument",
+    ActorState.FIXED: "Fixed",
+    ActorState.ALL: "All",
+}
+
+ENTITY_TYPE_NAMES = {
+    0: "Unknown",
+    1: "Monster",
+    2: "NPC",
+    3: "Scene object",
+    5: "Zone",
+    6: "Bullet",
+    7: "Client bullet",
+    8: "Pet",
+    10: "Player",
+    11: "Dummy",
+    12: "Drop",
+    14: "Field",
+    15: "Trap",
+    16: "Collection",
+    18: "Static object",
+    19: "Vehicle",
+    20: "Toy",
+    21: "Community house",
+    22: "House item",
+}
 
 
 class PacketCaptureTab(CustomTab):
@@ -24,7 +87,7 @@ class PacketCaptureTab(CustomTab):
         self._metadata_revision = -1
         self._local_position_revision = -1
         self._combat_state_revision = -1
-        self._death_state_revision = -1
+        self._actor_state_revision = -1
         self._config = Config("packet_capture", {"device_name": ""})
         self._refreshing_devices = False
         og.packet_capture_tool = self
@@ -64,8 +127,8 @@ class PacketCaptureTab(CustomTab):
         self.combat_state_label = BodyLabel(
             og.app.tr("Combat status: {status}").format(status=unknown), state
         )
-        self.death_state_label = BodyLabel(
-            og.app.tr("Death status: {status}").format(status=unknown), state
+        self.actor_state_label = BodyLabel(
+            og.app.tr("Actor state: {state}").format(state=unknown), state
         )
         self.nearby_title = BodyLabel(og.app.tr("Nearby entities"), state)
         self.nearby_entities = PlainTextEdit(state)
@@ -83,7 +146,7 @@ class PacketCaptureTab(CustomTab):
         state_layout.addWidget(self.player_id_label)
         state_layout.addWidget(self.scene_id_label)
         state_layout.addWidget(self.combat_state_label)
-        state_layout.addWidget(self.death_state_label)
+        state_layout.addWidget(self.actor_state_label)
         state_layout.addWidget(self.copy_button)
         state_layout.addWidget(self.nearby_title)
         state_layout.addWidget(self.nearby_entities)
@@ -201,12 +264,10 @@ class PacketCaptureTab(CustomTab):
             if self._parser.combat_state is not None:
                 og.packet_capture_data.update_combat_state(self._parser.combat_state)
             self._combat_state_revision = self._parser.combat_state_revision
-        if self._death_state_revision != self._parser.death_state_revision:
+        if self._actor_state_revision != self._parser.actor_state_revision:
             if self._parser.actor_state is not None:
-                og.packet_capture_data.update_death_state(
-                    self._parser.actor_state, self._parser.is_dead
-                )
-            self._death_state_revision = self._parser.death_state_revision
+                og.packet_capture_data.update_actor_state(self._parser.actor_state)
+            self._actor_state_revision = self._parser.actor_state_revision
 
     def _stop_capture(self):
         self._stop_requested = True
@@ -290,17 +351,19 @@ class PacketCaptureTab(CustomTab):
         self.combat_state_label.setText(
             og.app.tr("Combat status: {status}").format(status=combat_status)
         )
-        actor_state, is_dead = og.packet_capture_data.get_death_state()
-        if is_dead is None:
-            death_status = og.app.tr("Unknown")
-        elif is_dead:
-            death_status = og.app.tr("Dead")
+        actor_state = og.packet_capture_data.get_actor_state()
+        if actor_state is None:
+            actor_state_text = og.app.tr("Unknown")
         else:
-            death_status = og.app.tr("Alive")
-        if actor_state is not None:
-            death_status = f"{death_status} (ActorState {actor_state})"
-        self.death_state_label.setText(
-            og.app.tr("Death status: {status}").format(status=death_status)
+            try:
+                state_name = ACTOR_STATE_NAMES[ActorState(actor_state)]
+                actor_state_text = f"{state_name} ({actor_state})"
+            except (ValueError, KeyError):
+                actor_state_text = og.app.tr("Unknown value: {value}").format(
+                    value=actor_state
+                )
+        self.actor_state_label.setText(
+            og.app.tr("Actor state: {state}").format(state=actor_state_text)
         )
         rows = []
         if player_position is not None:

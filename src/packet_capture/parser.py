@@ -11,6 +11,7 @@ import importlib
 import struct
 import time
 from dataclasses import dataclass, field
+from enum import IntEnum
 
 from ok import Logger
 
@@ -29,34 +30,54 @@ ATTR_FACING = 0x32
 ATTR_POSITION = 0x34
 ATTR_COMBAT_STATE = 104
 ATTR_ACTOR_STATE = 11
-ACTOR_STATE_DEAD = 9
+
+
+class ActorState(IntEnum):
+    DEFAULT = 0
+    SINGING = 1
+    SKILL = 2
+    JUMP = 3
+    RUSH = 4
+    CLIMB = 5
+    SWIM = 6
+    FISHING = 7
+    ACTION = 8
+    DEAD = 9
+    STIFF = 10
+    SWIM_STIFF = 11
+    BORN = 12
+    TELEPORT = 13
+    FALL = 14
+    FLOW = 16
+    GLIDE = 17
+    PEDAL_WALL = 18
+    FALL_TELEPORT = 19
+    SELF_PHOTO = 20
+    COLLECTION = 21
+    RESET = 22
+    BREAKING = 23
+    WEAKNESS = 24
+    FRACTURE = 25
+    ABNORMAL = 26
+    RESURRECTION = 27
+    INTERACTION = 28
+    SCENE_INTERACTION = 29
+    TUNNEL_FLY = 30
+    LEVITATION = 31
+    HOMELAND_EDIT = 32
+    RIDE = 33
+    RIDE_CONTROL = 34
+    INSTRUMENT = 35
+    FIXED = 36
+    ALL = 37
+
+
 ENTITY_TYPE_CHAR = 10
 ENTITY_TYPE_SHIFT = 6
 ENTITY_UID_SHIFT = 16
 ENTITY_TYPE_MASK = 0xFF
 ENTITY_SUMMON_BIT = 15
 ENTITY_CLIENT_BIT = 14
-ENTITY_TYPE_NAMES = {
-    0: "Unknown",
-    1: "Monster",
-    2: "NPC",
-    3: "Scene object",
-    5: "Zone",
-    6: "Bullet",
-    7: "Client bullet",
-    8: "Pet",
-    10: "Player",
-    11: "Dummy",
-    12: "Drop",
-    14: "Field",
-    15: "Trap",
-    16: "Collection",
-    18: "Static object",
-    19: "Vehicle",
-    20: "Toy",
-    21: "Community house",
-    22: "House item",
-}
 MAX_FRAME_SIZE = 10 * 1024 * 1024
 
 
@@ -143,8 +164,7 @@ class GamePacketParser:
         self.combat_state = None
         self.combat_state_revision = 0
         self.actor_state = None
-        self.is_dead = None
-        self.death_state_revision = 0
+        self.actor_state_revision = 0
         self._proto = _load_proto_module()
         self._warned_proto = False
 
@@ -378,7 +398,7 @@ class GamePacketParser:
                 self.player_id = self.local_player_uuid >> ENTITY_UID_SHIFT
             if player.HasField("attrs"):
                 self._decode_combat_state_attr(player.attrs)
-                self._decode_death_state_attr(player.attrs)
+                self._decode_actor_state_attr(player.attrs)
                 changed |= self._decode_transform_attrs(
                     player.attrs, include_position_direction=True
                 )
@@ -440,17 +460,15 @@ class GamePacketParser:
         self.combat_state_revision += 1
         return True
 
-    def _decode_death_state_attr(self, collection):
+    def _decode_actor_state_attr(self, collection):
         actor_state = self._find_varint_attr(collection, ATTR_ACTOR_STATE)
         if actor_state is None:
             return False
         actor_state = int(actor_state)
-        is_dead = actor_state == ACTOR_STATE_DEAD
-        if actor_state == self.actor_state and is_dead == self.is_dead:
+        if actor_state == self.actor_state:
             return False
         self.actor_state = actor_state
-        self.is_dead = is_dead
-        self.death_state_revision += 1
+        self.actor_state_revision += 1
         return True
 
     def _decode_delta(self, delta, force_local=False):
@@ -462,7 +480,7 @@ class GamePacketParser:
         if not delta.HasField("attrs"):
             return False
         self._decode_combat_state_attr(delta.attrs)
-        self._decode_death_state_attr(delta.attrs)
+        self._decode_actor_state_attr(delta.attrs)
         return self._decode_transform_attrs(delta.attrs)
 
     def _record_appeared_entity(self, entity):
@@ -548,7 +566,6 @@ class GamePacketParser:
             "position": position,
             "facing": facing,
             "entity_type": entity_type,
-            "entity_type_name": ENTITY_TYPE_NAMES.get(entity_type, "Unknown"),
             "is_summoned": bool(entity_uuid & (1 << ENTITY_SUMMON_BIT)),
             "is_client_created": bool(entity_uuid & (1 << ENTITY_CLIENT_BIT)),
             "updated_at": time.time(),

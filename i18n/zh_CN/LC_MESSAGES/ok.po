@@ -444,14 +444,8 @@ msgstr "已脱战"
 msgid "Unknown value: {value}"
 msgstr "未知值：{value}"
 
-msgid "Death status: {status}"
-msgstr "死亡状态：{status}"
-
-msgid "Alive"
-msgstr "存活"
-
-msgid "Dead"
-msgstr "死亡"
+msgid "Actor state: {state}"
+msgstr "角色状态：{state}"
 
 msgid "Nearby entities"
 msgstr "附近实体"

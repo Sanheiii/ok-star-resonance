@@ -8,6 +8,7 @@ import numpy as np
 from ok import og, BaseTask
 
 from src.MinimapSectorAngleDetector import MinimapSectorAngleDetector
+from src.packet_capture.parser import ActorState
 
 
 _INPUT_MOUSE = 0
@@ -103,8 +104,9 @@ class SRTaskBase(BaseTask):
 
     @property
     def is_dead(self):
-        """Return the captured local-player death state, or ``None`` if unknown."""
-        return og.packet_capture_data.get_death_state()[1]
+        """Return whether the captured actor state is ``DEAD``."""
+        actor_state = og.packet_capture_data.get_actor_state()
+        return actor_state is not None and actor_state == ActorState.DEAD
 
     def _require_packet_capture(self):
         tool = self.packet_capture_tool

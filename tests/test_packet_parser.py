@@ -1,7 +1,7 @@
 import unittest
 
 from src.packet_capture.parser import (
-    ACTOR_STATE_DEAD,
+    ActorState,
     ATTR_ACTOR_STATE,
     ATTR_COMBAT_STATE,
     ATTR_FACING,
@@ -28,17 +28,15 @@ class GamePacketParserTest(unittest.TestCase):
         player.uuid = 123 << 16
         attr = player.attrs.attrs.add()
         attr.id = ATTR_ACTOR_STATE
-        attr.rawData = bytes([ACTOR_STATE_DEAD])
+        attr.rawData = bytes([ActorState.DEAD])
 
         self.assertFalse(parser._decode_enter_scene(message))
-        self.assertEqual(parser.actor_state, ACTOR_STATE_DEAD)
-        self.assertTrue(parser.is_dead)
-        self.assertEqual(parser.death_state_revision, 1)
+        self.assertEqual(parser.actor_state, ActorState.DEAD)
+        self.assertEqual(parser.actor_state_revision, 1)
 
     def test_sync_to_me_delta_tracks_revive_actor_state(self):
         parser = GamePacketParser()
-        parser.actor_state = ACTOR_STATE_DEAD
-        parser.is_dead = True
+        parser.actor_state = ActorState.DEAD
         message = parser._proto.WorldNtf.SyncToMeDeltaInfo()
         message.deltaInfo.uuid = 123 << 16
         attr = message.deltaInfo.baseDelta.attrs.attrs.add()
@@ -51,8 +49,7 @@ class GamePacketParserTest(unittest.TestCase):
             )
         )
         self.assertEqual(parser.actor_state, 0)
-        self.assertFalse(parser.is_dead)
-        self.assertEqual(parser.death_state_revision, 1)
+        self.assertEqual(parser.actor_state_revision, 1)
 
     def test_enter_scene_reads_initial_attribute_104(self):
         parser = GamePacketParser()
@@ -230,7 +227,7 @@ class GamePacketParserTest(unittest.TestCase):
         )
         entity = parser.nearby_entities[entity_uuid]
         self.assertEqual(entity["entity_type"], 16)
-        self.assertEqual(entity["entity_type_name"], "Collection")
+        self.assertNotIn("entity_type_name", entity)
         self.assertEqual(entity["position"], (10.0, 20.0, 30.0))
         self.assertEqual(entity["facing"], 5.6)
 
