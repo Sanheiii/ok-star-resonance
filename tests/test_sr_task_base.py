@@ -1,18 +1,21 @@
 import unittest
+from unittest.mock import patch
 
+from src.packet_capture.parser import ActorState
+from src.tasks import SRTaskBase as sr_task_base_module
 from src.tasks.SRTaskBase import SRTaskBase
 
 
 class _WaitTask:
     def __init__(self, states):
         self._states = iter(states)
-        self._combat_state = None
+        self._in_combat = None
         self.capture_checks = 0
 
     @property
-    def combat_state(self):
-        self._combat_state = next(self._states)
-        return self._combat_state
+    def in_combat(self):
+        self._in_combat = next(self._states)
+        return self._in_combat
 
     def _require_packet_capture(self):
         self.capture_checks += 1
@@ -39,6 +42,28 @@ class WaitOutOfCombatTest(unittest.TestCase):
         task = _WaitTask([1] * 10)
 
         self.assertFalse(SRTaskBase.wait_out_of_combat(task, time_out=1))
+
+
+class CapturedStatePropertyTest(unittest.TestCase):
+    def test_exposes_combat_and_actor_states(self):
+        class CaptureData:
+            @staticmethod
+            def get_combat_state():
+                return 1
+
+            @staticmethod
+            def get_actor_state():
+                return ActorState.DEAD
+
+        task = object.__new__(SRTaskBase)
+        with patch.object(
+                sr_task_base_module.og,
+                "packet_capture_data",
+                CaptureData(),
+                create=True):
+            self.assertEqual(task.in_combat, 1)
+            self.assertEqual(task.actor_state, ActorState.DEAD)
+            self.assertTrue(task.is_dead)
 
 
 class _PathTask:

@@ -37,7 +37,7 @@ class DungeonTaskBase(SRTask):
             )
             if completed:
                 return True
-            if not self._handle_death():
+            if not self.handle_death():
                 return False
             start_position = self.position
 
@@ -58,7 +58,7 @@ class DungeonTaskBase(SRTask):
                 )
                 if not completed:
                     remaining = remaining[index:]
-                    if not self._handle_death():
+                    if not self.handle_death():
                         return remaining
                     break
                 if index < len(remaining) - 1:
@@ -68,7 +68,7 @@ class DungeonTaskBase(SRTask):
                 return None
         return None
 
-    def _handle_death(self):
+    def handle_death(self):
         """Use the dungeon revive UI and wait until normal gameplay resumes."""
         self._release_move_keys()
         self.next_frame()

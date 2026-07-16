@@ -99,14 +99,19 @@ class SRTaskBase(BaseTask):
         return og.packet_capture_data.get_world()[3]
 
     @property
-    def combat_state(self):
-        """Return captured attribute 104, or ``None`` before its first sync."""
+    def in_combat(self):
+        """Return 0 out of combat, 1 in combat, or ``None`` before first sync."""
         return og.packet_capture_data.get_combat_state()
+
+    @property
+    def actor_state(self):
+        """Return the captured actor state, or ``None`` before its first sync."""
+        return og.packet_capture_data.get_actor_state()
 
     @property
     def is_dead(self):
         """Return whether the captured actor state is ``DEAD``."""
-        actor_state = og.packet_capture_data.get_actor_state()
+        actor_state = self.actor_state
         return actor_state is not None and actor_state == ActorState.DEAD
 
     def _require_packet_capture(self):
@@ -125,7 +130,7 @@ class SRTaskBase(BaseTask):
 
         def is_out_of_combat():
             self._require_packet_capture()
-            return self.combat_state == 0
+            return self.in_combat == 0
 
         return bool(self.wait_until(is_out_of_combat, time_out=time_out))
 
