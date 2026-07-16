@@ -518,3 +518,42 @@ msgstr "召唤实例"
 
 msgid "Client-created"
 msgstr "客户端实例"
+
+msgid "{type}: {id}({index})-{direction}{distance}"
+msgstr "{type}: {id}({index})-{direction}{distance}"
+
+msgid "Front"
+msgstr "前"
+
+msgid "Front right"
+msgstr "右前"
+
+msgid "Right"
+msgstr "右"
+
+msgid "Back right"
+msgstr "右后"
+
+msgid "Back"
+msgstr "后"
+
+msgid "Back left"
+msgstr "左后"
+
+msgid "Left"
+msgstr "左"
+
+msgid "Front left"
+msgstr "左前"
+
+msgid "None"
+msgstr "无"
+
+msgid "Entity details"
+msgstr "实体详情"
+
+msgid "Copy XZ"
+msgstr "复制 XZ"
+
+msgid "UUID: {uuid}\nUID: {uid}\nType: {type} ({type_id})\nAttr ID: {attr_id}\nSequence: {sequence}\nXZ: {x}, {z}\nY: {y}\nEntity facing: {facing}\nRelative direction: {direction}\nDistance: {distance}\nFlags: {flags}\nUpdated at: {updated_at}"
+msgstr "UUID：{uuid}\nUID：{uid}\n类型：{type} ({type_id})\nAttr ID：{attr_id}\n序号：{sequence}\nXZ：{x}, {z}\nY：{y}\n实体朝向：{facing}\n相对方向：{direction}\n距离：{distance}\n标记：{flags}\n更新时间：{updated_at}"

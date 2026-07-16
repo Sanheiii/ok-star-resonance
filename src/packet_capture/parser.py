@@ -26,6 +26,7 @@ MSG_SYNC_CONTAINER_DATA = 0x15
 MSG_SYNC_NEAR_DELTA_INFO = 0x2D
 MSG_SYNC_TO_ME_DELTA_INFO = 0x2E
 ATTR_SCENE_BASIC_ID = 0x155
+ATTR_ENTITY_ID = 0x0A
 ATTR_FACING = 0x32
 ATTR_POSITION = 0x34
 ATTR_COMBAT_STATE = 104
@@ -490,6 +491,7 @@ class GamePacketParser:
         previous = self.nearby_entities.get(entity_uuid, {})
         position = previous.get("position")
         facing = previous.get("facing")
+        attr_id = previous.get("attr_id")
         if entity.HasField("attrs"):
             for attr in entity.attrs.attrs:
                 if not attr.HasField("id") or not attr.HasField("rawData"):
@@ -507,8 +509,12 @@ class GamePacketParser:
                     raw_facing = _decode_varint(attr.rawData)
                     if raw_facing is not None:
                         facing = (raw_facing / 100.0) % 360.0
+                elif attr.id == ATTR_ENTITY_ID:
+                    raw_attr_id = _decode_varint(attr.rawData)
+                    if raw_attr_id is not None:
+                        attr_id = raw_attr_id
         entity_type = int(entity.entType) if entity.HasField("entType") else None
-        self._store_entity(entity_uuid, position, facing, entity_type)
+        self._store_entity(entity_uuid, position, facing, entity_type, attr_id)
 
     def _apply_position(self, position, include_direction=False):
         if position is None:
@@ -536,6 +542,7 @@ class GamePacketParser:
         previous = self.nearby_entities.get(entity_uuid, {})
         position = previous.get("position")
         facing = previous.get("facing")
+        attr_id = previous.get("attr_id")
         changed = False
         for attr in delta.attrs.attrs:
             if not attr.HasField("id") or not attr.HasField("rawData"):
@@ -553,19 +560,30 @@ class GamePacketParser:
                 if raw_facing is not None:
                     facing = (raw_facing / 100.0) % 360.0
                     changed = True
+            elif attr.id == ATTR_ENTITY_ID:
+                raw_attr_id = _decode_varint(attr.rawData)
+                if raw_attr_id is not None and raw_attr_id != attr_id:
+                    attr_id = raw_attr_id
+                    changed = True
         if changed:
-            self._store_entity(entity_uuid, position, facing)
+            self._store_entity(entity_uuid, position, facing, attr_id=attr_id)
 
-    def _store_entity(self, entity_uuid, position, facing, entity_type=None):
+    def _store_entity(
+        self, entity_uuid, position, facing, entity_type=None, attr_id=None
+    ):
         if not entity_uuid:
             return
         entity_uuid = int(entity_uuid)
+        previous = self.nearby_entities.get(entity_uuid, {})
         if entity_type is None:
             entity_type = (entity_uuid >> ENTITY_TYPE_SHIFT) & ENTITY_TYPE_MASK
+        if attr_id is None:
+            attr_id = previous.get("attr_id")
         self.nearby_entities[entity_uuid] = {
             "position": position,
             "facing": facing,
             "entity_type": entity_type,
+            "attr_id": attr_id,
             "is_summoned": bool(entity_uuid & (1 << ENTITY_SUMMON_BIT)),
             "is_client_created": bool(entity_uuid & (1 << ENTITY_CLIENT_BIT)),
             "updated_at": time.time(),

@@ -4,6 +4,7 @@ from src.packet_capture.parser import (
     ActorState,
     ATTR_ACTOR_STATE,
     ATTR_COMBAT_STATE,
+    ATTR_ENTITY_ID,
     ATTR_FACING,
     ATTR_POSITION,
     MSG_SYNC_CONTAINER_DATA,
@@ -221,6 +222,9 @@ class GamePacketParserTest(unittest.TestCase):
         facing_attr = appeared.attrs.attrs.add()
         facing_attr.id = ATTR_FACING
         facing_attr.rawData = b"\xb0\x04"
+        entity_id_attr = appeared.attrs.attrs.add()
+        entity_id_attr.id = ATTR_ENTITY_ID
+        entity_id_attr.rawData = b"\xac\x02"
 
         self.assertFalse(
             parser._decode_notify(MSG_SYNC_NEAR_ENTITIES, message.SerializeToString())
@@ -230,6 +234,31 @@ class GamePacketParserTest(unittest.TestCase):
         self.assertNotIn("entity_type_name", entity)
         self.assertEqual(entity["position"], (10.0, 20.0, 30.0))
         self.assertEqual(entity["facing"], 5.6)
+        self.assertEqual(entity["attr_id"], 300)
+
+    def test_entity_delta_updates_attr_id_and_preserves_it_on_movement(self):
+        parser = GamePacketParser()
+        entity_uuid = (789 << 16) | (16 << 6)
+        parser._store_entity(entity_uuid, (1.0, 2.0, 3.0), 4.0)
+
+        attr_delta = parser._proto.AoiSyncDelta(uuid=entity_uuid)
+        attr = attr_delta.attrs.attrs.add()
+        attr.id = ATTR_ENTITY_ID
+        attr.rawData = b"\xac\x02"
+        parser._record_entity_delta(attr_delta)
+        self.assertEqual(parser.nearby_entities[entity_uuid]["attr_id"], 300)
+
+        movement_delta = parser._proto.AoiSyncDelta(uuid=entity_uuid)
+        position_attr = movement_delta.attrs.attrs.add()
+        position_attr.id = ATTR_POSITION
+        position_attr.rawData = parser._proto.Position(
+            x=10.0, y=20.0, z=30.0
+        ).SerializeToString()
+        parser._record_entity_delta(movement_delta)
+
+        entity = parser.nearby_entities[entity_uuid]
+        self.assertEqual(entity["attr_id"], 300)
+        self.assertEqual(entity["position"], (10.0, 20.0, 30.0))
 
     @unittest.skipUnless(zstandard is not None, "zstandard is not installed")
     def test_decompresses_zstd_frame_without_content_size(self):

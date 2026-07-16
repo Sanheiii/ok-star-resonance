@@ -2,9 +2,17 @@ import math
 import threading
 from collections import Counter
 
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, ComboBox, FluentIcon, PlainTextEdit, PrimaryPushButton, PushButton
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QVBoxLayout,
+    QWidget,
+)
+from qfluentwidgets import BodyLabel, ComboBox, FluentIcon, PrimaryPushButton, PushButton
 
 from ok import Config, og
 from ok.gui.widget.CustomTab import CustomTab
@@ -74,6 +82,17 @@ ENTITY_TYPE_NAMES = {
     22: "House item",
 }
 
+DIRECTION_NAMES = (
+    "Front",
+    "Front right",
+    "Right",
+    "Back right",
+    "Back",
+    "Back left",
+    "Left",
+    "Front left",
+)
+
 
 class PacketCaptureTab(CustomTab):
     def __init__(self):
@@ -88,6 +107,12 @@ class PacketCaptureTab(CustomTab):
         self._local_position_revision = -1
         self._combat_state_revision = -1
         self._actor_state_revision = -1
+        self._sequence_scene_id = None
+        self._has_sequence_scene = False
+        self._entity_sequences = {}
+        self._next_sequence_by_attr_id = {}
+        self._visible_entity_details = {}
+        self._entity_list_signature = None
         self._config = Config("packet_capture", {"device_name": ""})
         self._refreshing_devices = False
         og.packet_capture_tool = self
@@ -131,10 +156,9 @@ class PacketCaptureTab(CustomTab):
             og.app.tr("Actor state: {state}").format(state=unknown), state
         )
         self.nearby_title = BodyLabel(og.app.tr("Nearby entities"), state)
-        self.nearby_entities = PlainTextEdit(state)
-        self.nearby_entities.setReadOnly(True)
+        self.nearby_entities = QListWidget(state)
         self.nearby_entities.setMinimumHeight(180)
-        self.nearby_entities.setPlainText(og.app.tr("No nearby entities"))
+        self._set_entity_list([])
         self.copy_button = PushButton(
             FluentIcon.COPY, og.app.tr("Copy local position XY"), state
         )
@@ -157,6 +181,7 @@ class PacketCaptureTab(CustomTab):
         self.device_combo.currentIndexChanged.connect(self._save_selected_device)
         self.capture_button.clicked.connect(self._toggle_capture)
         self.copy_button.clicked.connect(self._copy_position)
+        self.nearby_entities.itemClicked.connect(self._show_entity_details)
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._refresh_transform)
         self._timer.start(200)
@@ -323,10 +348,11 @@ class PacketCaptureTab(CustomTab):
                 position=local_position_text
             )
         )
-        self._refresh_world_state(server_position)
+        self._refresh_world_state(server_position, facing)
 
-    def _refresh_world_state(self, player_position):
+    def _refresh_world_state(self, player_position, player_facing):
         scene_id, player_id, player_uuid, entities = og.packet_capture_data.get_world()
+        self._reset_entity_sequences_if_scene_changed(scene_id)
         self.player_id_label.setText(
             og.app.tr("Character ID: {id}").format(
                 id=og.app.tr("Unknown") if player_id is None else player_id
@@ -366,6 +392,7 @@ class PacketCaptureTab(CustomTab):
             og.app.tr("Actor state: {state}").format(state=actor_state_text)
         )
         rows = []
+        visible_details = {}
         if player_position is not None:
             for entity_id, entity in entities.items():
                 entity_position = entity.get("position")
@@ -378,28 +405,135 @@ class PacketCaptureTab(CustomTab):
                 entity_type = entity.get("entity_type", 0)
                 type_name = ENTITY_TYPE_NAMES.get(entity_type, "Unknown")
                 translated_type = og.app.tr(type_name)
-                flags = []
-                if entity.get("is_summoned"):
-                    flags.append(og.app.tr("Summoned"))
-                if entity.get("is_client_created"):
-                    flags.append(og.app.tr("Client-created"))
-                flag_text = f" [{', '.join(flags)}]" if flags else ""
-                rows.append((distance, og.app.tr(
-                    "Entity {id}: Type {type} ({type_id}){flags}, XZ ({x}, {z}), Y {y}, Distance {distance}"
+                attr_id = entity.get("attr_id")
+                sequence = self._entity_sequence(entity_id, attr_id)
+                direction = self._relative_direction(
+                    player_position, player_facing, entity_position
+                )
+                direction_text = (
+                    og.app.tr("Unknown") if direction is None else og.app.tr(direction)
+                )
+                attr_id_text = og.app.tr("Unknown") if attr_id is None else str(attr_id)
+                text = og.app.tr(
+                    "{type}: {id}({index})-{direction}{distance}"
                 ).format(
-                    id=entity_id,
                     type=translated_type,
-                    type_id=entity_type,
-                    flags=flag_text,
-                    x=f"{entity_position[0]:.3f}",
-                    z=f"{entity_position[2]:.3f}",
-                    y=f"{entity_position[1]:.3f}",
+                    id=attr_id_text,
+                    index=sequence,
+                    direction=direction_text,
                     distance=f"{distance:.3f}",
-                )))
-        rows.sort(key=lambda item: item[0])
-        text = "\n".join(row for _, row in rows) if rows else og.app.tr("No nearby entities")
-        if self.nearby_entities.toPlainText() != text:
-            self.nearby_entities.setPlainText(text)
+                )
+                rows.append((translated_type, attr_id is None, attr_id or 0, sequence, entity_id, text))
+                visible_details[entity_id] = {
+                    **entity,
+                    "uuid": entity_id,
+                    "sequence": sequence,
+                    "direction": direction_text,
+                    "distance": distance,
+                    "type_name": translated_type,
+                }
+        rows.sort(key=lambda item: (item[0], item[1], item[2], item[3]))
+        self._visible_entity_details = visible_details
+        self._set_entity_list([(row[4], row[5]) for row in rows])
+
+    def _reset_entity_sequences_if_scene_changed(self, scene_id):
+        if not self._has_sequence_scene:
+            self._sequence_scene_id = scene_id
+            self._has_sequence_scene = True
+            return
+        if scene_id == self._sequence_scene_id:
+            return
+        self._sequence_scene_id = scene_id
+        self._entity_sequences.clear()
+        self._next_sequence_by_attr_id.clear()
+
+    def _entity_sequence(self, entity_uuid, attr_id):
+        existing = self._entity_sequences.get(entity_uuid)
+        if existing is not None and existing[0] == attr_id:
+            return existing[1]
+        sequence = self._next_sequence_by_attr_id.get(attr_id, 0) + 1
+        self._next_sequence_by_attr_id[attr_id] = sequence
+        self._entity_sequences[entity_uuid] = (attr_id, sequence)
+        return sequence
+
+    @staticmethod
+    def _relative_direction(player_position, player_facing, entity_position):
+        if player_position is None or player_facing is None or entity_position is None:
+            return None
+        delta_x = entity_position[0] - player_position[0]
+        delta_z = entity_position[2] - player_position[2]
+        if math.isclose(delta_x, 0.0) and math.isclose(delta_z, 0.0):
+            return DIRECTION_NAMES[0]
+        bearing = math.degrees(math.atan2(delta_x, delta_z)) % 360.0
+        relative_angle = (bearing - player_facing) % 360.0
+        direction_index = int((relative_angle + 22.5) // 45.0) % 8
+        return DIRECTION_NAMES[direction_index]
+
+    def _set_entity_list(self, rows):
+        signature = tuple(rows)
+        if signature == self._entity_list_signature:
+            return
+        self._entity_list_signature = signature
+        self.nearby_entities.clear()
+        if not rows:
+            item = QListWidgetItem(og.app.tr("No nearby entities"))
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+            self.nearby_entities.addItem(item)
+            return
+        for entity_uuid, text in rows:
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, entity_uuid)
+            self.nearby_entities.addItem(item)
+
+    def _show_entity_details(self, item):
+        entity_uuid = item.data(Qt.ItemDataRole.UserRole)
+        entity = self._visible_entity_details.get(entity_uuid)
+        if entity is None:
+            return
+        position = entity.get("position")
+        flags = []
+        if entity.get("is_summoned"):
+            flags.append(og.app.tr("Summoned"))
+        if entity.get("is_client_created"):
+            flags.append(og.app.tr("Client-created"))
+        flag_text = ", ".join(flags) if flags else og.app.tr("None")
+        attr_id = entity.get("attr_id")
+        entity_facing = entity.get("facing")
+        details = og.app.tr(
+            "UUID: {uuid}\nUID: {uid}\nType: {type} ({type_id})\n"
+            "Attr ID: {attr_id}\nSequence: {sequence}\n"
+            "XZ: {x}, {z}\nY: {y}\nEntity facing: {facing}\n"
+            "Relative direction: {direction}\nDistance: {distance}\n"
+            "Flags: {flags}\nUpdated at: {updated_at}"
+        ).format(
+            uuid=entity_uuid,
+            uid=entity_uuid >> 16,
+            type=entity["type_name"],
+            type_id=entity.get("entity_type", 0),
+            attr_id=og.app.tr("Unknown") if attr_id is None else attr_id,
+            sequence=entity["sequence"],
+            x=f"{position[0]:.3f}",
+            z=f"{position[2]:.3f}",
+            y=f"{position[1]:.3f}",
+            facing=(og.app.tr("Unknown") if entity_facing is None
+                    else f"{entity_facing:.2f}\N{DEGREE SIGN}"),
+            direction=entity["direction"],
+            distance=f"{entity['distance']:.3f}",
+            flags=flag_text,
+            updated_at=f"{entity.get('updated_at', 0.0):.3f}",
+        )
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle(og.app.tr("Entity details"))
+        dialog.setText(details)
+        copy_button = dialog.addButton(
+            og.app.tr("Copy XZ"), QMessageBox.ButtonRole.ActionRole
+        )
+        dialog.addButton(QMessageBox.StandardButton.Close)
+        dialog.exec()
+        if dialog.clickedButton() is copy_button:
+            QApplication.clipboard().setText(
+                f"{position[0]:.3f}, {position[2]:.3f}"
+            )
 
     def _copy_position(self):
         position = og.packet_capture_data.get_local_position()
