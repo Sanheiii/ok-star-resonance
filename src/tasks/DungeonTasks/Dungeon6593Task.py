@@ -23,9 +23,9 @@ class Dungeon6593Task(DungeonTaskBase):
         self.send_key('h')
         # 依次走到下面坐标的10范围内，等待怪物消失
         monsters = (
-            (110809, (-9.000, 15.600)),
-            (110808, (-9.000, -15.600)),
-            (110910, (18.000, 0.000)),
+            (34017, (-9.000, -15.600)),
+            (34018, (-9.000, 15.600)),
+            (34019, (18.000, 0.000)),
         )
         if not self._clear_monsters(monsters):
             return
@@ -40,7 +40,7 @@ class Dungeon6593Task(DungeonTaskBase):
             (38.610, 10.980),
             (46.430, 7.800),
             (50.840, 0.810),
-            (50.781, 5.821),
+            (50.974, -7.304),
         )
         if not self._jump_route(jump_points1):
             return
@@ -50,7 +50,7 @@ class Dungeon6593Task(DungeonTaskBase):
     def _clear_monsters(self, monsters):
         for monster_id, target_position in monsters:
             if not self.move_to_position(
-                    self.position, target_position, target_tolerance=10):
+                    self.position, target_position, target_tolerance=2):
                 return False
             while any(
                     entity.get('attr_id') == monster_id
