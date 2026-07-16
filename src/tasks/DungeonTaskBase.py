@@ -40,8 +40,7 @@ class DungeonTaskBase(SRTask):
             )
             if completed:
                 return True
-            if not self.handle_death():
-                return False
+            self.handle_death()
             start_position = self.position
 
     def move_to_positions(self, positions, line_tolerance=2, node_tolerance=2):

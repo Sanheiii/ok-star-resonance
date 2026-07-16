@@ -1,5 +1,6 @@
 import math
 
+from src.packet_capture.parser import ActorState
 from src.tasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
@@ -61,8 +62,13 @@ class Dungeon6593Task(DungeonTaskBase):
         self.info['state'] = '前往跳台起始点'
         self.move_to_position(self.position, jump_points1[0], 0.5, 0.5)
         self.info['state'] = '第一次跳台'
+
         if not self._jump_route(jump_points1):
-            return False
+            # 如果失败了重试到成功为止
+            while True:
+                self.move_to_position(self.position, jump_points1[0], 0.5, 0.5)
+                if self._jump_route(jump_points1):
+                    break
 
         # 在第一个浮空岛战斗
         self.info['state'] = '第一个小浮空岛战斗中'
@@ -86,7 +92,11 @@ class Dungeon6593Task(DungeonTaskBase):
         )
         self.info['state'] = '第二次跳台'
         if not self._jump_route(jump_points2):
-            return False
+            # 如果失败了重试到成功为止
+            while True:
+                self.move_to_position(self.position, jump_points1[0], 0.5, 0.5)
+                if self._jump_route(jump_points1) and self._jump_route(jump_points2):
+                    break
 
         # 在第二个浮空岛战斗
         self.send_key('h')
@@ -215,11 +225,9 @@ class Dungeon6593Task(DungeonTaskBase):
         for target_position in positions[1:]:
             if not self.look_at(target_position):
                 self.log_error('无法识别镜头朝向')
-                return False
             self.sleep(0.5)
             if not self.look_at(target_position):
                 self.log_error('无法识别镜头朝向')
-                return False
             self.sleep(0.3)
             self.send_key_down('w')
             try:
@@ -230,7 +238,24 @@ class Dungeon6593Task(DungeonTaskBase):
             finally:
                 self.send_key_up('w')
             self.sleep(2)
-            if not self.move_to_position(
-                    self.position, target_position, target_tolerance=0.5):
+
+            # 如果跳台摔下去了返回 False
+            blocked_states = {
+                ActorState.FALL,
+                ActorState.TELEPORT,
+                ActorState.FALL_TELEPORT,
+            }
+            blocked_positions = {
+                (19.050, 13.770),
+                (-43.480, -7.870),
+            }
+            position_blocked = any(
+                abs(self.position[0] - x) < 0.001
+                and abs(self.position[2] - z) < 0.001
+                for x, z in blocked_positions
+            )
+            if self.actor_state in blocked_states or position_blocked:
                 return False
+
+            self.move_to_position(self.position, target_position, target_tolerance=0.5)
         return True
