@@ -109,13 +109,17 @@ class Dungeon6593Task(DungeonTaskBase):
         self.info['state'] = '道中清完了，等待Boss动画'
         self.sleep(7)
         nearby_entities = self.nearby_entities
-        if not any(
-                entity.get('attr_id') == 34000
-                for entity in nearby_entities.values()):
+        boss_position = next((
+            entity.get('position')
+            for entity in nearby_entities.values()
+            if (entity.get('attr_id') == 34000
+                and entity.get('position') is not None)
+        ), None)
+        if boss_position is None:
             self.log_error('没有检测到Boss')
             return False
         self.info['state'] = 'Boss战中'
-        self.send_key('e')
+        self.move_to_position(self.position, boss_position, target_tolerance=2)
         self.sleep(3)
         if not self.wait_out_of_combat(time_out=420):
             self.log_error('Boss战超时')
@@ -255,6 +259,7 @@ class Dungeon6593Task(DungeonTaskBase):
                 for x, z in blocked_positions
             )
             if self.actor_state in blocked_states or position_blocked:
+                self.sleep(3)
                 return False
 
             self.move_to_position(self.position, target_position, target_tolerance=0.5)
