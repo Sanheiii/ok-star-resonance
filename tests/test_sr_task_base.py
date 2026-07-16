@@ -106,5 +106,67 @@ class MovementReturnValueTest(unittest.TestCase):
         self.assertEqual(task.release_count, 2)
 
 
+class _LookAtTask:
+    _xz = staticmethod(SRTaskBase._xz)
+    _angle_delta = staticmethod(SRTaskBase._angle_delta)
+
+    def __init__(self, camera_direction=0, position=(0, 0), detected=True):
+        self.camera_direction = camera_direction
+        self.position = position
+        self._camera_direction_detected = detected
+        self.rotations = []
+        self.capture_checks = 0
+        self.frame_count = 0
+
+    def _require_packet_capture(self):
+        self.capture_checks += 1
+
+    def next_frame(self):
+        self.frame_count += 1
+
+    def detect_camera_direction(self):
+        return self.camera_direction
+
+    def rotate_camera(self, degrees):
+        self.rotations.append(degrees)
+
+
+class LookAtTest(unittest.TestCase):
+    def test_looks_at_absolute_angle_using_shortest_turn(self):
+        task = _LookAtTask(camera_direction=350)
+
+        result = SRTaskBase.look_at(task, 10)
+
+        self.assertTrue(result)
+        self.assertEqual(task.rotations, [20])
+        self.assertEqual(task.capture_checks, 0)
+
+    def test_looks_at_world_position(self):
+        task = _LookAtTask(camera_direction=0, position=(10, 5, 20))
+
+        result = SRTaskBase.look_at(task, (20, 99, 20))
+
+        self.assertTrue(result)
+        self.assertEqual(task.rotations, [90])
+        self.assertEqual(task.capture_checks, 1)
+
+    def test_does_not_rotate_when_direction_detection_fails(self):
+        task = _LookAtTask(camera_direction=123, detected=False)
+
+        result = SRTaskBase.look_at(task, 90)
+
+        self.assertFalse(result)
+        self.assertEqual(task.rotations, [])
+
+    def test_same_position_needs_no_camera_detection(self):
+        task = _LookAtTask(position=(10, 20))
+
+        result = SRTaskBase.look_at(task, (10, 20))
+
+        self.assertTrue(result)
+        self.assertEqual(task.frame_count, 0)
+        self.assertEqual(task.rotations, [])
+
+
 if __name__ == "__main__":
     unittest.main()

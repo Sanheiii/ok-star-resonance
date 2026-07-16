@@ -1,6 +1,7 @@
 import ctypes
 import math
 import time
+from numbers import Real
 from ctypes import wintypes
 
 import cv2
@@ -140,6 +141,37 @@ class SRTaskBase(BaseTask):
         """Rotate the camera horizontally; positive values turn right."""
         pixels = round(float(degrees) * self._CAMERA_PIXELS_PER_DEGREE)
         self._move_mouse_relative(pixels, 0)
+
+    def look_at(self, target):
+        """Turn the camera toward an absolute yaw or a world position.
+
+        ``target`` may be a numeric yaw in degrees, where 0 points along the
+        positive Z axis and 90 points along the positive X axis, or an X/Z or
+        X/Y/Z position. Return ``False`` without rotating when the camera
+        direction cannot be detected; otherwise return ``True``.
+        """
+        if isinstance(target, Real) and not isinstance(target, bool):
+            target_heading = float(target) % 360.0
+        else:
+            self._require_packet_capture()
+            current = self.position
+            if current is None:
+                raise PacketCaptureRequiredError(
+                    "Player position has not been received from packet capture."
+                )
+            current_x, current_z = self._xz(current)
+            target_x, target_z = self._xz(target)
+            dx, dz = target_x - current_x, target_z - current_z
+            if dx == 0 and dz == 0:
+                return True
+            target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
+
+        self.next_frame()
+        self.detect_camera_direction()
+        if not self._camera_direction_detected:
+            return False
+        self.rotate_camera(self._angle_delta(target_heading, self.camera_direction))
+        return True
 
     @staticmethod
     def _move_mouse_relative(dx, dy):
