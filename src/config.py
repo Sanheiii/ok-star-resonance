@@ -82,7 +82,7 @@ config = {
         ["src.tasks.MahjongTask", "MahjongTask"],
         ["src.tasks.TutorialTask", "TutorialTask"],
         ["src.tasks.MinimapSectorAngleTestTask", "MinimapSectorAngleTestTask"],
-        ["src.tasks.SeaRingedReefTask", "SeaRingedReefTask"],
+        ["src.tasks.DungeonTasks.Dungeon6593Task", "Dungeon6593Task"],
     ],
     'trigger_tasks':[
         ["src.tasks.FishingTask", "FishingTask"],

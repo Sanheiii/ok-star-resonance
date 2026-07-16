@@ -6,6 +6,7 @@ class DungeonTaskBase(SRTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.has_normal_difficulty = False
 
     def run(self):
         self._require_packet_capture()
@@ -73,15 +74,23 @@ class DungeonTaskBase(SRTask):
         self.sleep(3)
         return not self.is_dead
 
-    def investigate(self, pos):
+    def investigate(self, pos=None):
         self.sleep(2)
-        self.move_to_position(self.position,pos, target_tolerance=1.5)
+        if pos is None:
+            pos = next((
+                entity.get('position')
+                for entity in self.nearby_entities.values()
+                if entity.get('attr_id') == 10001 and entity.get('position') is not None
+            ), None)
+            if pos is None:
+                self.log_error('没有找到调查目标')
+                return False
+        self.move_to_position(self.position, pos, target_tolerance=1.5)
         self.sleep(2)
         self.send_key('f')
         self.sleep(1)
         self.click(0.632,0.857)
         self.sleep(10)
-        pass
 
     def enter(self, difficulty):
         # 交互副本入口
@@ -99,11 +108,14 @@ class DungeonTaskBase(SRTask):
         # 选择难度
         if self.wait_feature('dungeon_icon'):
             if difficulty is Difficulty.NORMAL:
-                self.click(0.092,0.154)
+                if not self.has_normal_difficulty:
+                    self.log_error('没有这个难度')
+                    return False
+                self.click(0.092, 0.154)
             elif difficulty is Difficulty.HARD:
-                self.click(0.092,0.245)
+                self.click(0.092, 0.245 if self.has_normal_difficulty else 0.154)
             elif difficulty in (Difficulty.MASTER1, Difficulty.MASTER6):
-                self.click(0.092,0.344)
+                self.click(0.092, 0.344 if self.has_normal_difficulty else 0.245)
                 self.sleep(1)
                 self.scroll(self.width_of_screen(0.370),self.height_of_screen(0.922),-3000)
                 self.sleep(1)
