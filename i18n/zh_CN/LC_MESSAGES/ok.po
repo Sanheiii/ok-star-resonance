@@ -54,9 +54,6 @@ msgstr "采集"
 msgid "Auto Fish"
 msgstr "钓鱼"
 
-msgid "Dungeon6593"
-msgstr "镜中的审判 - 困难"
-
 msgid "Auto-claim Monthly Card"
 msgstr "领取月卡"
 

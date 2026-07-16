@@ -1,12 +1,18 @@
 from enum import Enum
+from ok import og
 
 from src.tasks.SRTask import SRTask
 
 class DungeonTaskBase(SRTask):
 
+    task_name = 'Unnamed Dungeon Task'
+    task_name_zh = '未命名副本任务'
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.has_normal_difficulty = False
+        if og.app.po_translation and (catalog:=getattr(og.app.po_translation, '_catalog', None)):
+            catalog[self.task_name] = self.task_name_zh
+        self.name = self.task_name
 
     def run(self):
         self._require_packet_capture()
