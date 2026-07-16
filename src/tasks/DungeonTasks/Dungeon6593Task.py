@@ -70,7 +70,7 @@ class Dungeon6593Task(DungeonTaskBase):
         for entity in entities.values():
             position = entity.get('position')
             if (position is None
-                    or entity.get('attr_id') in 34016):
+                    or entity.get('attr_id') == 34016):
                 continue
             target_x, target_z = self._xz(position)
             candidates.append((position, math.hypot(

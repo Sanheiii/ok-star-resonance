@@ -420,8 +420,8 @@ msgstr "已结束抓包"
 msgid "Character facing: {facing}"
 msgstr "角色面向：{facing}"
 
-msgid "Copy local position XY"
-msgstr "复制本地位置 XY"
+msgid "Copy local position XZ"
+msgstr "复制本地位置 XZ"
 
 msgid "Server position: {position}"
 msgstr "服务器位置：{position}"

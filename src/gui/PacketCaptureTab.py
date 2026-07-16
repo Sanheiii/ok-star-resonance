@@ -161,7 +161,7 @@ class PacketCaptureTab(CustomTab):
         self.nearby_entities.setMinimumHeight(180)
         self._set_entity_list([])
         self.copy_button = PushButton(
-            FluentIcon.COPY, og.app.tr("Copy local position XY"), state
+            FluentIcon.COPY, og.app.tr("Copy local position XZ"), state
         )
         self.copy_button.setEnabled(False)
         state_layout.addWidget(self.status_label)
@@ -546,7 +546,7 @@ class PacketCaptureTab(CustomTab):
     def _copy_position(self):
         position = og.packet_capture_data.get_local_position()
         if position is not None:
-            QApplication.clipboard().setText(f"{position[0]:.3f}, {position[1]:.3f}")
+            QApplication.clipboard().setText(f"{position[0]:.3f}, {position[2]:.3f}")
 
     def closeEvent(self, event):
         self._stop_capture()
