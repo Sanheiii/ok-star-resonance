@@ -83,6 +83,22 @@ class GamePacketParserTest(unittest.TestCase):
         self.assertEqual(parser.combat_state, 0)
         self.assertEqual(parser.combat_state_revision, 1)
 
+    def test_sync_to_me_delta_treats_omitted_attribute_104_data_as_zero(self):
+        parser = GamePacketParser()
+        parser.combat_state = 1
+        message = parser._proto.WorldNtf.SyncToMeDeltaInfo()
+        message.deltaInfo.uuid = 123 << 16
+        attr = message.deltaInfo.baseDelta.attrs.attrs.add()
+        attr.id = ATTR_COMBAT_STATE
+
+        self.assertFalse(
+            parser._decode_notify(
+                MSG_SYNC_TO_ME_DELTA_INFO, message.SerializeToString()
+            )
+        )
+        self.assertEqual(parser.combat_state, 0)
+        self.assertEqual(parser.combat_state_revision, 1)
+
     def test_new_move_notify_updates_local_without_changing_server_position(self):
         parser = GamePacketParser()
         parser.server_position = (1.0, 2.0, 3.0)

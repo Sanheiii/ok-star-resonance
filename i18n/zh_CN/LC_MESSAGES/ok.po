@@ -432,8 +432,17 @@ msgstr "角色 ID：{id}"
 msgid "Scene ID: {id}"
 msgstr "场景 ID：{id}"
 
-msgid "Attribute 104: {value}"
-msgstr "属性 104：{value}"
+msgid "Combat status: {status}"
+msgstr "战斗状态：{status}"
+
+msgid "In combat"
+msgstr "战斗中"
+
+msgid "Out of combat"
+msgstr "已脱战"
+
+msgid "Unknown value: {value}"
+msgstr "未知值：{value}"
 
 msgid "Death status: {status}"
 msgstr "死亡状态：{status}"

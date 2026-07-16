@@ -392,9 +392,12 @@ class GamePacketParser:
     @staticmethod
     def _find_varint_attr(collection, attr_id):
         for attr in collection.attrs:
-            if (attr.HasField("id") and attr.id == attr_id
-                    and attr.HasField("rawData")):
-                return _decode_varint(attr.rawData)
+            if attr.HasField("id") and attr.id == attr_id:
+                # Protobuf omits fields carrying their default value. The game
+                # therefore represents an integer attribute reset to zero as
+                # either an empty rawData field or no rawData field at all.
+                raw_data = attr.rawData if attr.HasField("rawData") else b""
+                return _decode_varint(raw_data)
         return None
 
     def _decode_transform_attrs(self, collection, include_position_direction=False):

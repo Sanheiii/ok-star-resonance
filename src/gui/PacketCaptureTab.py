@@ -62,7 +62,7 @@ class PacketCaptureTab(CustomTab):
             og.app.tr("Scene ID: {id}").format(id=unknown), state
         )
         self.combat_state_label = BodyLabel(
-            og.app.tr("Attribute 104: {value}").format(value=unknown), state
+            og.app.tr("Combat status: {status}").format(status=unknown), state
         )
         self.death_state_label = BodyLabel(
             og.app.tr("Death status: {status}").format(status=unknown), state
@@ -277,10 +277,18 @@ class PacketCaptureTab(CustomTab):
             )
         )
         combat_state = og.packet_capture_data.get_combat_state()
-        self.combat_state_label.setText(
-            og.app.tr("Attribute 104: {value}").format(
-                value=og.app.tr("Unknown") if combat_state is None else combat_state
+        if combat_state is None:
+            combat_status = og.app.tr("Unknown")
+        elif combat_state == 1:
+            combat_status = og.app.tr("In combat")
+        elif combat_state == 0:
+            combat_status = og.app.tr("Out of combat")
+        else:
+            combat_status = og.app.tr("Unknown value: {value}").format(
+                value=combat_state
             )
+        self.combat_state_label.setText(
+            og.app.tr("Combat status: {status}").format(status=combat_status)
         )
         actor_state, is_dead = og.packet_capture_data.get_death_state()
         if is_dead is None:
