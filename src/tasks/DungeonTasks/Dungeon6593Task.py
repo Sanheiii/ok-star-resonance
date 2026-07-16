@@ -21,34 +21,19 @@ class Dungeon6593Task(DungeonTaskBase):
         if not self.move_to_position(self.position, (-15.432, -10.630)):
             return
         self.send_key('h')
-        while self.is_dead or self.in_combat == 1:
-            if self.is_dead:
-                if not self.handle_death():
-                    return
-                continue
-
-            current_position = self.position
-            entities = self.nearby_entities
-            # 取最近的怪物，排除id为34016的怪物
-            nearest = self._nearest_entity(current_position, entities)
-            if nearest is None:
-                self.sleep(0.2)
-                continue
-
-            target_position, distance = nearest
-            # 如果最近的怪物距离玩家超过10米则向怪物移动直到进入10米范围
-            if distance > 10 and not self.move_to_position(
-                    current_position, target_position, target_tolerance=10):
-                return
-            # 面向怪物
-            if not self.is_dead:
-                self.look_at(target_position)
-            self.sleep(0.2)
+        # 依次走到下面坐标的10范围内，等待怪物消失
+        monsters = (
+            (110809, (-9.000, 15.600)),
+            (110808, (-9.000, -15.600)),
+            (110910, (18.000, 0.000)),
+        )
+        if not self._clear_monsters(monsters):
+            return
         self.sleep(3)
         if self.is_dead and not self.handle_death():
             return
 
-        # 依次站在下面点位，然后面向下一个点位，然后按下w，等待0.5秒后按两次space，间隔0.5s，然后松开w，然后用self.move_to_position校准落点，target_tolerance=1
+        # 依次站在下面点位，然后面向下一个点位，然后按下w，等待0.5秒后按两次space，间隔0.5s，然后松开w，等待2秒，然后用self.move_to_position校准落点，target_tolerance=1
         jump_points1 = (
             (21.653, 10.925),
             (30.430, 13.940),
@@ -61,6 +46,19 @@ class Dungeon6593Task(DungeonTaskBase):
             return
 
         self.sleep(1)
+
+    def _clear_monsters(self, monsters):
+        for monster_id, target_position in monsters:
+            if not self.move_to_position(
+                    self.position, target_position, target_tolerance=10):
+                return False
+            while any(
+                    entity.get('attr_id') == monster_id
+                    for entity in self.nearby_entities.values()):
+                if self.is_dead and not self.handle_death():
+                    return False
+                self.sleep(0.2)
+        return True
 
     def _nearest_entity(self, current_position, entities):
         if current_position is None:
@@ -99,6 +97,7 @@ class Dungeon6593Task(DungeonTaskBase):
                 self.send_key('space')
             finally:
                 self.send_key_up('w')
+            self.sleep(2)
             if not self.move_to_position(
                     self.position, target_position, target_tolerance=1):
                 return False
