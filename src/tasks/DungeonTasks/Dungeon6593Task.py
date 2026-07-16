@@ -18,7 +18,7 @@ class Dungeon6593Task(DungeonTaskBase):
         # 开本仪器
         self.investigate(None)
         # 往前走几步
-        if not self.move_to_position(self.position, (-21.586, 99.977)):
+        if not self.move_to_position(self.position, (-15.432, -10.630)):
             return
         self.send_key('h')
         while self.is_dead or self.in_combat == 1:
