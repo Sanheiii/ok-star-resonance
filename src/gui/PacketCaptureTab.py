@@ -23,6 +23,7 @@ class PacketCaptureTab(CustomTab):
         self._parser = GamePacketParser()
         self._metadata_revision = -1
         self._local_position_revision = -1
+        self._combat_state_revision = -1
         self._config = Config("packet_capture", {"device_name": ""})
         self._refreshing_devices = False
         og.packet_capture_tool = self
@@ -59,6 +60,9 @@ class PacketCaptureTab(CustomTab):
         self.scene_id_label = BodyLabel(
             og.app.tr("Scene ID: {id}").format(id=unknown), state
         )
+        self.combat_state_label = BodyLabel(
+            og.app.tr("Attribute 104: {value}").format(value=unknown), state
+        )
         self.nearby_title = BodyLabel(og.app.tr("Nearby entities"), state)
         self.nearby_entities = PlainTextEdit(state)
         self.nearby_entities.setReadOnly(True)
@@ -74,6 +78,7 @@ class PacketCaptureTab(CustomTab):
         state_layout.addWidget(self.facing_label)
         state_layout.addWidget(self.player_id_label)
         state_layout.addWidget(self.scene_id_label)
+        state_layout.addWidget(self.combat_state_label)
         state_layout.addWidget(self.copy_button)
         state_layout.addWidget(self.nearby_title)
         state_layout.addWidget(self.nearby_entities)
@@ -187,6 +192,10 @@ class PacketCaptureTab(CustomTab):
             if self._parser.local_position is not None:
                 og.packet_capture_data.update_local_position(self._parser.local_position)
             self._local_position_revision = self._parser.local_position_revision
+        if self._combat_state_revision != self._parser.combat_state_revision:
+            if self._parser.combat_state is not None:
+                og.packet_capture_data.update_combat_state(self._parser.combat_state)
+            self._combat_state_revision = self._parser.combat_state_revision
 
     def _stop_capture(self):
         self._stop_requested = True
@@ -254,6 +263,12 @@ class PacketCaptureTab(CustomTab):
         self.scene_id_label.setText(
             og.app.tr("Scene ID: {id}").format(
                 id=og.app.tr("Unknown") if scene_id is None else scene_id
+            )
+        )
+        combat_state = og.packet_capture_data.get_combat_state()
+        self.combat_state_label.setText(
+            og.app.tr("Attribute 104: {value}").format(
+                value=og.app.tr("Unknown") if combat_state is None else combat_state
             )
         )
         rows = []

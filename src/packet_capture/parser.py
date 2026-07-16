@@ -27,6 +27,7 @@ MSG_SYNC_TO_ME_DELTA_INFO = 0x2E
 ATTR_SCENE_BASIC_ID = 0x155
 ATTR_FACING = 0x32
 ATTR_POSITION = 0x34
+ATTR_COMBAT_STATE = 104
 ENTITY_TYPE_CHAR = 10
 ENTITY_TYPE_SHIFT = 6
 ENTITY_UID_SHIFT = 16
@@ -137,6 +138,8 @@ class GamePacketParser:
         self.facing = None
         self.local_position = None
         self.local_position_revision = 0
+        self.combat_state = None
+        self.combat_state_revision = 0
         self._proto = _load_proto_module()
         self._warned_proto = False
 
@@ -369,6 +372,7 @@ class GamePacketParser:
                 self.local_player_uuid = int(player.uuid)
                 self.player_id = self.local_player_uuid >> ENTITY_UID_SHIFT
             if player.HasField("attrs"):
+                self._decode_combat_state_attr(player.attrs)
                 changed |= self._decode_transform_attrs(
                     player.attrs, include_position_direction=True
                 )
@@ -416,6 +420,17 @@ class GamePacketParser:
                         changed = True
         return changed
 
+    def _decode_combat_state_attr(self, collection):
+        value = self._find_varint_attr(collection, ATTR_COMBAT_STATE)
+        if value is None:
+            return False
+        value = int(value)
+        if value == self.combat_state:
+            return False
+        self.combat_state = value
+        self.combat_state_revision += 1
+        return True
+
     def _decode_delta(self, delta, force_local=False):
         if delta is None:
             return False
@@ -424,6 +439,7 @@ class GamePacketParser:
             return False
         if not delta.HasField("attrs"):
             return False
+        self._decode_combat_state_attr(delta.attrs)
         return self._decode_transform_attrs(delta.attrs)
 
     def _record_appeared_entity(self, entity):

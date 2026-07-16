@@ -4,7 +4,7 @@
 
 ## 项目概览
 
-`ok-star-resonance` 是仅支持 Windows 的 Python 3.12 桌面自动化工具，用于《星痕共鸣》。程序通过屏幕捕获、OCR、模板匹配、目标检测和模拟键鼠与游戏 UI 交互；不要引入读取游戏内存、修改游戏文件或注入游戏进程的实现。
+`ok-star-resonance` 是仅支持 Windows 的 Python 3.12 桌面自动化工具，用于《星痕共鸣》。程序通过屏幕捕获、网络包捕获、OCR、模板匹配、目标检测和模拟键鼠与游戏 UI 交互；不要引入读取游戏内存、修改游戏文件或注入游戏进程的实现。
 
 核心依赖和子系统：
 
@@ -92,28 +92,24 @@ uv pip sync requirements.txt
 
 任务执行可能随时被禁用。长循环和等待优先使用框架提供的 `self.sleep()`、`wait_until()` 等可中断方法，不要用长时间的阻塞 `time.sleep()`。模拟按键后必须确保异常和禁用路径能够释放按键或鼠标；涉及线程的任务应避免直接从工作线程操作 Qt 控件。
 
+编写Task时候参考ok-script [API 文档](https://github.com/ok-oldking/ok-script/blob/master/docs/api_doc/README.md)，优先使用其提供的API。
+
 ## 坐标、视觉和语言约定
 
-- 游戏区域坐标通常使用相对于画面的 0–1 比例；优先使用 `box_of_screen()`、`width_of_screen()`、`height_of_screen()` 等框架转换方法。
-- 不要写死仅适用于某个像素分辨率的坐标。改动需兼容配置声明的 16:9 分辨率集合。
-- 模板应加入 `assets/images/` 并同步维护 `assets/coco_annotations.json`；不要用运行时截图替代正式资源。
-- OCR 匹配优先复用 `get_game_language()` 和任务的 `regex_map`。
+- 游戏区域坐标通常使用相对于画面的 0–1 比例，任何时候都不要直接写入像素坐标，但框架的某些方法不支持直接传入比例坐标，可能需要使用 `box_of_screen()`、`width_of_screen()`、`height_of_screen()` 等转换方法。
 - 保持源文件为 UTF-8。仓库中部分中文在某些 Windows PowerShell 输出编码下会显示为乱码；在确认文件真实编码前，不要批量“修复”中文或整文件重写。
 
 ## 抓包子系统约定
 
 - Npcap 是 Windows 上的可选运行时依赖。没有 Npcap 或没有真实流量时，解析器和状态层仍应可导入、可测试。
-- 网络输入不可信：帧长度、偏移、压缩数据和 protobuf 解码必须保留边界检查与失败隔离。
-- `PacketCaptureData` 由捕获线程写入、GUI/任务线程读取；修改共享状态时保持其锁语义。
-- 依赖抓包位置数据的任务应通过 `SRTaskBase._require_packet_capture()` 或等价的明确检查快速失败，不要静默使用陈旧位置。
+- 依赖抓包位置数据的任务应通过 `SRTaskBase._require_packet_capture()` 或等价的明确检查快速失败。
 - 修改 TCP 重组、压缩或消息 ID 映射时，优先添加小型二进制夹具单元测试，不要提交真实用户抓包或敏感网络数据。
 
 ## 代码与变更规范
 
 - 遵循现有 Python 风格：4 空格缩进、模块使用绝对导入、类使用 PascalCase、方法和变量使用 snake_case。
 - 新代码可使用 Python 3.12 类型语法，但不要为无关旧代码做大范围格式化或类型改写。
-- 保持变更聚焦；不要顺手提交 `configs/`、`logs/`、`screenshots/`、缓存、模型、MIDI 或本地模板。
 - 不要手工修改生成的 `requirements.txt`、protobuf 或构建产物。
 - 不要覆盖用户工作树中的未提交修改。开始和结束前检查 `git status --short`，只处理当前任务涉及的文件。
-- 绝大多数功能均需游戏实机测试，修改完成后无需构建与测试。
+- 绝大多数功能均需游戏实机测试，修改完成后无需构建与运行。
 - 用户可能在两次对话之间手动修改部分代码，不要撤销用户修改的这部分代码。

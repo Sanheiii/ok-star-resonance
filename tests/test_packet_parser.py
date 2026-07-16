@@ -1,10 +1,12 @@
 import unittest
 
 from src.packet_capture.parser import (
+    ATTR_COMBAT_STATE,
     ATTR_FACING,
     ATTR_POSITION,
     MSG_SYNC_CONTAINER_DATA,
     MSG_SYNC_NEAR_ENTITIES,
+    MSG_SYNC_TO_ME_DELTA_INFO,
     MSG_NEW_MOVE,
     WORLD_CALL_SERVICE_ID,
     GamePacketParser,
@@ -17,6 +19,35 @@ except ImportError:
 
 
 class GamePacketParserTest(unittest.TestCase):
+    def test_enter_scene_reads_initial_attribute_104(self):
+        parser = GamePacketParser()
+        message = parser._proto.WorldNtf.EnterScene()
+        player = message.enterSceneInfo.playerEnt
+        player.uuid = 123 << 16
+        attr = player.attrs.attrs.add()
+        attr.id = ATTR_COMBAT_STATE
+        attr.rawData = b"\x02"
+
+        self.assertFalse(parser._decode_enter_scene(message))
+        self.assertEqual(parser.combat_state, 2)
+        self.assertEqual(parser.combat_state_revision, 1)
+
+    def test_sync_to_me_delta_updates_attribute_104_including_zero(self):
+        parser = GamePacketParser()
+        message = parser._proto.WorldNtf.SyncToMeDeltaInfo()
+        message.deltaInfo.uuid = 123 << 16
+        attr = message.deltaInfo.baseDelta.attrs.attrs.add()
+        attr.id = ATTR_COMBAT_STATE
+        attr.rawData = b""
+
+        self.assertFalse(
+            parser._decode_notify(
+                MSG_SYNC_TO_ME_DELTA_INFO, message.SerializeToString()
+            )
+        )
+        self.assertEqual(parser.combat_state, 0)
+        self.assertEqual(parser.combat_state_revision, 1)
+
     def test_new_move_notify_updates_local_without_changing_server_position(self):
         parser = GamePacketParser()
         parser.server_position = (1.0, 2.0, 3.0)

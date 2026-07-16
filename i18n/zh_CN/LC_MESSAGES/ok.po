@@ -432,6 +432,9 @@ msgstr "角色 ID：{id}"
 msgid "Scene ID: {id}"
 msgstr "场景 ID：{id}"
 
+msgid "Attribute 104: {value}"
+msgstr "属性 104：{value}"
+
 msgid "Nearby entities"
 msgstr "附近实体"
 

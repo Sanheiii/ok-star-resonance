@@ -16,6 +16,8 @@ class PacketCaptureData:
         self.player_id = None
         self.player_uuid = None
         self.nearby_entities = {}
+        self.combat_state = None
+        self.combat_state_update_time = 0.0
 
     def update_server_transform(self, position=None, facing=None):
         with self._lock:
@@ -48,3 +50,12 @@ class PacketCaptureData:
     def get_world(self):
         with self._lock:
             return self.scene_id, self.player_id, self.player_uuid, dict(self.nearby_entities)
+
+    def update_combat_state(self, value):
+        with self._lock:
+            self.combat_state = int(value)
+            self.combat_state_update_time = time.time()
+
+    def get_combat_state(self):
+        with self._lock:
+            return self.combat_state
