@@ -423,7 +423,7 @@ class PacketCaptureTab(CustomTab):
                     direction=direction_text,
                     distance=f"{distance:.3f}",
                 )
-                rows.append((translated_type, attr_id is None, attr_id or 0, sequence, entity_id, text))
+                rows.append((distance, sequence, entity_id, text))
                 visible_details[entity_id] = {
                     **entity,
                     "uuid": entity_id,
@@ -432,9 +432,9 @@ class PacketCaptureTab(CustomTab):
                     "distance": distance,
                     "type_name": translated_type,
                 }
-        rows.sort(key=lambda item: (item[0], item[1], item[2], item[3]))
+        rows.sort(key=lambda item: (item[0], item[1]))
         self._visible_entity_details = visible_details
-        self._set_entity_list([(row[4], row[5]) for row in rows])
+        self._set_entity_list([(row[2], row[3]) for row in rows])
 
     def _reset_entity_sequences_if_scene_changed(self, scene_id):
         if not self._has_sequence_scene:
@@ -477,7 +477,7 @@ class PacketCaptureTab(CustomTab):
         self.nearby_entities.clear()
         if not rows:
             item = QListWidgetItem(og.app.tr("No nearby entities"))
-            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+            item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.nearby_entities.addItem(item)
             return
         for entity_uuid, text in rows:
