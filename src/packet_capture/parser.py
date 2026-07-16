@@ -28,6 +28,8 @@ ATTR_SCENE_BASIC_ID = 0x155
 ATTR_FACING = 0x32
 ATTR_POSITION = 0x34
 ATTR_COMBAT_STATE = 104
+ATTR_ACTOR_STATE = 11
+ACTOR_STATE_DEAD = 9
 ENTITY_TYPE_CHAR = 10
 ENTITY_TYPE_SHIFT = 6
 ENTITY_UID_SHIFT = 16
@@ -140,6 +142,9 @@ class GamePacketParser:
         self.local_position_revision = 0
         self.combat_state = None
         self.combat_state_revision = 0
+        self.actor_state = None
+        self.is_dead = None
+        self.death_state_revision = 0
         self._proto = _load_proto_module()
         self._warned_proto = False
 
@@ -373,6 +378,7 @@ class GamePacketParser:
                 self.player_id = self.local_player_uuid >> ENTITY_UID_SHIFT
             if player.HasField("attrs"):
                 self._decode_combat_state_attr(player.attrs)
+                self._decode_death_state_attr(player.attrs)
                 changed |= self._decode_transform_attrs(
                     player.attrs, include_position_direction=True
                 )
@@ -431,6 +437,19 @@ class GamePacketParser:
         self.combat_state_revision += 1
         return True
 
+    def _decode_death_state_attr(self, collection):
+        actor_state = self._find_varint_attr(collection, ATTR_ACTOR_STATE)
+        if actor_state is None:
+            return False
+        actor_state = int(actor_state)
+        is_dead = actor_state == ACTOR_STATE_DEAD
+        if actor_state == self.actor_state and is_dead == self.is_dead:
+            return False
+        self.actor_state = actor_state
+        self.is_dead = is_dead
+        self.death_state_revision += 1
+        return True
+
     def _decode_delta(self, delta, force_local=False):
         if delta is None:
             return False
@@ -440,6 +459,7 @@ class GamePacketParser:
         if not delta.HasField("attrs"):
             return False
         self._decode_combat_state_attr(delta.attrs)
+        self._decode_death_state_attr(delta.attrs)
         return self._decode_transform_attrs(delta.attrs)
 
     def _record_appeared_entity(self, entity):

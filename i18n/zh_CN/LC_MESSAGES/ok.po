@@ -435,6 +435,15 @@ msgstr "场景 ID：{id}"
 msgid "Attribute 104: {value}"
 msgstr "属性 104：{value}"
 
+msgid "Death status: {status}"
+msgstr "死亡状态：{status}"
+
+msgid "Alive"
+msgstr "存活"
+
+msgid "Dead"
+msgstr "死亡"
+
 msgid "Nearby entities"
 msgstr "附近实体"
 

@@ -24,6 +24,7 @@ class PacketCaptureTab(CustomTab):
         self._metadata_revision = -1
         self._local_position_revision = -1
         self._combat_state_revision = -1
+        self._death_state_revision = -1
         self._config = Config("packet_capture", {"device_name": ""})
         self._refreshing_devices = False
         og.packet_capture_tool = self
@@ -63,6 +64,9 @@ class PacketCaptureTab(CustomTab):
         self.combat_state_label = BodyLabel(
             og.app.tr("Attribute 104: {value}").format(value=unknown), state
         )
+        self.death_state_label = BodyLabel(
+            og.app.tr("Death status: {status}").format(status=unknown), state
+        )
         self.nearby_title = BodyLabel(og.app.tr("Nearby entities"), state)
         self.nearby_entities = PlainTextEdit(state)
         self.nearby_entities.setReadOnly(True)
@@ -79,6 +83,7 @@ class PacketCaptureTab(CustomTab):
         state_layout.addWidget(self.player_id_label)
         state_layout.addWidget(self.scene_id_label)
         state_layout.addWidget(self.combat_state_label)
+        state_layout.addWidget(self.death_state_label)
         state_layout.addWidget(self.copy_button)
         state_layout.addWidget(self.nearby_title)
         state_layout.addWidget(self.nearby_entities)
@@ -196,6 +201,12 @@ class PacketCaptureTab(CustomTab):
             if self._parser.combat_state is not None:
                 og.packet_capture_data.update_combat_state(self._parser.combat_state)
             self._combat_state_revision = self._parser.combat_state_revision
+        if self._death_state_revision != self._parser.death_state_revision:
+            if self._parser.actor_state is not None:
+                og.packet_capture_data.update_death_state(
+                    self._parser.actor_state, self._parser.is_dead
+                )
+            self._death_state_revision = self._parser.death_state_revision
 
     def _stop_capture(self):
         self._stop_requested = True
@@ -270,6 +281,18 @@ class PacketCaptureTab(CustomTab):
             og.app.tr("Attribute 104: {value}").format(
                 value=og.app.tr("Unknown") if combat_state is None else combat_state
             )
+        )
+        actor_state, is_dead = og.packet_capture_data.get_death_state()
+        if is_dead is None:
+            death_status = og.app.tr("Unknown")
+        elif is_dead:
+            death_status = og.app.tr("Dead")
+        else:
+            death_status = og.app.tr("Alive")
+        if actor_state is not None:
+            death_status = f"{death_status} (ActorState {actor_state})"
+        self.death_state_label.setText(
+            og.app.tr("Death status: {status}").format(status=death_status)
         )
         rows = []
         if player_position is not None:

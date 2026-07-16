@@ -1,6 +1,8 @@
 import unittest
 
 from src.packet_capture.parser import (
+    ACTOR_STATE_DEAD,
+    ATTR_ACTOR_STATE,
     ATTR_COMBAT_STATE,
     ATTR_FACING,
     ATTR_POSITION,
@@ -19,6 +21,39 @@ except ImportError:
 
 
 class GamePacketParserTest(unittest.TestCase):
+    def test_enter_scene_reads_initial_dead_actor_state(self):
+        parser = GamePacketParser()
+        message = parser._proto.WorldNtf.EnterScene()
+        player = message.enterSceneInfo.playerEnt
+        player.uuid = 123 << 16
+        attr = player.attrs.attrs.add()
+        attr.id = ATTR_ACTOR_STATE
+        attr.rawData = bytes([ACTOR_STATE_DEAD])
+
+        self.assertFalse(parser._decode_enter_scene(message))
+        self.assertEqual(parser.actor_state, ACTOR_STATE_DEAD)
+        self.assertTrue(parser.is_dead)
+        self.assertEqual(parser.death_state_revision, 1)
+
+    def test_sync_to_me_delta_tracks_revive_actor_state(self):
+        parser = GamePacketParser()
+        parser.actor_state = ACTOR_STATE_DEAD
+        parser.is_dead = True
+        message = parser._proto.WorldNtf.SyncToMeDeltaInfo()
+        message.deltaInfo.uuid = 123 << 16
+        attr = message.deltaInfo.baseDelta.attrs.attrs.add()
+        attr.id = ATTR_ACTOR_STATE
+        attr.rawData = b""
+
+        self.assertFalse(
+            parser._decode_notify(
+                MSG_SYNC_TO_ME_DELTA_INFO, message.SerializeToString()
+            )
+        )
+        self.assertEqual(parser.actor_state, 0)
+        self.assertFalse(parser.is_dead)
+        self.assertEqual(parser.death_state_revision, 1)
+
     def test_enter_scene_reads_initial_attribute_104(self):
         parser = GamePacketParser()
         message = parser._proto.WorldNtf.EnterScene()

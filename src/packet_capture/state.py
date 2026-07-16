@@ -18,6 +18,9 @@ class PacketCaptureData:
         self.nearby_entities = {}
         self.combat_state = None
         self.combat_state_update_time = 0.0
+        self.actor_state = None
+        self.is_dead = None
+        self.death_state_update_time = 0.0
 
     def update_server_transform(self, position=None, facing=None):
         with self._lock:
@@ -59,3 +62,13 @@ class PacketCaptureData:
     def get_combat_state(self):
         with self._lock:
             return self.combat_state
+
+    def update_death_state(self, actor_state, is_dead):
+        with self._lock:
+            self.actor_state = int(actor_state)
+            self.is_dead = bool(is_dead)
+            self.death_state_update_time = time.time()
+
+    def get_death_state(self):
+        with self._lock:
+            return self.actor_state, self.is_dead
