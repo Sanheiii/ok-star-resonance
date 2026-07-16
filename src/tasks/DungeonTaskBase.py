@@ -1,4 +1,6 @@
 from enum import Enum
+import time
+
 from ok import og
 from qfluentwidgets import FluentIcon
 
@@ -82,12 +84,23 @@ class DungeonTaskBase(SRTask):
 
     def wait_out_of_combat(self, time_out=300):
         self._require_packet_capture()
+        inactive_since = None
 
         def is_out_of_combat():
+            nonlocal inactive_since
             self._require_packet_capture()
-            result = not self.in_combat and not self.is_dead
-            self.handle_death()
-            return result
+            in_combat = self.in_combat
+            is_dead = self.is_dead
+            if in_combat or is_dead:
+                inactive_since = None
+                if is_dead:
+                    self.handle_death()
+                return False
+
+            now = time.monotonic()
+            if inactive_since is None:
+                inactive_since = now
+            return now - inactive_since >= 3
 
         return bool(self.wait_until(is_out_of_combat, time_out=time_out))
 

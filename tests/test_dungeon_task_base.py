@@ -1,6 +1,67 @@
 import unittest
+from unittest.mock import patch
 
+from src.tasks import DungeonTaskBase as dungeon_task_base_module
 from src.tasks.DungeonTaskBase import Difficulty, DungeonTaskBase
+
+
+class _WaitOutOfCombatTask:
+    def __init__(self, states):
+        self._states = iter(states)
+        self.capture_checks = 0
+        self.death_handling_count = 0
+
+    def _require_packet_capture(self):
+        self.capture_checks += 1
+
+    def wait_until(self, condition, time_out=0):
+        self.time_out = time_out
+        for _ in range(20):
+            if condition():
+                return True
+        return None
+
+    @property
+    def in_combat(self):
+        self._in_combat, self._is_dead = next(self._states)
+        return self._in_combat
+
+    @property
+    def is_dead(self):
+        return self._is_dead
+
+    def handle_death(self):
+        self.death_handling_count += 1
+
+
+class WaitOutOfCombatTest(unittest.TestCase):
+    @patch.object(dungeon_task_base_module.time, 'monotonic')
+    def test_requires_five_continuous_seconds_without_combat_or_death(self, monotonic):
+        task = _WaitOutOfCombatTask([(0, False)] * 3)
+        monotonic.side_effect = [10, 14.9, 15]
+
+        result = DungeonTaskBase.wait_out_of_combat(task, time_out=12)
+
+        self.assertTrue(result)
+        self.assertEqual(task.time_out, 12)
+
+    @patch.object(dungeon_task_base_module.time, 'monotonic')
+    def test_combat_or_death_restarts_the_five_second_timer(self, monotonic):
+        task = _WaitOutOfCombatTask([
+            (0, False),
+            (0, False),
+            (1, False),
+            (0, False),
+            (0, True),
+            (0, False),
+            (0, False),
+        ])
+        monotonic.side_effect = [0, 4.9, 10, 20, 25]
+
+        result = DungeonTaskBase.wait_out_of_combat(task)
+
+        self.assertTrue(result)
+        self.assertEqual(task.death_handling_count, 1)
 
 
 class _EnterTask:
