@@ -363,6 +363,9 @@ msgstr "没有检测到全部手牌，如果无法正常打牌，请将游戏设
 msgid "Band"
 msgstr "乐队"
 
+msgid "Dungeon"
+msgstr "副本"
+
 msgid "Tutorial Chart Performance"
 msgstr "演奏教学谱面"
 

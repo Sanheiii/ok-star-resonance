@@ -1,11 +1,4 @@
-from ok import og
-
 from src.tasks.DungeonTaskBase import DungeonTaskBase, Difficulty
-
-
-DUNGEON_NAME_ZH = ""
-DUNGEON_NAME_EN = "Judgment in the Mirror - Hard"
-
 
 class Dungeon6593Task(DungeonTaskBase):
 

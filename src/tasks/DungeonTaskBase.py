@@ -1,5 +1,6 @@
 from enum import Enum
 from ok import og
+from qfluentwidgets import FluentIcon
 
 from src.tasks.SRTask import SRTask
 
@@ -13,6 +14,8 @@ class DungeonTaskBase(SRTask):
         if og.app.po_translation and (catalog:=getattr(og.app.po_translation, '_catalog', None)):
             catalog[self.task_name] = self.task_name_zh
         self.name = self.task_name
+        self.group_name = 'Dungeon'
+        self.group_icon = FluentIcon.GAME
 
     def run(self):
         self._require_packet_capture()
