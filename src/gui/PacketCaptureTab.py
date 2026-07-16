@@ -1,6 +1,7 @@
 import math
 import threading
 from collections import Counter
+from datetime import datetime
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
@@ -499,6 +500,13 @@ class PacketCaptureTab(CustomTab):
         flag_text = ", ".join(flags) if flags else og.app.tr("None")
         attr_id = entity.get("attr_id")
         entity_facing = entity.get("facing")
+        updated_at = entity.get("updated_at")
+        try:
+            updated_at_text = datetime.fromtimestamp(updated_at).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+        except (OSError, OverflowError, TypeError, ValueError):
+            updated_at_text = og.app.tr("Unknown")
         details = og.app.tr(
             "UUID: {uuid}\nUID: {uid}\nType: {type} ({type_id})\n"
             "Attr ID: {attr_id}\nSequence: {sequence}\n"
@@ -520,7 +528,7 @@ class PacketCaptureTab(CustomTab):
             direction=entity["direction"],
             distance=f"{entity['distance']:.3f}",
             flags=flag_text,
-            updated_at=f"{entity.get('updated_at', 0.0):.3f}",
+            updated_at=updated_at_text,
         )
         dialog = QMessageBox(self)
         dialog.setWindowTitle(og.app.tr("Entity details"))
