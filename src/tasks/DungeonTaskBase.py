@@ -20,6 +20,9 @@ class DungeonTaskBase(SRTask):
     def run(self):
         self._require_packet_capture()
         self.info['entry_count'] = 0
+        self.info['win_count'] = 0
+
+    def begin(self):
         if not self.enter(self.difficulty):
             self.log_error('进入副本失败')
             return False
@@ -69,21 +72,28 @@ class DungeonTaskBase(SRTask):
         return None
 
     def handle_death(self):
-        """Use the dungeon revive UI and wait until normal gameplay resumes."""
-        self._release_move_keys()
-        self.next_frame()
-        if not self.wait_feature("leave_dungeon", time_out=5):
-            return not self.is_dead
-
-        while self.find_one("leave_dungeon"):
+        if self.is_dead:
+            self._release_move_keys()
+        while self.is_dead:
+            self.next_frame()
             if (revive_box := self.find_one("dungeon_revive")) and self.is_colorful(revive_box):
                 self.click(revive_box)
             self.sleep(1)
-            self.next_frame()
-        self.sleep(3)
-        return not self.is_dead
+        return True
+
+    def wait_out_of_combat(self, time_out=300):
+        self._require_packet_capture()
+
+        def is_out_of_combat():
+            self._require_packet_capture()
+            result = not self.in_combat and not self.is_dead
+            self.handle_death()
+            return result
+
+        return bool(self.wait_until(is_out_of_combat, time_out=time_out))
 
     def investigate(self, pos=None):
+        self.info['state'] = '准备交互开本仪器'
         self.sleep(2)
         if pos is None:
             pos = next((
@@ -92,29 +102,35 @@ class DungeonTaskBase(SRTask):
                 if entity.get('attr_id') == 10001 and entity.get('position') is not None
             ), None)
             if pos is None:
-                self.log_error('没有找到调查目标')
+                self.log_error('没有找到开本仪器')
                 return False
+        self.info['state'] = f'前往开本仪器: {pos}'
         self.move_to_position(self.position, pos, target_tolerance=1.5)
+        self.info['state'] = f'交互开本仪器'
         self.sleep(2)
         self.send_key('f')
+        self.info['state'] = f'点击开本'
         self.sleep(1)
         self.click(0.632,0.857)
-        self.sleep(10)
+        self.info['state'] = f'等待开本读秒'
+        self.sleep(8)
 
     def enter(self, difficulty):
         # 交互副本入口
+        self.info['state'] = '等待副本入口按钮'
         if box:=self.wait_feature('dungeon_entrance'):
+            self.info['state'] = '点击交互副本入口'
             self.send_key_down('lalt')
             self.sleep(0.1)
             self.click(box)
             self.sleep(0.1)
             self.send_key_up('lalt')
             self.sleep(1)
-            self.log_info('点击交互副本入口')
         else:
             self.log_error('没有找到副本入口')
             return False
         # 选择难度
+        self.info['state'] = '等待选择难度'
         if self.wait_feature('dungeon_icon'):
             if difficulty is Difficulty.NORMAL:
                 if not self.has_normal_difficulty:
@@ -126,6 +142,7 @@ class DungeonTaskBase(SRTask):
             elif difficulty in (Difficulty.MASTER1, Difficulty.MASTER6):
                 self.click(0.092, 0.344 if self.has_normal_difficulty else 0.245)
                 self.sleep(1)
+                self.info['state'] = '选择大师难度'
                 self.scroll(self.width_of_screen(0.370),self.height_of_screen(0.922),-3000)
                 self.sleep(1)
                 pass
@@ -140,24 +157,45 @@ class DungeonTaskBase(SRTask):
         else:
             return False
         # 选择单双人模式
+        self.info['state'] = '选择单双人模式'
         self.click(0.812,0.859)
         self.sleep(1)
         # 点击进入副本
+        self.info['state'] = '点击进入副本'
         self.click(0.933,0.920)
         self.sleep(1)
         # 等待副本UI
         if not self.wait_feature('loading'):
             self.log_error('没有找到加载页面')
             return False
+        self.info['state'] = '等待进本加载'
         while self.frame is None or self.find_one('loading'):
             self.sleep(1)
             self.next_frame()
+        self.info['state'] = '加载完成'
         if not  self.wait_feature('dungeon_scene_icon'):
             self.log_error('加载完成后没有找到副本UI')
             return False
         self.info['entry_count'] += 1
+        self.info['state'] = '已进入副本'
         return True
 
+    def handle_end(self):
+        self.info['state'] = 'Boss战结束，等待结算'
+        if not self.wait_click_feature('next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92), time_out=30):
+            self.log_error('Boss战结束后没等到结算')
+            return False
+        self.info['win_count'] += 1
+        # 点击离开
+        self.wait_click_feature('exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97))
+        self.wait_feature('loading')
+        self.info['state'] = '等待出本加载'
+        while self.find_one('loading'):
+            self.sleep(1)
+        self.info['state'] = '本次副本成功'
+
+    def clear(self):
+        self.info['state'] = '副本流程出现错误，尝试退回状态'
 
 class Difficulty(Enum):
     NORMAL = 1

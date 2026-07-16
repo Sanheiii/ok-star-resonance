@@ -1,3 +1,4 @@
+import math
 import unittest
 
 from src.tasks.DungeonTasks.Dungeon6593Task import Dungeon6593Task
@@ -83,6 +84,58 @@ class ClearMonstersTest(unittest.TestCase):
         self.assertFalse(Dungeon6593Task._clear_monsters(
             DeadTask(),
             ((110809, (-9, 15.6)),),
+        ))
+
+
+class DummyAvoidanceTest(unittest.TestCase):
+    def test_only_selects_dummy_entities_with_the_expected_attr_id(self):
+        entities = {
+            1: {'entity_type': 11, 'attr_id': 3400013,
+                'position': (1, 2, 3)},
+            2: {'entity_type': 1, 'attr_id': 3400013,
+                'position': (4, 5, 6)},
+            3: {'entity_type': 11, 'attr_id': 123,
+                'position': (7, 8, 9)},
+            4: {'entity_type': 11, 'attr_id': 3400013,
+                'position': None},
+        }
+
+        self.assertEqual(
+            Dungeon6593Task._dummy_positions(entities),
+            [(1, 2, 3)],
+        )
+
+    def test_only_triggers_when_a_dummy_is_less_than_six_metres_away(self):
+        task = object.__new__(Dungeon6593Task)
+
+        self.assertTrue(task._is_near_any_position(
+            (10, 0), ((15.99, 0), (30, 0)), 6))
+        self.assertFalse(task._is_near_any_position(
+            (10, 0), ((16, 0), (30, 0)), 6))
+
+    def test_finds_first_clockwise_point_far_enough_from_every_dummy(self):
+        task = object.__new__(Dungeon6593Task)
+
+        result = task._first_clockwise_safe_position(
+            (10, 0),
+            ((10, 0), (8, 0)),
+            minimum_distance=6,
+        )
+
+        self.assertIsNotNone(result)
+        result_angle = math.degrees(math.atan2(result[1], result[0])) % 360
+        self.assertEqual(result_angle, 323)
+        self.assertAlmostEqual(math.hypot(*result), 10)
+        for dummy in ((10, 0), (8, 0)):
+            self.assertGreaterEqual(math.dist(result, dummy), 6)
+
+    def test_returns_none_when_character_is_at_rotation_origin(self):
+        task = object.__new__(Dungeon6593Task)
+
+        self.assertIsNone(task._first_clockwise_safe_position(
+            (0, 0),
+            ((1, 1),),
+            minimum_distance=6,
         ))
 
 

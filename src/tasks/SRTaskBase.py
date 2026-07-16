@@ -110,29 +110,15 @@ class SRTaskBase(BaseTask):
 
     @property
     def is_dead(self):
-        """Return whether the captured actor state is ``DEAD``."""
+        """Return whether the captured actor state is ``DEAD`` or ``RESURRECTION``."""
         actor_state = self.actor_state
-        return actor_state is not None and actor_state == ActorState.DEAD
+        return actor_state is not None and actor_state in [ActorState.DEAD, ActorState.RESURRECTION]
 
     def _require_packet_capture(self):
         tool = self.packet_capture_tool
         if tool is None or not tool.is_capturing:
             raise PacketCaptureRequiredError("Packet capture must be started before using movement helpers.")
         return tool
-
-    def wait_out_of_combat(self, time_out=30):
-        """Wait until attribute 104 becomes 0 (1 is assumed to mean in combat).
-
-        An unknown value keeps waiting, so callers do not mistake a missing
-        initial attribute sync for an out-of-combat state.
-        """
-        self._require_packet_capture()
-
-        def is_out_of_combat():
-            self._require_packet_capture()
-            return self.in_combat == 0
-
-        return bool(self.wait_until(is_out_of_combat, time_out=time_out))
 
     def detect_camera_direction(self):
         """Detect camera yaw from the translucent sector in the current minimap."""
