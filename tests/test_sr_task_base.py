@@ -41,5 +41,70 @@ class WaitOutOfCombatTest(unittest.TestCase):
         self.assertFalse(SRTaskBase.wait_out_of_combat(task, time_out=1))
 
 
+class _PathTask:
+    def __init__(self, results):
+        self.position = (0, 0)
+        self.results = iter(results)
+        self.calls = []
+
+    def _begin_movement_session(self):
+        pass
+
+    def _end_movement_session(self):
+        pass
+
+    def _release_move_keys(self):
+        pass
+
+    def sleep(self, _seconds):
+        pass
+
+    def move_to_position(self, start, target, **_kwargs):
+        self.calls.append((start, target))
+        return next(self.results)
+
+
+class MovementReturnValueTest(unittest.TestCase):
+    def test_path_returns_current_and_later_nodes_after_death(self):
+        task = _PathTask([True, False])
+        nodes = [(1, 1), (2, 2), (3, 3)]
+
+        remaining = SRTaskBase.move_to_positions(task, nodes)
+
+        self.assertEqual(remaining, [(2, 2), (3, 3)])
+
+    def test_completed_path_returns_none(self):
+        task = _PathTask([True, True])
+
+        self.assertIsNone(SRTaskBase.move_to_positions(task, [(1, 1), (2, 2)]))
+
+    def test_direct_move_releases_keys_before_returning_on_death(self):
+        class DirectTask:
+            _xz = staticmethod(SRTaskBase._xz)
+            position = (0, 0)
+            is_dead = True
+            camera_direction = 0
+            release_count = 0
+
+            def _release_move_keys(self):
+                self.release_count += 1
+
+            def _require_packet_capture(self):
+                pass
+
+            def next_frame(self):
+                pass
+
+            def detect_camera_direction(self):
+                pass
+
+        task = DirectTask()
+
+        result = SRTaskBase._move_direct(task, (0, 0), tolerance=1)
+
+        self.assertFalse(result)
+        self.assertEqual(task.release_count, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

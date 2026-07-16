@@ -101,6 +101,11 @@ class SRTaskBase(BaseTask):
         """Return captured attribute 104, or ``None`` before its first sync."""
         return og.packet_capture_data.get_combat_state()
 
+    @property
+    def is_dead(self):
+        """Return the captured local-player death state, or ``None`` if unknown."""
+        return og.packet_capture_data.get_death_state()[1]
+
     def _require_packet_capture(self):
         tool = self.packet_capture_tool
         if tool is None or not tool.is_capturing:
@@ -152,7 +157,7 @@ class SRTaskBase(BaseTask):
             raise ctypes.WinError(ctypes.get_last_error())
 
     def move_to_position(self, start_position, target_position, line_tolerance=2, target_tolerance=2):
-        """Join the start/target line first, then follow it to the target."""
+        """Move to one target; return ``True`` on success or ``False`` on death."""
         start_x, start_z = self._xz(start_position)
         target_x, target_z = self._xz(target_position)
         self._begin_movement_session()
@@ -169,18 +174,20 @@ class SRTaskBase(BaseTask):
                 projection = ((current_x - start_x) * line_x + (current_z - start_z) * line_z) / line_length_squared
                 projection = max(0.0, min(1.0, projection))
                 line_position = (start_x + projection * line_x, start_z + projection * line_z)
-                self._move_direct(line_position, line_tolerance)
-            return self._move_direct(
+                if self._move_direct(line_position, line_tolerance) is False:
+                    return False
+            result = self._move_direct(
                 target_position,
                 target_tolerance,
                 line_start=start_position,
                 line_tolerance=line_tolerance,
             )
+            return result is not False
         finally:
             self._end_movement_session()
 
     def move_to_positions(self, positions, line_tolerance=2, node_tolerance=2):
-        """Move through positions, using the player's position for the first segment."""
+        """Move a path; return remaining nodes on death, otherwise ``None``."""
         positions = list(positions)
         start = self.position
         if start is None:
@@ -190,13 +197,19 @@ class SRTaskBase(BaseTask):
             previous = None
             for index, target in enumerate(positions):
                 segment_start = previous if previous is not None else start
-                self.move_to_position(segment_start, target, line_tolerance=line_tolerance,
-                                      target_tolerance=node_tolerance)
+                completed = self.move_to_position(
+                    segment_start,
+                    target,
+                    line_tolerance=line_tolerance,
+                    target_tolerance=node_tolerance,
+                )
+                if not completed:
+                    return positions[index:]
                 previous = target
                 if index < len(positions) - 1:
                     self._release_move_keys()
                     self.sleep(1)
-            return self.position
+            return None
         finally:
             self._end_movement_session()
 
@@ -246,24 +259,10 @@ class SRTaskBase(BaseTask):
 
         while True:
             self._require_packet_capture()
+            if self.is_dead:
+                self._release_move_keys()
+                return False
             self.next_frame()
-            if self._handle_dungeon_death():
-                previous_position = None
-                line_correction_done = False
-                camera_deviation_frame_count = 0
-                last_camera_correction_at = float("-inf")
-                self.next_frame()
-                self.detect_camera_direction()
-                current = self.position
-                if current is None:
-                    raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
-                current_x, current_z = self._xz(current)
-                dx, dz = target_x - current_x, target_z - current_z
-                if math.hypot(dx, dz) > tolerance:
-                    target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
-                    self.rotate_camera(self._angle_delta(target_heading, self.camera_direction))
-                    last_camera_correction_at = time.monotonic()
-                continue
             self.detect_camera_direction()
             current = self.position
             if current is None:
@@ -334,24 +333,6 @@ class SRTaskBase(BaseTask):
                 self.send_key("shift", 0.1)
                 last_sprint_at = now
             self.sleep(self._MOVE_DURATION)
-
-    def _handle_dungeon_death(self):
-        if not self.find_one("leave_dungeon"):
-            return False
-
-        self._release_move_keys()
-        revive_clicked = False
-        while self.find_one("leave_dungeon"):
-            if (not revive_clicked
-                    and (revive_box := self.find_one("dungeon_revive"))
-                    and self.is_colorful(revive_box)):
-                self.click(revive_box)
-                revive_clicked = True
-            self.sleep(self._MOVE_DURATION)
-            self.next_frame()
-
-        self.sleep(3)
-        return True
 
     def _sprint_prompt_visible(self):
         if self.frame is None or self.frame.size == 0:
