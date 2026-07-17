@@ -66,6 +66,7 @@ class SRTaskBase(BaseTask):
     _MOVE_RESULT_SUCCESS = 0
     _MOVE_RESULT_DEATH = 1
     _MOVE_RESULT_TIMEOUT = 2
+    _MOVE_RESULT_PATH_DEVIATION = 3
     _MOVE_BLOCKED_ACTOR_STATES = frozenset((
         ActorState.FALL,
         ActorState.TELEPORT,
@@ -190,8 +191,15 @@ class SRTaskBase(BaseTask):
         if sent != 1:
             raise ctypes.WinError(ctypes.get_last_error())
 
-    def move_to_position(self, start_position, target_position, line_tolerance=2, target_tolerance=2):
-        """Move to one target, reviving after death and failing after five seconds without progress."""
+    def move_to_position(
+            self,
+            start_position,
+            target_position,
+            line_tolerance=2,
+            target_tolerance=2,
+            max_path_deviation=None,
+    ):
+        """Move to one target, optionally failing after straying too far from its path."""
         target_x, target_z = self._xz(target_position)
         while True:
             start_x, start_z = self._xz(start_position)
@@ -217,16 +225,15 @@ class SRTaskBase(BaseTask):
                         target_tolerance,
                         line_start=start_position,
                         line_tolerance=line_tolerance,
+                        max_path_deviation=max_path_deviation,
                     )
             finally:
                 self._end_movement_session()
 
             if move_result == self._MOVE_RESULT_SUCCESS:
                 return True
-            if move_result == self._MOVE_RESULT_TIMEOUT:
+            if move_result != self._MOVE_RESULT_DEATH:
                 return False
-            if move_result == self._MOVE_RESULT_DEATH:
-                pass
             if not self.handle_death():
                 return False
             start_position = self.position
@@ -251,7 +258,13 @@ class SRTaskBase(BaseTask):
         self.sleep(1)
         return True
 
-    def move_to_positions(self, positions, line_tolerance=2, node_tolerance=2):
+    def move_to_positions(
+            self,
+            positions,
+            line_tolerance=2,
+            node_tolerance=2,
+            max_path_deviation=None,
+    ):
         """Move a path; return remaining nodes on movement failure, otherwise ``None``."""
         positions = list(positions)
         start = self.position
@@ -267,6 +280,7 @@ class SRTaskBase(BaseTask):
                     target,
                     line_tolerance=line_tolerance,
                     target_tolerance=node_tolerance,
+                    max_path_deviation=max_path_deviation,
                 )
                 if not completed:
                     return positions[index:]
@@ -298,7 +312,14 @@ class SRTaskBase(BaseTask):
         avg_saturation = np.mean(s_channel)
         return avg_saturation > min_saturation
 
-    def _move_direct(self, target_position, tolerance, line_start=None, line_tolerance=None) -> int:
+    def _move_direct(
+            self,
+            target_position,
+            tolerance,
+            line_start=None,
+            line_tolerance=None,
+            max_path_deviation=None,
+    ) -> int:
         """Move directly to a target and return a ``_MOVE_RESULT_*`` status."""
         target_x, target_z = self._xz(target_position)
         line_start_xz = self._xz(line_start) if line_start is not None else None
@@ -352,6 +373,21 @@ class SRTaskBase(BaseTask):
             if reached_target:
                 return self._MOVE_RESULT_SUCCESS
             previous_position = (current_x, current_z)
+
+            if line_start_xz is not None and max_path_deviation is not None:
+                path_position = self._closest_point_on_segment(
+                    (current_x, current_z),
+                    line_start_xz,
+                    (target_x, target_z),
+                )
+                path_deviation = math.hypot(
+                    current_x - path_position[0],
+                    current_z - path_position[1],
+                )
+                self.info["Path Deviation"] = f"{path_deviation:.2f}"
+                if path_deviation > max_path_deviation:
+                    self._release_move_keys()
+                    return self._MOVE_RESULT_PATH_DEVIATION
 
             now = time.monotonic()
             if remaining_distance < closest_distance:

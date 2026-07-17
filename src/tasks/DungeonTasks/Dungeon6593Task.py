@@ -231,7 +231,8 @@ class Dungeon6593Task(DungeonTaskBase):
             self.log_error('移动到跳台初始点位失败')
             return False
 
-        for target_position in positions[1:]:
+        route = positions[1:]
+        for index, target_position in enumerate(route):
             if not self.look_at(target_position):
                 self.log_error('无法识别镜头朝向')
                 self.rotate_camera(5)
@@ -244,6 +245,8 @@ class Dungeon6593Task(DungeonTaskBase):
                 self.sleep(0.9)
                 self.send_key('space')
                 self.sleep(0.2)
+                if index == len(route) - 1:
+                    self.send_key('q')
                 self.send_key_up('w')
             finally:
                 self.send_key_up('w')
@@ -269,7 +272,7 @@ class Dungeon6593Task(DungeonTaskBase):
             if self.actor_state in blocked_states or position_blocked:
                 self.sleep(3)
                 return False
-            if not self.move_to_position(self.position, target_position, target_tolerance=0.5):
+            if not self.move_to_position(self.position, target_position, target_tolerance=0.5, max_path_deviation=3):
                 self.log_error('移动到跳台中心点失败')
                 return False
         return True

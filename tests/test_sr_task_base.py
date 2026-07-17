@@ -85,7 +85,7 @@ class _PathTask:
         pass
 
     def move_to_position(self, start, target, **_kwargs):
-        self.calls.append((start, target))
+        self.calls.append((start, target, _kwargs))
         return next(self.results)
 
 
@@ -102,6 +102,20 @@ class MovementReturnValueTest(unittest.TestCase):
         task = _PathTask([True, True])
 
         self.assertIsNone(SRTaskBase.move_to_positions(task, [(1, 1), (2, 2)]))
+
+    def test_path_forwards_maximum_deviation_to_each_segment(self):
+        task = _PathTask([True, True])
+
+        SRTaskBase.move_to_positions(
+            task,
+            [(1, 1), (2, 2)],
+            max_path_deviation=4,
+        )
+
+        self.assertEqual(
+            [call[2]['max_path_deviation'] for call in task.calls],
+            [4, 4],
+        )
 
     def test_direct_move_releases_keys_before_returning_on_death(self):
         class DirectTask:
@@ -266,6 +280,95 @@ class MovementReturnValueTest(unittest.TestCase):
 
         self.assertFalse(result)
         self.assertFalse(task.death_handled)
+
+    def test_move_to_position_returns_false_after_exceeding_path_deviation(self):
+        class DeviatedTask:
+            _xz = staticmethod(SRTaskBase._xz)
+            _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
+            _MOVE_RESULT_DEATH = SRTaskBase._MOVE_RESULT_DEATH
+            _MOVE_RESULT_TIMEOUT = SRTaskBase._MOVE_RESULT_TIMEOUT
+            _MOVE_RESULT_PATH_DEVIATION = SRTaskBase._MOVE_RESULT_PATH_DEVIATION
+            position = (0, 0)
+
+            def __init__(self):
+                self.calls = []
+                self.death_handled = False
+
+            def _begin_movement_session(self):
+                pass
+
+            def _end_movement_session(self):
+                pass
+
+            def _require_packet_capture(self):
+                pass
+
+            def _move_direct(self, *args, **kwargs):
+                self.calls.append((args, kwargs))
+                if kwargs.get('max_path_deviation') is not None:
+                    return self._MOVE_RESULT_PATH_DEVIATION
+                return self._MOVE_RESULT_SUCCESS
+
+            def handle_death(self):
+                self.death_handled = True
+                return True
+
+        task = DeviatedTask()
+
+        result = SRTaskBase.move_to_position(
+            task,
+            (0, 0),
+            (0, 10),
+            max_path_deviation=3,
+        )
+
+        self.assertFalse(result)
+        self.assertEqual(task.calls[-1][1]['max_path_deviation'], 3)
+        self.assertFalse(task.death_handled)
+
+    def test_direct_move_fails_when_too_far_from_planned_path(self):
+        class DeviatedTask:
+            _xz = staticmethod(SRTaskBase._xz)
+            _angle_delta = staticmethod(SRTaskBase._angle_delta)
+            _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
+            _closest_point_on_segment = staticmethod(SRTaskBase._closest_point_on_segment)
+            _MOVE_RESULT_PATH_DEVIATION = SRTaskBase._MOVE_RESULT_PATH_DEVIATION
+            position = (4, 0, 5)
+            is_dead = False
+            camera_direction = 0
+            _camera_direction_detected = True
+            info = {}
+
+            def __init__(self):
+                self.release_count = 0
+
+            def _release_move_keys(self):
+                self.release_count += 1
+
+            def _require_packet_capture(self):
+                pass
+
+            def next_frame(self):
+                pass
+
+            def detect_camera_direction(self):
+                pass
+
+            def rotate_camera(self, _degrees):
+                pass
+
+        task = DeviatedTask()
+
+        result = SRTaskBase._move_direct(
+            task,
+            (0, 0, 10),
+            tolerance=1,
+            line_start=(0, 0, 0),
+            max_path_deviation=3,
+        )
+
+        self.assertEqual(result, SRTaskBase._MOVE_RESULT_PATH_DEVIATION)
+        self.assertEqual(task.release_count, 2)
 
 
 class _LookAtTask:

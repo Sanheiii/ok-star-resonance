@@ -140,6 +140,46 @@ class DummyAvoidanceTest(unittest.TestCase):
 
 
 class JumpRouteTest(unittest.TestCase):
+    def test_presses_q_before_releasing_forward_on_last_segment(self):
+        class Task:
+            actor_state = None
+
+            def __init__(self):
+                self.position = (0, 0, 0)
+                self.keys = []
+
+            def move_to_position(self, _start, target, target_tolerance):
+                self.position = (target[0], 0, target[1])
+                return target_tolerance == 0.5
+
+            def look_at(self, _target):
+                return True
+
+            def send_key_down(self, key):
+                self.keys.append(('down', key))
+
+            def send_key(self, key):
+                self.keys.append(('press', key))
+
+            def send_key_up(self, key):
+                self.keys.append(('up', key))
+
+            def sleep(self, _seconds):
+                pass
+
+            def log_error(self, _message):
+                pass
+
+        task = Task()
+
+        self.assertTrue(Dungeon6593Task._jump_route(
+            task,
+            ((1, 1), (2, 2), (3, 3)),
+        ))
+        self.assertEqual(task.keys.count(('press', 'q')), 1)
+        q_index = task.keys.index(('press', 'q'))
+        self.assertEqual(task.keys[q_index + 1], ('up', 'w'))
+
     def test_jumps_toward_each_next_position_and_calibrates_landings(self):
         class Task:
             def __init__(self):
