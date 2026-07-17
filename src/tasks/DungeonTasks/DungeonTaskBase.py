@@ -224,7 +224,7 @@ class DungeonTaskBase(SRTask):
         }.get(self.get_game_language(), 'confirm')
         state_changed = False
 
-        while not self.find_one('menu_icon'):
+        while not self.find_one('menu_icon') or self.find_one('dungeon_scene_icon'):
             self.next_frame()
             if self.find_one('loading'):
                 continue
