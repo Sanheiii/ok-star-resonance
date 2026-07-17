@@ -135,6 +135,15 @@ msgstr "自动接受其他玩家的邀请并帮助他协会狩猎 "
 msgid  "Entry Count"
 msgstr "进入次数"
 
+msgid "Purchase Items"
+msgstr "购买商品"
+
+msgid "Purchase Every N Clears"
+msgstr "每通关多少次购买商品"
+
+msgid "Purchase Item Index"
+msgstr "购买第几个商品"
+
 msgid  "I'm Tank"
 msgstr "我是T"
 

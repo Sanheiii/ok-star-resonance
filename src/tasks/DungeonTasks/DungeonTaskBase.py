@@ -22,27 +22,23 @@ class DungeonTaskBase(SRTask):
         self.description = self.task_desc
         self.group_name = 'Dungeon'
         self.group_icon = FluentIcon.GAME
+        self.default_config.update({
+            'Purchase Items': False,
+            'Purchase Every N Clears': 8,
+            'Purchase Item Index': 1,
+        })
 
     def run(self):
         self._require_packet_capture()
         self.info['Entry Count'] = 0
         self.info['Pass Count'] = 0
         self.info['Pass Rate'] = '0.00%'
-
-    def _update_pass_rate(self):
-        completed_entries = self.info['Entry Count'] - 1
-        pass_rate = (
-            self.info['Pass Count'] / completed_entries
-            if completed_entries > 0
-            else 0
-        )
-        self.info['Pass Rate'] = f'{pass_rate:.2%}'
+        self._last_redeem_pass_count = None
 
     def begin(self):
         self._update_pass_rate()
         if not self.find_one('menu_icon'):
             self.return_to_initial_state()
-        # 尝试购买商店里的东西
         if not self.redeem_items():
             self.log_error('购买物品失败')
             return False
@@ -52,7 +48,44 @@ class DungeonTaskBase(SRTask):
         return True
 
     def redeem_items(self):
-        self.send_key('esc', after_sleep=1)
+        if not self.config.get('Purchase Items'):
+            return True
+
+        pass_count = self.info['Pass Count']
+        purchase_interval = self.config.get('Purchase Every N Clears', 1)
+        if (pass_count == 0
+                or purchase_interval <= 0
+                or pass_count % purchase_interval != 0
+                or self._last_redeem_pass_count == pass_count):
+            return True
+
+        item_positions = (
+            (0.176, 0.338), (0.296, 0.338), (0.416, 0.338),
+            (0.536, 0.338), (0.657, 0.338), (0.777, 0.338),
+            (0.897, 0.338),
+            (0.176, 0.612), (0.296, 0.612), (0.416, 0.612),
+            (0.536, 0.612), (0.657, 0.612), (0.777, 0.612),
+            (0.897, 0.612),
+            (0.176, 0.887), (0.296, 0.887), (0.416, 0.887),
+            (0.536, 0.887), (0.657, 0.887), (0.777, 0.887),
+            (0.897, 0.887),
+        )
+
+        item_index = self.config.get('Purchase Item Index', 1)
+        if not 1 <= item_index <= len(item_positions):
+            self.log_error(f'Purchase item index out of range: {item_index}')
+            self._last_redeem_pass_count = pass_count
+            return True
+        item_position = item_positions[item_index - 1]
+
+        self.send_key('o', after_sleep=2)
+        self.click(0.035, 0.454, after_sleep=1)
+        self.click(item_position[0], item_position[1], after_sleep=1)
+        self.click(0.812, 0.676, after_sleep=1)
+        self.click(0.633, 0.856, after_sleep=1)
+        self.send_key('o', after_sleep=0)
+
+        self._last_redeem_pass_count = pass_count
         return True
 
     def wait_out_of_combat(self, time_out=300):
@@ -216,6 +249,15 @@ class DungeonTaskBase(SRTask):
                 self.click(self.get_box_by_name('cancel'))
         if sleep_flag:
             self.sleep(1)
+
+    def _update_pass_rate(self):
+        completed_entries = self.info['Entry Count'] - 1
+        pass_rate = (
+            self.info['Pass Count'] / completed_entries
+            if completed_entries > 0
+            else 0
+        )
+        self.info['Pass Rate'] = f'{pass_rate:.2%}'
 
 
 class Difficulty(Enum):

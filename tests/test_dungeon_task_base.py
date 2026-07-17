@@ -168,5 +168,63 @@ class PassRateTest(unittest.TestCase):
         self.assertEqual(task.info['Pass Rate'], '0.00%')
 
 
+class _RedeemItemsTask:
+    def __init__(self, *, enabled=True, interval=2, item_index=1,
+                 pass_count=2, last_redeem=None):
+        self.config = {
+            'Purchase Items': enabled,
+            'Purchase Every N Clears': interval,
+            'Purchase Item Index': item_index,
+        }
+        self.info = {'Pass Count': pass_count}
+        self._last_redeem_pass_count = last_redeem
+        self.keys = []
+        self.clicks = []
+        self.errors = []
+
+    def send_key(self, key, **kwargs):
+        self.keys.append((key, kwargs))
+
+    def click(self, *position, **kwargs):
+        self.clicks.append((position, kwargs))
+
+    def log_error(self, message):
+        self.errors.append(message)
+
+
+class RedeemItemsTest(unittest.TestCase):
+    def test_only_triggers_at_the_configured_clear_interval(self):
+        task = _RedeemItemsTask(pass_count=1)
+
+        self.assertTrue(DungeonTaskBase.redeem_items(task))
+        self.assertFalse(task.keys)
+
+        task.info['Pass Count'] = 2
+        self.assertTrue(DungeonTaskBase.redeem_items(task))
+        self.assertTrue(task.keys)
+
+    def test_does_not_trigger_again_when_entry_retries(self):
+        task = _RedeemItemsTask(pass_count=2)
+
+        self.assertTrue(DungeonTaskBase.redeem_items(task))
+        task.keys.clear()
+        task.clicks.clear()
+
+        self.assertTrue(DungeonTaskBase.redeem_items(task))
+        self.assertFalse(task.keys)
+        self.assertFalse(task.clicks)
+
+    def test_out_of_range_item_index_logs_error_and_returns_true(self):
+        task = _RedeemItemsTask(item_index=22)
+
+        self.assertTrue(DungeonTaskBase.redeem_items(task))
+        self.assertTrue(task.errors)
+        self.assertFalse(task.keys)
+
+        task.errors.clear()
+        self.assertTrue(DungeonTaskBase.redeem_items(task))
+        self.assertFalse(task.errors)
+
+
 if __name__ == '__main__':
     unittest.main()
