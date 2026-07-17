@@ -153,9 +153,36 @@ class DungeonTaskBase(SRTask):
         while self.find_one('loading'):
             self.sleep(1)
         self.info['state'] = '本次副本成功'
+        return True
 
-    def clear(self):
+    def return_to_initial_state(self):
         self.info['state'] = '副本流程出现错误，尝试退回状态'
+        while not self.find_one('menu_icon'):
+            self.next_frame()
+            if self.find_one('loading'):
+                continue
+
+            confirm_flag = False
+            if box:=self.find_one(['escape', 'leave_dungeon', 'dungeon_timeout']):
+                self.click(box)
+                confirm_flag = True
+            box = self.get_box_by_name('close')
+            if self.calculate_color_percentage({'r': (254, 255), 'g': (254, 255), 'b': (254, 255)}, box) > 0.3:
+                self.click(box)
+                confirm_flag = True
+            if self.find_one('dungeon_scene_icon'):
+                self.send_key('p')
+                confirm_flag = True
+            lang = self.get_game_language()
+
+            confirm = {
+                'en': 'confirm_en',
+                'jp': 'confirm_jp',
+                'zht': 'confirm_zht',
+            }.get(lang, 'confirm')
+            if confirm_flag and (box:=self.wait_click_feature(confirm, time_out=3)):
+                self.click(box)
+
 
 class Difficulty(Enum):
     NORMAL = 1

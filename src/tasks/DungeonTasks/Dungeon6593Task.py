@@ -17,7 +17,7 @@ class Dungeon6593Task(DungeonTaskBase):
         super().run()
         while True:
             if not self.exec():
-                self.clear()
+                self.return_to_initial_state()
 
     def exec(self):
         # 进本与开启仪器

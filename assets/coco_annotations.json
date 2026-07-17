@@ -236,12 +236,36 @@
         },
         {
             "id": 39,
-            "file_name": "images/0.png",
+            "file_name": "images/2.png",
             "width": 1920,
             "height": 1080
         },
         {
             "id": 40,
+            "file_name": "images/0.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 41,
+            "file_name": "images/0.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 42,
+            "file_name": "images/1.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 43,
+            "file_name": "images/0.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 44,
             "file_name": "images/0.png",
             "width": 1920,
             "height": 1080
@@ -683,6 +707,31 @@
         {
             "id": 102,
             "name": "close",
+            "supercategory": ""
+        },
+        {
+            "id": 103,
+            "name": "dungeon_entrance",
+            "supercategory": ""
+        },
+        {
+            "id": 104,
+            "name": "dungeon_scene_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 105,
+            "name": "dungeon_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 106,
+            "name": "leave_dungeon",
+            "supercategory": ""
+        },
+        {
+            "id": 107,
+            "name": "dungeon_timeout",
             "supercategory": ""
         }
     ],
@@ -2090,6 +2139,71 @@
                 24
             ],
             "area": 600,
+            "iscrowd": 0
+        },
+        {
+            "id": 103,
+            "image_id": 39,
+            "category_id": 103,
+            "bbox": [
+                1415,
+                552,
+                27,
+                27
+            ],
+            "area": 729,
+            "iscrowd": 0
+        },
+        {
+            "id": 104,
+            "image_id": 41,
+            "category_id": 104,
+            "bbox": [
+                207,
+                32,
+                22,
+                24
+            ],
+            "area": 528,
+            "iscrowd": 0
+        },
+        {
+            "id": 105,
+            "image_id": 42,
+            "category_id": 105,
+            "bbox": [
+                51,
+                33,
+                35,
+                36
+            ],
+            "area": 1260,
+            "iscrowd": 0
+        },
+        {
+            "id": 106,
+            "image_id": 43,
+            "category_id": 106,
+            "bbox": [
+                1721,
+                52,
+                35,
+                6
+            ],
+            "area": 210,
+            "iscrowd": 0
+        },
+        {
+            "id": 107,
+            "image_id": 44,
+            "category_id": 107,
+            "bbox": [
+                790,
+                705,
+                340,
+                13
+            ],
+            "area": 4420,
             "iscrowd": 0
         }
     ],
