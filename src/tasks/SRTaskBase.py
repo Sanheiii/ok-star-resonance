@@ -66,6 +66,11 @@ class SRTaskBase(BaseTask):
     _MOVE_RESULT_SUCCESS = 0
     _MOVE_RESULT_DEATH = 1
     _MOVE_RESULT_TIMEOUT = 2
+    _MOVE_BLOCKED_ACTOR_STATES = frozenset((
+        ActorState.FALL,
+        ActorState.TELEPORT,
+        ActorState.FALL_TELEPORT,
+    ))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -355,6 +360,11 @@ class SRTaskBase(BaseTask):
             elif now - closest_distance_at >= self._MOVE_STALL_TIMEOUT:
                 self._release_move_keys()
                 return self._MOVE_RESULT_TIMEOUT
+
+            if self.actor_state in self._MOVE_BLOCKED_ACTOR_STATES:
+                self._release_move_keys()
+                self.sleep(self._MOVE_DURATION)
+                continue
 
             target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
             relative = self._angle_delta(target_heading, self.camera_direction)

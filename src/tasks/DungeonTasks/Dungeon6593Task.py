@@ -9,6 +9,8 @@ class Dungeon6593Task(DungeonTaskBase):
     def __init__(self, *args, **kwargs):
         self.task_name = 'Dungeon 6593'
         self.task_name_zh = '镜中的审判 - 困难'
+        self.task_desc = 'S4 Dungeon "镜中的审判" - Hard'
+        self.task_desc_zh = '启动前需要使用正确的网卡开始抓包'
         self.difficulty = Difficulty.HARD
         self.has_normal_difficulty = False
         super().__init__(*args, **kwargs)

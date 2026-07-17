@@ -131,8 +131,12 @@ class MovementReturnValueTest(unittest.TestCase):
         self.assertEqual(result, SRTaskBase._MOVE_RESULT_DEATH)
         self.assertEqual(task.release_count, 2)
 
-    @patch.object(sr_task_base_module.time, 'monotonic', side_effect=[0, 5])
-    def test_direct_move_fails_after_five_seconds_without_progress(self, _monotonic):
+    @patch.object(
+        sr_task_base_module.time,
+        'monotonic',
+        side_effect=[0, SRTaskBase._MOVE_STALL_TIMEOUT],
+    )
+    def test_direct_move_fails_after_stall_timeout_without_progress(self, _monotonic):
         class StalledTask:
             _xz = staticmethod(SRTaskBase._xz)
             _angle_delta = staticmethod(SRTaskBase._angle_delta)
@@ -167,6 +171,69 @@ class MovementReturnValueTest(unittest.TestCase):
 
         self.assertEqual(result, SRTaskBase._MOVE_RESULT_TIMEOUT)
         self.assertEqual(task.release_count, 2)
+
+    def test_direct_move_does_not_press_direction_keys_in_blocked_actor_states(self):
+        for blocked_state in (
+                ActorState.FALL,
+                ActorState.TELEPORT,
+                ActorState.FALL_TELEPORT):
+            with self.subTest(actor_state=blocked_state):
+                class BlockedTask:
+                    _xz = staticmethod(SRTaskBase._xz)
+                    _angle_delta = staticmethod(SRTaskBase._angle_delta)
+                    _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
+                    _MOVE_KEYS = SRTaskBase._MOVE_KEYS
+                    _MOVE_DURATION = SRTaskBase._MOVE_DURATION
+                    _MOVE_STALL_TIMEOUT = SRTaskBase._MOVE_STALL_TIMEOUT
+                    _MOVE_BLOCKED_ACTOR_STATES = SRTaskBase._MOVE_BLOCKED_ACTOR_STATES
+                    _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
+                    camera_direction = 0
+                    _camera_direction_detected = True
+                    info = {}
+
+                    def __init__(self):
+                        self.frame_count = 0
+                        self.pressed_keys = []
+
+                    @property
+                    def position(self):
+                        return (0, 10) if self.frame_count >= 3 else (0, 0)
+
+                    @property
+                    def actor_state(self):
+                        return blocked_state if self.frame_count == 2 else ActorState.DEFAULT
+
+                    @property
+                    def is_dead(self):
+                        return False
+
+                    def _release_move_keys(self):
+                        pass
+
+                    def _require_packet_capture(self):
+                        pass
+
+                    def next_frame(self):
+                        self.frame_count += 1
+
+                    def detect_camera_direction(self):
+                        pass
+
+                    def rotate_camera(self, _degrees):
+                        pass
+
+                    def send_key_down(self, key):
+                        self.pressed_keys.append(key)
+
+                    def sleep(self, _seconds):
+                        pass
+
+                task = BlockedTask()
+
+                result = SRTaskBase._move_direct(task, (0, 10), tolerance=1)
+
+                self.assertEqual(result, SRTaskBase._MOVE_RESULT_SUCCESS)
+                self.assertEqual(task.pressed_keys, [])
 
     def test_move_to_position_returns_false_on_timeout(self):
         class TimeoutTask:
