@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch
 
-from src.tasks import DungeonTaskBase as dungeon_task_base_module
-from src.tasks.DungeonTaskBase import Difficulty, DungeonTaskBase
+from tasks.DungeonTasks import DungeonTaskBase as dungeon_task_base_module
+from tasks.DungeonTasks.DungeonTaskBase import Difficulty, DungeonTaskBase
 
 
 class _WaitOutOfCombatTask:

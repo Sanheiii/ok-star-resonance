@@ -62,6 +62,10 @@ class SRTaskBase(BaseTask):
     _SPRINT_PROMPT_POSITION = (0.628, 0.968)
     _SPRINT_PROMPT_BGR = (0x35, 0xAE, 0xFF)
     _SPRINT_COOLDOWN = 2
+    _MOVE_STALL_TIMEOUT = 5
+    _MOVE_RESULT_SUCCESS = 0
+    _MOVE_RESULT_DEATH = 1
+    _MOVE_RESULT_TIMEOUT = 2
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -182,37 +186,68 @@ class SRTaskBase(BaseTask):
             raise ctypes.WinError(ctypes.get_last_error())
 
     def move_to_position(self, start_position, target_position, line_tolerance=2, target_tolerance=2):
-        """Move to one target; return ``True`` on success or ``False`` on death."""
-        start_x, start_z = self._xz(start_position)
+        """Move to one target, reviving after death and failing after five seconds without progress."""
         target_x, target_z = self._xz(target_position)
-        self._begin_movement_session()
-        try:
-            self._require_packet_capture()
-            current = self.position
-            if current is None:
+        while True:
+            start_x, start_z = self._xz(start_position)
+            self._begin_movement_session()
+            try:
+                self._require_packet_capture()
+                current = self.position
+                if current is None:
+                    raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
+                current_x, current_z = self._xz(current)
+                line_x, line_z = target_x - start_x, target_z - start_z
+                line_length_squared = line_x * line_x + line_z * line_z
+                move_result = self._MOVE_RESULT_SUCCESS
+                if line_length_squared:
+                    # 将当前位置投影到规划线段上：先回到路线附近，再沿路线前往终点，减少累计偏移。
+                    projection = ((current_x - start_x) * line_x + (current_z - start_z) * line_z) / line_length_squared
+                    projection = max(0.0, min(1.0, projection))
+                    line_position = (start_x + projection * line_x, start_z + projection * line_z)
+                    move_result = self._move_direct(line_position, line_tolerance)
+                if move_result == self._MOVE_RESULT_SUCCESS:
+                    move_result = self._move_direct(
+                        target_position,
+                        target_tolerance,
+                        line_start=start_position,
+                        line_tolerance=line_tolerance,
+                    )
+            finally:
+                self._end_movement_session()
+
+            if move_result == self._MOVE_RESULT_SUCCESS:
+                return True
+            if move_result == self._MOVE_RESULT_TIMEOUT:
+                return False
+            if move_result == self._MOVE_RESULT_DEATH:
+                pass
+            if not self.handle_death():
+                return False
+            start_position = self.position
+            if start_position is None:
                 raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
-            current_x, current_z = self._xz(current)
-            line_x, line_z = target_x - start_x, target_z - start_z
-            line_length_squared = line_x * line_x + line_z * line_z
-            if line_length_squared:
-                # 将当前位置投影到规划线段上：先回到路线附近，再沿路线前往终点，减少累计偏移。
-                projection = ((current_x - start_x) * line_x + (current_z - start_z) * line_z) / line_length_squared
-                projection = max(0.0, min(1.0, projection))
-                line_position = (start_x + projection * line_x, start_z + projection * line_z)
-                if self._move_direct(line_position, line_tolerance) is False:
-                    return False
-            result = self._move_direct(
-                target_position,
-                target_tolerance,
-                line_start=start_position,
-                line_tolerance=line_tolerance,
-            )
-            return result is not False
-        finally:
-            self._end_movement_session()
+
+    def handle_death(self):
+        if not self.is_dead:
+            return True
+        self._release_move_keys()
+        while self.is_dead:
+            self.next_frame()
+            # 点击复活
+            if (box := self.find_one(
+                    'dungeon_revive',
+                    box=self.box_of_screen(0.81, 0.84, 0.94, 0.92))) and self.is_colorful(box):
+                self.click(box)
+            # 不小心点到用复活豆点取消
+            if self.find_one('msg_use_bean'):
+                self.click(0.37, 0.74)
+            self.sleep(1)
+        self.sleep(1)
+        return True
 
     def move_to_positions(self, positions, line_tolerance=2, node_tolerance=2):
-        """Move a path; return remaining nodes on death, otherwise ``None``."""
+        """Move a path; return remaining nodes on movement failure, otherwise ``None``."""
         positions = list(positions)
         start = self.position
         if start is None:
@@ -258,7 +293,8 @@ class SRTaskBase(BaseTask):
         avg_saturation = np.mean(s_channel)
         return avg_saturation > min_saturation
 
-    def _move_direct(self, target_position, tolerance, line_start=None, line_tolerance=None):
+    def _move_direct(self, target_position, tolerance, line_start=None, line_tolerance=None) -> int:
+        """Move directly to a target and return a ``_MOVE_RESULT_*`` status."""
         target_x, target_z = self._xz(target_position)
         line_start_xz = self._xz(line_start) if line_start is not None else None
         previous_position = None
@@ -277,16 +313,18 @@ class SRTaskBase(BaseTask):
             raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
         current_x, current_z = self._xz(current)
         dx, dz = target_x - current_x, target_z - current_z
-        if math.hypot(dx, dz) > tolerance:
+        closest_distance = math.hypot(dx, dz)
+        closest_distance_at = time.monotonic()
+        if closest_distance > tolerance:
             target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
             self.rotate_camera(self._angle_delta(target_heading, self.camera_direction))
-            last_camera_correction_at = time.monotonic()
+            last_camera_correction_at = closest_distance_at
 
         while True:
             self._require_packet_capture()
             if self.is_dead:
                 self._release_move_keys()
-                return False
+                return self._MOVE_RESULT_DEATH
             self.next_frame()
             self.detect_camera_direction()
             current = self.position
@@ -307,8 +345,16 @@ class SRTaskBase(BaseTask):
                     tolerance,
                 )
             if reached_target:
-                return current
+                return self._MOVE_RESULT_SUCCESS
             previous_position = (current_x, current_z)
+
+            now = time.monotonic()
+            if remaining_distance < closest_distance:
+                closest_distance = remaining_distance
+                closest_distance_at = now
+            elif now - closest_distance_at >= self._MOVE_STALL_TIMEOUT:
+                self._release_move_keys()
+                return self._MOVE_RESULT_TIMEOUT
 
             target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
             relative = self._angle_delta(target_heading, self.camera_direction)
@@ -316,7 +362,6 @@ class SRTaskBase(BaseTask):
                 self._camera_direction_detected
                 and abs(relative) < self._CAMERA_CORRECTION_THRESHOLD
             )
-            now = time.monotonic()
             if (not self._camera_direction_detected
                     or abs(relative) <= self._CAMERA_CORRECTION_THRESHOLD):
                 camera_deviation_frame_count = 0
@@ -360,6 +405,7 @@ class SRTaskBase(BaseTask):
             self.sleep(self._MOVE_DURATION)
 
     def _sprint_prompt_visible(self):
+        """检测是否能冲刺"""
         if self.frame is None or self.frame.size == 0:
             return False
         height, width = self.frame.shape[:2]

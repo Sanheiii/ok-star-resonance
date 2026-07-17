@@ -30,58 +30,6 @@ class DungeonTaskBase(SRTask):
             return False
         return True
 
-    def move_to_position(self, start_position, target_position, line_tolerance=2,
-                         target_tolerance=2):
-        """Revive after a death interruption, then retry the current target."""
-        while True:
-            completed = super().move_to_position(
-                start_position,
-                target_position,
-                line_tolerance=line_tolerance,
-                target_tolerance=target_tolerance,
-            )
-            if completed:
-                return True
-            self.handle_death()
-            start_position = self.position
-
-    def move_to_positions(self, positions, line_tolerance=2, node_tolerance=2):
-        """Revive as needed and continue until every path node is reached."""
-        remaining = list(positions)
-        while remaining:
-            start = self.position
-            if start is None:
-                return remaining
-            for index, target in enumerate(remaining):
-                segment_start = start if index == 0 else remaining[index - 1]
-                completed = super().move_to_position(
-                    segment_start,
-                    target,
-                    line_tolerance=line_tolerance,
-                    target_tolerance=node_tolerance,
-                )
-                if not completed:
-                    remaining = remaining[index:]
-                    if not self.handle_death():
-                        return remaining
-                    break
-                if index < len(remaining) - 1:
-                    self._release_move_keys()
-                    self.sleep(1)
-            else:
-                return None
-        return None
-
-    def handle_death(self):
-        if self.is_dead:
-            self._release_move_keys()
-        while self.is_dead:
-            self.next_frame()
-            if (revive_box := self.find_one("dungeon_revive")) and self.is_colorful(revive_box):
-                self.click(revive_box)
-            self.sleep(1)
-        return True
-
     def wait_out_of_combat(self, time_out=300):
         self._require_packet_capture()
         inactive_since = None

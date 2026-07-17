@@ -106,6 +106,7 @@ class MovementReturnValueTest(unittest.TestCase):
     def test_direct_move_releases_keys_before_returning_on_death(self):
         class DirectTask:
             _xz = staticmethod(SRTaskBase._xz)
+            _MOVE_RESULT_DEATH = SRTaskBase._MOVE_RESULT_DEATH
             position = (0, 0)
             is_dead = True
             camera_direction = 0
@@ -127,8 +128,77 @@ class MovementReturnValueTest(unittest.TestCase):
 
         result = SRTaskBase._move_direct(task, (0, 0), tolerance=1)
 
-        self.assertFalse(result)
+        self.assertEqual(result, SRTaskBase._MOVE_RESULT_DEATH)
         self.assertEqual(task.release_count, 2)
+
+    @patch.object(sr_task_base_module.time, 'monotonic', side_effect=[0, 5])
+    def test_direct_move_fails_after_five_seconds_without_progress(self, _monotonic):
+        class StalledTask:
+            _xz = staticmethod(SRTaskBase._xz)
+            _angle_delta = staticmethod(SRTaskBase._angle_delta)
+            _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
+            _MOVE_STALL_TIMEOUT = SRTaskBase._MOVE_STALL_TIMEOUT
+            _MOVE_RESULT_TIMEOUT = SRTaskBase._MOVE_RESULT_TIMEOUT
+            position = (0, 0)
+            is_dead = False
+            camera_direction = 0
+            _camera_direction_detected = True
+            release_count = 0
+            info = {}
+
+            def _release_move_keys(self):
+                self.release_count += 1
+
+            def _require_packet_capture(self):
+                pass
+
+            def next_frame(self):
+                pass
+
+            def detect_camera_direction(self):
+                pass
+
+            def rotate_camera(self, _degrees):
+                pass
+
+        task = StalledTask()
+
+        result = SRTaskBase._move_direct(task, (0, 10), tolerance=1)
+
+        self.assertEqual(result, SRTaskBase._MOVE_RESULT_TIMEOUT)
+        self.assertEqual(task.release_count, 2)
+
+    def test_move_to_position_returns_false_on_timeout(self):
+        class TimeoutTask:
+            _xz = staticmethod(SRTaskBase._xz)
+            _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
+            _MOVE_RESULT_DEATH = SRTaskBase._MOVE_RESULT_DEATH
+            _MOVE_RESULT_TIMEOUT = SRTaskBase._MOVE_RESULT_TIMEOUT
+            position = (0, 0)
+            death_handled = False
+
+            def _begin_movement_session(self):
+                pass
+
+            def _end_movement_session(self):
+                pass
+
+            def _require_packet_capture(self):
+                pass
+
+            def _move_direct(self, *_args, **_kwargs):
+                return self._MOVE_RESULT_TIMEOUT
+
+            def handle_death(self):
+                self.death_handled = True
+                return True
+
+        task = TimeoutTask()
+
+        result = SRTaskBase.move_to_position(task, (0, 0), (0, 10))
+
+        self.assertFalse(result)
+        self.assertFalse(task.death_handled)
 
 
 class _LookAtTask:

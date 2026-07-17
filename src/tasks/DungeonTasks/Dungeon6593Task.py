@@ -1,7 +1,7 @@
 import math
 
 from src.packet_capture.parser import ActorState
-from src.tasks.DungeonTaskBase import DungeonTaskBase, Difficulty
+from tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
 class Dungeon6593Task(DungeonTaskBase):
@@ -224,11 +224,14 @@ class Dungeon6593Task(DungeonTaskBase):
         if not positions:
             return True
 
-        self.move_to_position(self.position, positions[0], target_tolerance=0.5)
+        if not self.move_to_position(self.position, positions[0], target_tolerance=0.5):
+            self.log_error('移动到跳台初始点位失败')
+            return False
 
         for target_position in positions[1:]:
             if not self.look_at(target_position):
                 self.log_error('无法识别镜头朝向')
+                self.rotate_camera(5)
             self.sleep(0.5)
             if not self.look_at(target_position):
                 self.log_error('无法识别镜头朝向')
@@ -258,9 +261,12 @@ class Dungeon6593Task(DungeonTaskBase):
                 and abs(self.position[2] - z) < 0.001
                 for x, z in blocked_positions
             )
+
+            # 跳完摔下去或者被传送走
             if self.actor_state in blocked_states or position_blocked:
                 self.sleep(3)
                 return False
-
-            self.move_to_position(self.position, target_position, target_tolerance=0.5)
+            if not self.move_to_position(self.position, target_position, target_tolerance=0.5):
+                self.log_error('移动到跳台中心点失败')
+                return False
         return True
