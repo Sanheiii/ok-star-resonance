@@ -230,7 +230,7 @@
         },
         {
             "id": 38,
-            "file_name": "images/1.png",
+            "file_name": "images/0.png",
             "width": 1920,
             "height": 1080
         },
@@ -242,18 +242,6 @@
         },
         {
             "id": 40,
-            "file_name": "images/0.png",
-            "width": 1920,
-            "height": 1080
-        },
-        {
-            "id": 41,
-            "file_name": "images/4.png",
-            "width": 1920,
-            "height": 1080
-        },
-        {
-            "id": 42,
             "file_name": "images/0.png",
             "width": 1920,
             "height": 1080
@@ -684,32 +672,17 @@
         },
         {
             "id": 100,
-            "name": "dungeon_entrance",
+            "name": "escape",
             "supercategory": ""
         },
         {
             "id": 101,
-            "name": "dungeon_icon",
+            "name": "menu_icon",
             "supercategory": ""
         },
         {
             "id": 102,
-            "name": "dungeon_scene_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 103,
-            "name": "leave_dungeon",
-            "supercategory": ""
-        },
-        {
-            "id": 104,
-            "name": "dungeon_revive",
-            "supercategory": ""
-        },
-        {
-            "id": 105,
-            "name": "dungeon_timeout",
+            "name": "close",
             "supercategory": ""
         }
     ],
@@ -2085,12 +2058,12 @@
             "image_id": 38,
             "category_id": 100,
             "bbox": [
-                1414,
-                551,
+                33,
+                35,
                 29,
-                29
+                28
             ],
-            "area": 841,
+            "area": 812,
             "iscrowd": 0
         },
         {
@@ -2098,12 +2071,12 @@
             "image_id": 39,
             "category_id": 101,
             "bbox": [
-                48,
-                31,
-                43,
-                43
+                1817,
+                1021,
+                18,
+                18
             ],
-            "area": 1849,
+            "area": 324,
             "iscrowd": 0
         },
         {
@@ -2111,51 +2084,12 @@
             "image_id": 40,
             "category_id": 102,
             "bbox": [
-                211,
-                35,
-                13,
-                18
+                1848,
+                39,
+                25,
+                24
             ],
-            "area": 234,
-            "iscrowd": 0
-        },
-        {
-            "id": 103,
-            "image_id": 41,
-            "category_id": 104,
-            "bbox": [
-                1677,
-                922,
-                42,
-                39
-            ],
-            "area": 1638,
-            "iscrowd": 0
-        },
-        {
-            "id": 104,
-            "image_id": 42,
-            "category_id": 105,
-            "bbox": [
-                790,
-                705,
-                339,
-                11
-            ],
-            "area": 3729,
-            "iscrowd": 0
-        },
-        {
-            "id": 105,
-            "image_id": 41,
-            "category_id": 103,
-            "bbox": [
-                1720,
-                52,
-                36,
-                6
-            ],
-            "area": 216,
+            "area": 600,
             "iscrowd": 0
         }
     ],
