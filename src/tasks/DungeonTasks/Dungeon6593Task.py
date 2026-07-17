@@ -130,7 +130,8 @@ class Dungeon6593Task(DungeonTaskBase):
 
     def _clear_monsters(self, monsters):
         for monster_id, target_position in monsters:
-            self.move_to_position(self.position, target_position, target_tolerance=2)
+            while not self.move_to_position(self.position, target_position, target_tolerance=2):
+                self.sleep(1)
             while True:
                 nearby_entities = self.nearby_entities
                 if not any(

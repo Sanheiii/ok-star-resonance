@@ -62,7 +62,7 @@ class SRTaskBase(BaseTask):
     _SPRINT_PROMPT_POSITION = (0.628, 0.968)
     _SPRINT_PROMPT_BGR = (0x35, 0xAE, 0xFF)
     _SPRINT_COOLDOWN = 2
-    _MOVE_STALL_TIMEOUT = 5
+    _MOVE_STALL_TIMEOUT = 20
     _MOVE_RESULT_SUCCESS = 0
     _MOVE_RESULT_DEATH = 1
     _MOVE_RESULT_TIMEOUT = 2
@@ -236,7 +236,7 @@ class SRTaskBase(BaseTask):
             self.next_frame()
             # 点击复活
             if (box := self.find_one(
-                    'dungeon_revive',
+                    'revive',
                     box=self.box_of_screen(0.81, 0.84, 0.94, 0.92))) and self.is_colorful(box):
                 self.click(box)
             # 不小心点到用复活豆点取消

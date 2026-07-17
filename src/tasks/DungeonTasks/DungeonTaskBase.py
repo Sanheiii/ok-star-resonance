@@ -25,6 +25,8 @@ class DungeonTaskBase(SRTask):
         self.info['win_count'] = 0
 
     def begin(self):
+        if not self.find_one('menu_icon'):
+            self.return_to_initial_state()
         if not self.enter(self.difficulty):
             self.log_error('进入副本失败')
             return False
@@ -152,22 +154,25 @@ class DungeonTaskBase(SRTask):
         self.info['state'] = '等待出本加载'
         while self.find_one('loading'):
             self.sleep(1)
+            self.next_frame()
         self.info['state'] = '本次副本成功'
         return True
 
     def return_to_initial_state(self):
         self.info['state'] = '副本流程出现错误，尝试退回状态'
+        sleep_flag = False
         while not self.find_one('menu_icon'):
             self.next_frame()
             if self.find_one('loading'):
                 continue
 
             confirm_flag = False
+            sleep_flag = True
             if box:=self.find_one(['escape', 'leave_dungeon', 'dungeon_timeout']):
                 self.click(box)
                 confirm_flag = True
             box = self.get_box_by_name('close')
-            if self.calculate_color_percentage({'r': (254, 255), 'g': (254, 255), 'b': (254, 255)}, box) > 0.3:
+            if self.calculate_color_percentage({'r': (250, 255), 'g': (250, 255), 'b': (250, 255)}, box) > 0.15:
                 self.click(box)
                 confirm_flag = True
             if self.find_one('dungeon_scene_icon'):
@@ -180,8 +185,14 @@ class DungeonTaskBase(SRTask):
                 'jp': 'confirm_jp',
                 'zht': 'confirm_zht',
             }.get(lang, 'confirm')
-            if confirm_flag and (box:=self.wait_click_feature(confirm, time_out=3)):
-                self.click(box)
+
+            if confirm_flag:
+                if box:=self.wait_feature(confirm, time_out=3):
+                    self.click(box)
+            elif self.find_one(confirm):
+                self.click(self.get_box_by_name('cancel'))
+        if sleep_flag:
+            self.sleep(1)
 
 
 class Difficulty(Enum):
