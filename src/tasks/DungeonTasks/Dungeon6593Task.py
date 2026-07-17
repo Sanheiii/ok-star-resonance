@@ -28,10 +28,10 @@ class Dungeon6593Task(DungeonTaskBase):
         self.investigate(None)
 
         # 等人机去找怪打再动
-        self.info['state'] = '等待人机往前冲'
+        self.info['State'] = '等待人机往前冲'
         self.sleep(4)
         # 移动到右侧桩怪背后
-        self.move_to_position(self.position,(-9.190, -19.024))
+        self.move_to_position(self.position,(-9.190, -19.024), enable_sprint = True)
         self.send_key('h')
         # 按顺序解决三个桩怪
         monsters = (
@@ -39,7 +39,7 @@ class Dungeon6593Task(DungeonTaskBase):
             (34018, (-9.000, 15.600)),
             (34019, (18.000, 0.000)),
         )
-        self.info['state'] = '大广场战斗中'
+        self.info['State'] = '大广场战斗中'
         if not self._clear_monsters(monsters):
             self.log_error('广场三个桩超时')
             return False
@@ -49,66 +49,39 @@ class Dungeon6593Task(DungeonTaskBase):
             self.log_error('广场三个桩清完了，但是剩余小怪超时没有脱战')
             return False
         self.sleep(3)
-        # 广场清完了关h
-        self.send_key('h')
 
-        jump_points1 = (
-            (23.740, 9.808),
-            (30.430, 13.940),
-            (38.610, 10.980),
-            (46.430, 7.800),
-            (50.840, 0.810),
-            (50.974, -7.304),
-        )
-        # 先走到跳台起始点，走路方法会自动复活
-        self.info['state'] = '前往跳台起始点'
-        self.move_to_position(self.position, jump_points1[0], 0.5, 0.5)
-        self.info['state'] = '第一次跳台'
-
-        if not self._jump_route(jump_points1):
-            # 如果失败了重试到成功为止
-            while True:
-                self.move_to_position(self.position, jump_points1[0], 0.5, 0.5)
-                if self._jump_route(jump_points1):
-                    break
+        self.info['State'] = '第一次跳台'
+        # 二段跳收起武器
+        self.send_key('space', after_sleep=0.2)
+        self.send_key('space', after_sleep=2)
+        while not self._jump_to_area2():
+            pass
 
         # 在第一个浮空岛战斗
-        self.info['state'] = '第一个小浮空岛战斗中'
-        self.send_key('h')
+        self.info['State'] = '第一个小浮空岛战斗中'
         if not self.wait_out_of_combat(time_out=180):
             self.log_error('第一个小浮空岛战斗超时')
             return False
-        # 第一个小浮空岛清完了关h
-        self.send_key('h')
 
-        # 第二次跳台
-        jump_points2 = (
-            (62.046, -11.995),
-            (68.830, -8.110),
-            (72.190, -1.040),
-            (68.020, 5.300),
-            (65.240, 12.720),
-            (68.530, 19.630),
-            (70.680, 27.130),
-            (82.517, 26.304),
-        )
-        self.info['state'] = '第二次跳台'
-        if not self._jump_route(jump_points2):
+        self.info['State'] = '第二次跳台'
+        # 二段跳收起武器
+        self.send_key('space', after_sleep=0.2)
+        self.send_key('space', after_sleep=2)
+        if not self._jump_to_area3():
             # 如果失败了重试到成功为止
             while True:
-                self.move_to_position(self.position, jump_points1[0], 0.5, 0.5)
-                if self._jump_route(jump_points1) and self._jump_route(jump_points2):
+                if self._jump_to_area2() and self._jump_to_area3():
                     break
 
+
         # 在第二个浮空岛战斗
-        self.send_key('h')
-        self.info['state'] = '第二个小浮空岛战斗中'
+        self.info['State'] = '第二个小浮空岛战斗中'
         if not self.wait_out_of_combat(time_out=180):
             self.log_error('第二个小浮空岛战斗超时')
             return False
 
         # Boss战
-        self.info['state'] = '道中清完了，等待Boss动画'
+        self.info['State'] = '道中清完了，等待Boss动画'
         self.sleep(7)
         nearby_entities = self.nearby_entities
         boss_position = next((
@@ -120,8 +93,8 @@ class Dungeon6593Task(DungeonTaskBase):
         if boss_position is None:
             self.log_error('没有检测到Boss')
             return False
-        self.info['state'] = 'Boss战中'
-        self.move_to_position(self.position, boss_position, target_tolerance=2)
+        self.info['State'] = 'Boss战中'
+        self.move_to_position(self.position, boss_position, target_tolerance=2, enable_sprint = True)
         self.sleep(3)
         if not self.wait_out_of_combat(time_out=420):
             self.log_error('Boss战超时')
@@ -132,7 +105,7 @@ class Dungeon6593Task(DungeonTaskBase):
 
     def _clear_monsters(self, monsters):
         for monster_id, target_position in monsters:
-            while not self.move_to_position(self.position, target_position, target_tolerance=2):
+            while not self.move_to_position(self.position, target_position, target_tolerance=2, enable_sprint = True):
                 self.sleep(1)
             while True:
                 nearby_entities = self.nearby_entities
@@ -154,7 +127,7 @@ class Dungeon6593Task(DungeonTaskBase):
                         6,
                     )
                     if safe_position is not None:
-                        self.move_to_position(current_position, safe_position, target_tolerance=1)
+                        self.move_to_position(current_position, safe_position, target_tolerance=1, enable_sprint = True)
                 self.sleep(0.2)
         return True
 
@@ -222,59 +195,76 @@ class Dungeon6593Task(DungeonTaskBase):
             )))
         return min(candidates, key=lambda candidate: candidate[1], default=None)
 
-    def _jump_route(self, positions):
-        positions = tuple(positions)
-        if not positions:
-            return True
 
-        if not self.move_to_position(self.position, positions[0], target_tolerance=0.5):
-            self.log_error('移动到跳台初始点位失败')
+    def _jump_to_area2(self):
+        start_pos = (22.693, -12.085)
+        camera_dir = 90
+        # 大概走到位置
+        if not self.move_to_position(self.position, (0, 0), target_tolerance=2, max_path_deviation=3):
             return False
+        if not self.move_to_position(self.position, start_pos, target_tolerance=2, max_path_deviation=3):
+            return False
+        # 看地面
+        self._move_mouse_relative(0, 500)
+        # 两次纠正视角
+        self.look_at(camera_dir)
+        self.sleep(1)
+        self.look_at(camera_dir)
+        # 开启走路增加精度，然后走到起始点
+        self.send_key('rctrl', after_sleep=0.2)
+        self.send_key('s', down_time=2, after_sleep=0.1)
+        self.send_key('w', down_time=1, after_sleep=0.1)
+        if not self.move_to_position(self.position, start_pos, target_tolerance=0.1, max_path_deviation=3, rotate_camera=False):
+            return False
+        self.send_key('rctrl', after_sleep=0.2)
+        # 录制的操作
+        self.send_key_down('w', after_sleep=0.82) # key down 'w'
+        self.send_key('space', down_time=0.18, after_sleep=0.23)
+        self.send_key('space', down_time=0.19, after_sleep=0.21)
+        self.send_key('q', down_time=0.16, after_sleep=1.69)
+        self.send_key_up('w', after_sleep=5)
+        # 检查是否被传送了
+        return not self._is_teleported()
 
-        route = positions[1:]
-        for index, target_position in enumerate(route):
-            if not self.look_at(target_position):
-                self.log_error('无法识别镜头朝向')
-                self.rotate_camera(5)
-            self.sleep(0.5)
-            if not self.look_at(target_position):
-                self.log_error('无法识别镜头朝向')
-            self.sleep(0.3)
-            self.send_key_down('w')
-            try:
-                self.sleep(0.9)
-                self.send_key('space')
-                self.sleep(0.2)
-                if index == len(route) - 1:
-                    self.send_key('space')
-                    self.send_key('q')
-                    self.sleep(1)
-                self.send_key_up('w')
-            finally:
-                self.send_key_up('w')
-            self.sleep(2)
+    def _jump_to_area3(self):
+        start_pos = (57.887, -10.731)
+        camera_dir = 33
+        # 大概走到位置
+        if not self.move_to_position(self.position, start_pos, target_tolerance=2, max_path_deviation=3):
+            return False
+        # 看地面
+        self._move_mouse_relative(0, 500)
+        # 两次纠正视角
+        self.look_at(camera_dir)
+        self.sleep(1)
+        self.look_at(camera_dir)
+        # 开启走路增加精度，然后走到起始点
+        self.send_key('rctrl', after_sleep=0.2)
+        self.send_key('s', down_time=2, after_sleep=0.1)
+        self.send_key('w', down_time=1, after_sleep=0.1)
+        if not self.move_to_position(self.position, start_pos, target_tolerance=0.1, max_path_deviation=3, rotate_camera=False):
+            return False
+        self.send_key('rctrl', after_sleep=0.2)
+        # 录制的操作
+        self.send_key_down('w', after_sleep=0.19)
+        self.send_key_down('shift', after_sleep=0.63)
+        self.send_key('space', down_time=0.25, after_sleep=0.29)
+        self.send_key('space', down_time=0.23)
+        self.send_key_up('shift', after_sleep=0.19)
+        self.send_key('q', down_time=0.18, after_sleep=0.19)
+        self.send_key('q', down_time=0.14, after_sleep=0.83)
+        self.send_key('space', down_time=0.17, after_sleep=0.28)
+        self.send_key('space', down_time=0.18, after_sleep=0.32)
+        self.send_key('q', down_time=0.17, after_sleep=1.37)
+        self.send_key('q', down_time=0.11, after_sleep=0.11)
+        self.send_key_up('w', after_sleep=0.93)
+        # 检查是否被传送了
+        return not self._is_teleported()
 
-            # 如果跳台摔下去了返回 False
-            blocked_states = {
-                ActorState.FALL,
-                ActorState.TELEPORT,
-                ActorState.FALL_TELEPORT,
-            }
-            blocked_positions = {
-                (19.050, 13.770),
-                (-43.480, -7.870),
-            }
-            position_blocked = any(
-                abs(self.position[0] - x) < 0.001
-                and abs(self.position[2] - z) < 0.001
-                for x, z in blocked_positions
-            )
-
-            # 跳完摔下去或者被传送走
-            if self.actor_state in blocked_states or position_blocked:
-                self.sleep(3)
-                return False
-            if not self.move_to_position(self.position, target_position, target_tolerance=0.5, max_path_deviation=3):
-                self.log_error('移动到跳台中心点失败')
-                return False
-        return True
+    def _is_teleported(self):
+        # 如果位置在这个点则认为跳失败了
+        if abs(self.position[0] - -43.480) < 1 and abs(self.position[2] - -7.870) < 1:
+            return True
+        if abs(self.position[0] - 19.050) < 1 and abs(self.position[2] - 13.770) < 1:
+            return True
+        return False

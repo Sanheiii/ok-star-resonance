@@ -117,8 +117,146 @@ class MovementReturnValueTest(unittest.TestCase):
             [4, 4],
         )
 
+    def test_path_forwards_sprint_and_camera_options_to_each_segment(self):
+        task = _PathTask([True, True])
+
+        SRTaskBase.move_to_positions(
+            task,
+            [(1, 1), (2, 2)],
+            enable_sprint=True,
+            rotate_camera=False,
+        )
+
+        self.assertEqual(
+            [call[2]['enable_sprint'] for call in task.calls],
+            [True, True],
+        )
+        self.assertEqual(
+            [call[2]['rotate_camera'] for call in task.calls],
+            [False, False],
+        )
+
+    def test_movement_options_default_to_sprint_off_and_camera_rotation_on(self):
+        task = _PathTask([True])
+
+        SRTaskBase.move_to_positions(task, [(1, 1)])
+
+        self.assertFalse(task.calls[0][2]['enable_sprint'])
+        self.assertTrue(task.calls[0][2]['rotate_camera'])
+
+    def test_direct_move_can_disable_camera_rotation(self):
+        class DirectTask(SRTaskBase):
+            _xz = staticmethod(SRTaskBase._xz)
+            _angle_delta = staticmethod(SRTaskBase._angle_delta)
+            _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
+            _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
+            is_dead = False
+            camera_direction = 0
+            _camera_direction_detected = True
+            info = {}
+
+            def __init__(self):
+                self.frame_count = 0
+                self.rotations = []
+
+            @property
+            def position(self):
+                return (10, 0) if self.frame_count >= 2 else (0, 0)
+
+            def _release_move_keys(self):
+                pass
+
+            def _require_packet_capture(self):
+                pass
+
+            def next_frame(self):
+                self.frame_count += 1
+
+            def detect_camera_direction(self):
+                pass
+
+            def rotate_camera(self, degrees):
+                self.rotations.append(degrees)
+
+        task = DirectTask()
+
+        result = SRTaskBase._move_direct(
+            task,
+            (10, 0),
+            tolerance=1,
+            rotate_camera=False,
+        )
+
+        self.assertEqual(result, SRTaskBase._MOVE_RESULT_SUCCESS)
+        self.assertEqual(task.rotations, [])
+
+    def test_enabled_sprint_does_not_depend_on_remaining_distance(self):
+        class SprintTask(SRTaskBase):
+            _xz = staticmethod(SRTaskBase._xz)
+            _angle_delta = staticmethod(SRTaskBase._angle_delta)
+            _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
+            _MOVE_KEYS = SRTaskBase._MOVE_KEYS
+            _MOVE_DURATION = SRTaskBase._MOVE_DURATION
+            _MOVE_STALL_TIMEOUT = SRTaskBase._MOVE_STALL_TIMEOUT
+            _MOVE_BLOCKED_ACTOR_STATES = SRTaskBase._MOVE_BLOCKED_ACTOR_STATES
+            _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
+            _CAMERA_CORRECTION_THRESHOLD = SRTaskBase._CAMERA_CORRECTION_THRESHOLD
+            _SPRINT_COOLDOWN = SRTaskBase._SPRINT_COOLDOWN
+            camera_direction = 0
+            _camera_direction_detected = True
+            actor_state = ActorState.DEFAULT
+            is_dead = False
+            info = {}
+
+            def __init__(self):
+                self.frame_count = 0
+                self.sent_keys = []
+
+            @property
+            def position(self):
+                return (0, 4) if self.frame_count >= 3 else (0, 0)
+
+            def _release_move_keys(self):
+                pass
+
+            def _require_packet_capture(self):
+                pass
+
+            def next_frame(self):
+                self.frame_count += 1
+
+            def detect_camera_direction(self):
+                pass
+
+            def rotate_camera(self, _degrees):
+                pass
+
+            def send_key_down(self, _key):
+                pass
+
+            def send_key(self, key, _duration):
+                self.sent_keys.append(key)
+
+            def _sprint_prompt_visible(self):
+                return True
+
+            def sleep(self, _seconds):
+                pass
+
+        task = SprintTask()
+
+        result = SRTaskBase._move_direct(
+            task,
+            (0, 4),
+            tolerance=0.5,
+            enable_sprint=True,
+        )
+
+        self.assertEqual(result, SRTaskBase._MOVE_RESULT_SUCCESS)
+        self.assertEqual(task.sent_keys, ['shift'])
+
     def test_direct_move_releases_keys_before_returning_on_death(self):
-        class DirectTask:
+        class DirectTask(SRTaskBase):
             _xz = staticmethod(SRTaskBase._xz)
             _MOVE_RESULT_DEATH = SRTaskBase._MOVE_RESULT_DEATH
             position = (0, 0)
@@ -151,7 +289,7 @@ class MovementReturnValueTest(unittest.TestCase):
         side_effect=[0, SRTaskBase._MOVE_STALL_TIMEOUT],
     )
     def test_direct_move_fails_after_stall_timeout_without_progress(self, _monotonic):
-        class StalledTask:
+        class StalledTask(SRTaskBase):
             _xz = staticmethod(SRTaskBase._xz)
             _angle_delta = staticmethod(SRTaskBase._angle_delta)
             _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
@@ -192,7 +330,7 @@ class MovementReturnValueTest(unittest.TestCase):
                 ActorState.TELEPORT,
                 ActorState.FALL_TELEPORT):
             with self.subTest(actor_state=blocked_state):
-                class BlockedTask:
+                class BlockedTask(SRTaskBase):
                     _xz = staticmethod(SRTaskBase._xz)
                     _angle_delta = staticmethod(SRTaskBase._angle_delta)
                     _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
@@ -282,7 +420,7 @@ class MovementReturnValueTest(unittest.TestCase):
         self.assertFalse(task.death_handled)
 
     def test_move_to_position_returns_false_after_exceeding_path_deviation(self):
-        class DeviatedTask:
+        class DeviatedTask(SRTaskBase):
             _xz = staticmethod(SRTaskBase._xz)
             _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
             _MOVE_RESULT_DEATH = SRTaskBase._MOVE_RESULT_DEATH
@@ -327,7 +465,7 @@ class MovementReturnValueTest(unittest.TestCase):
         self.assertFalse(task.death_handled)
 
     def test_direct_move_fails_when_too_far_from_planned_path(self):
-        class DeviatedTask:
+        class DeviatedTask(SRTaskBase):
             _xz = staticmethod(SRTaskBase._xz)
             _angle_delta = staticmethod(SRTaskBase._angle_delta)
             _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)

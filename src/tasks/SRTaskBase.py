@@ -51,7 +51,7 @@ class PacketCaptureRequiredError(RuntimeError):
 class SRTaskBase(BaseTask):
     """Shared Star Resonance helpers for one-shot and trigger tasks."""
 
-    _CAMERA_PIXELS_PER_DEGREE = 10
+    _CAMERA_PIXELS_PER_DEGREE = 9.8
     # 以镜头朝向为基准，每 45 度对应一个移动方向；斜向移动需要同时按下两个键。
     _MOVE_KEYS = (
         ("w",), ("w", "d"), ("d",), ("s", "d"),
@@ -62,7 +62,7 @@ class SRTaskBase(BaseTask):
     _SPRINT_PROMPT_POSITION = (0.628, 0.968)
     _SPRINT_PROMPT_BGR = (0x35, 0xAE, 0xFF)
     _SPRINT_COOLDOWN = 2
-    _MOVE_STALL_TIMEOUT = 20
+    _MOVE_STALL_TIMEOUT = 15
     _MOVE_RESULT_SUCCESS = 0
     _MOVE_RESULT_DEATH = 1
     _MOVE_RESULT_TIMEOUT = 2
@@ -198,8 +198,10 @@ class SRTaskBase(BaseTask):
             line_tolerance=2,
             target_tolerance=2,
             max_path_deviation=None,
+            enable_sprint=False,
+            rotate_camera=True,
     ):
-        """Move to one target, optionally failing after straying too far from its path."""
+        """Move to one target, with optional sprinting and camera rotation."""
         target_x, target_z = self._xz(target_position)
         while True:
             start_x, start_z = self._xz(start_position)
@@ -218,7 +220,12 @@ class SRTaskBase(BaseTask):
                     projection = ((current_x - start_x) * line_x + (current_z - start_z) * line_z) / line_length_squared
                     projection = max(0.0, min(1.0, projection))
                     line_position = (start_x + projection * line_x, start_z + projection * line_z)
-                    move_result = self._move_direct(line_position, line_tolerance)
+                    move_result = self._move_direct(
+                        line_position,
+                        line_tolerance,
+                        enable_sprint=enable_sprint,
+                        rotate_camera=rotate_camera,
+                    )
                 if move_result == self._MOVE_RESULT_SUCCESS:
                     move_result = self._move_direct(
                         target_position,
@@ -226,6 +233,8 @@ class SRTaskBase(BaseTask):
                         line_start=start_position,
                         line_tolerance=line_tolerance,
                         max_path_deviation=max_path_deviation,
+                        enable_sprint=enable_sprint,
+                        rotate_camera=rotate_camera,
                     )
             finally:
                 self._end_movement_session()
@@ -264,6 +273,8 @@ class SRTaskBase(BaseTask):
             line_tolerance=2,
             node_tolerance=2,
             max_path_deviation=None,
+            enable_sprint=False,
+            rotate_camera=True,
     ):
         """Move a path; return remaining nodes on movement failure, otherwise ``None``."""
         positions = list(positions)
@@ -281,6 +292,8 @@ class SRTaskBase(BaseTask):
                     line_tolerance=line_tolerance,
                     target_tolerance=node_tolerance,
                     max_path_deviation=max_path_deviation,
+                    enable_sprint=enable_sprint,
+                    rotate_camera=rotate_camera,
                 )
                 if not completed:
                     return positions[index:]
@@ -319,9 +332,11 @@ class SRTaskBase(BaseTask):
             line_start=None,
             line_tolerance=None,
             max_path_deviation=None,
+            enable_sprint=False,
+            rotate_camera=True,
     ) -> int:
         """Move directly to a target and return a ``_MOVE_RESULT_*`` status."""
-        target_x, target_z = self._xz(target_position)
+        target = self._xz(target_position)
         line_start_xz = self._xz(line_start) if line_start is not None else None
         previous_position = None
         line_correction_done = False
@@ -329,21 +344,15 @@ class SRTaskBase(BaseTask):
         last_camera_correction_at = float("-inf")
         camera_deviation_frame_count = 0
 
-        # 每段移动开始前先面向目标。
+        # 每段移动开始前先停止旧输入，并按需面向目标。
         self._release_move_keys()
         self._require_packet_capture()
         self.next_frame()
         self.detect_camera_direction()
-        current = self.position
-        if current is None:
-            raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
-        current_x, current_z = self._xz(current)
-        dx, dz = target_x - current_x, target_z - current_z
-        closest_distance = math.hypot(dx, dz)
+        current, delta, closest_distance = self._movement_position(target)
         closest_distance_at = time.monotonic()
-        if closest_distance > tolerance:
-            target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
-            self.rotate_camera(self._angle_delta(target_heading, self.camera_direction))
+        if rotate_camera and closest_distance > tolerance:
+            self.rotate_camera(self._relative_target_angle(delta))
             last_camera_correction_at = closest_distance_at
 
         while True:
@@ -353,42 +362,24 @@ class SRTaskBase(BaseTask):
                 return self._MOVE_RESULT_DEATH
             self.next_frame()
             self.detect_camera_direction()
-            current = self.position
-            if current is None:
-                raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
-            current_x, current_z = self._xz(current)
-            dx, dz = target_x - current_x, target_z - current_z
-            remaining_distance = math.hypot(dx, dz)
-            self.info["Current Position"] = f"({current_x:.2f}, {current_z:.2f})"
-            self.info["Target Position"] = f"({target_x:.2f}, {target_z:.2f})"
-            self.info["Remaining Distance"] = f"{remaining_distance:.2f}"
-            reached_target = remaining_distance <= tolerance
-            if previous_position is not None:
-                reached_target = reached_target or self._segment_reaches_target(
-                    previous_position,
-                    (current_x, current_z),
-                    (target_x, target_z),
-                    tolerance,
-                )
-            if reached_target:
-                return self._MOVE_RESULT_SUCCESS
-            previous_position = (current_x, current_z)
 
+            # 刷新位置，并同时处理正常到达和跨过目标点的情况。
+            current, delta, remaining_distance = self._movement_position(target)
+            self._update_movement_info(current, target, remaining_distance)
+            if self._movement_target_reached(
+                    previous_position, current, target, remaining_distance, tolerance):
+                return self._MOVE_RESULT_SUCCESS
+            previous_position = current
+
+            # 超出规划路径的最大允许范围时立即停止。
             if line_start_xz is not None and max_path_deviation is not None:
-                path_position = self._closest_point_on_segment(
-                    (current_x, current_z),
-                    line_start_xz,
-                    (target_x, target_z),
-                )
-                path_deviation = math.hypot(
-                    current_x - path_position[0],
-                    current_z - path_position[1],
-                )
+                path_deviation = self._path_deviation(current, line_start_xz, target)
                 self.info["Path Deviation"] = f"{path_deviation:.2f}"
                 if path_deviation > max_path_deviation:
                     self._release_move_keys()
                     return self._MOVE_RESULT_PATH_DEVIATION
 
+            # 只要距离持续缩短就刷新停滞计时。
             now = time.monotonic()
             if remaining_distance < closest_distance:
                 closest_distance = remaining_distance
@@ -397,58 +388,154 @@ class SRTaskBase(BaseTask):
                 self._release_move_keys()
                 return self._MOVE_RESULT_TIMEOUT
 
+            # 下落或传送期间暂停输入，避免移动键干扰状态切换。
             if self.actor_state in self._MOVE_BLOCKED_ACTOR_STATES:
                 self._release_move_keys()
                 self.sleep(self._MOVE_DURATION)
                 continue
 
-            target_heading = math.degrees(math.atan2(dx, dz)) % 360.0
-            relative = self._angle_delta(target_heading, self.camera_direction)
-            camera_aligned = (
-                self._camera_direction_detected
-                and abs(relative) < self._CAMERA_CORRECTION_THRESHOLD
+            # 根据镜头相对目标的角度选择移动键，并修正持续偏航。
+            relative = self._relative_target_angle(delta)
+            (
+                relative,
+                camera_aligned,
+                camera_deviation_frame_count,
+                last_camera_correction_at,
+            ) = self._correct_camera_direction(
+                relative,
+                camera_deviation_frame_count,
+                last_camera_correction_at,
+                now,
+                rotate_camera,
             )
-            if (not self._camera_direction_detected
-                    or abs(relative) <= self._CAMERA_CORRECTION_THRESHOLD):
-                camera_deviation_frame_count = 0
-            else:
-                camera_deviation_frame_count += 1
-            if (camera_deviation_frame_count >= 3
-                    and now - last_camera_correction_at >= 1):
-                self.rotate_camera(relative)
-                last_camera_correction_at = now
-                camera_deviation_frame_count = 0
-                # 本帧按镜头已朝向目标处理；下一帧重新识别实际角度。
-                relative = 0.0
-            # 将目标相对镜头的角度量化为最近的八方向按键组合。
-            direction_index = round(relative / 45.0) % 8
-            keys = self._MOVE_KEYS[direction_index]
-            if (not line_correction_done and keys == ("w",)
-                    and line_start_xz is not None and line_tolerance is not None):
-                line_offset = self._signed_distance_to_line(
-                    (current_x, current_z),
-                    line_start_xz,
-                    (target_x, target_z),
-                )
-                self.info["Line Offset"] = f"{abs(line_offset):.2f}"
-                if line_offset < -line_tolerance:
-                    keys = ("w", "a")
-                elif line_offset > line_tolerance:
-                    keys = ("w", "d")
-                else:
-                    # 本次转镜头后的纠偏已经完成，移动到下一节点前不再重复检查。
-                    line_correction_done = True
-            self._release_move_keys()
-            for key in keys:
-                self.send_key_down(key)
-            self._held_move_keys = keys
-            sprint_prompt_visible = self._sprint_prompt_visible()
-            if (sprint_prompt_visible and remaining_distance > 5
-                    and camera_aligned and keys == ("w",)
-                    and now - last_sprint_at >= self._SPRINT_COOLDOWN):
-                self.send_key("shift", 0.1)
-                last_sprint_at = now
+            keys, line_correction_done = self._movement_keys(
+                relative,
+                current,
+                target,
+                line_start_xz,
+                line_tolerance,
+                line_correction_done,
+            )
+            self._hold_move_keys(keys)
+            last_sprint_at = self._try_sprint(
+                enable_sprint, camera_aligned, keys, now, last_sprint_at,
+            )
             self.sleep(self._MOVE_DURATION)
+
+    def _movement_position(self, target):
+        """读取当前位置，并返回目标方向和剩余距离。"""
+        current = self.position
+        if current is None:
+            raise PacketCaptureRequiredError(
+                "Player position has not been received from packet capture."
+            )
+        current = self._xz(current)
+        delta = target[0] - current[0], target[1] - current[1]
+        return current, delta, math.hypot(*delta)
+
+    def _update_movement_info(self, current, target, remaining_distance):
+        self.info["Current Position"] = f"({current[0]:.2f}, {current[1]:.2f})"
+        self.info["Target Position"] = f"({target[0]:.2f}, {target[1]:.2f})"
+        self.info["Remaining Distance"] = f"{remaining_distance:.2f}"
+
+    def _movement_target_reached(
+            self, previous, current, target, remaining_distance, tolerance):
+        """判断当前点已到达，或本帧移动线段已穿过目标范围。"""
+        if remaining_distance <= tolerance:
+            return True
+        return previous is not None and self._segment_reaches_target(
+            previous, current, target, tolerance,
+        )
+
+    def _path_deviation(self, current, line_start, target):
+        path_position = self._closest_point_on_segment(current, line_start, target)
+        return math.hypot(
+            current[0] - path_position[0],
+            current[1] - path_position[1],
+        )
+
+    def _relative_target_angle(self, delta):
+        target_heading = math.degrees(math.atan2(delta[0], delta[1])) % 360.0
+        return self._angle_delta(target_heading, self.camera_direction)
+
+    def _correct_camera_direction(
+            self,
+            relative,
+            deviation_frame_count,
+            last_correction_at,
+            now,
+            rotate_camera,
+    ):
+        """累计镜头偏差帧，并在满足条件时执行一次修正。"""
+        camera_aligned = (
+            self._camera_direction_detected
+            and abs(relative) < self._CAMERA_CORRECTION_THRESHOLD
+        )
+        if (not self._camera_direction_detected
+                or abs(relative) <= self._CAMERA_CORRECTION_THRESHOLD):
+            deviation_frame_count = 0
+        else:
+            deviation_frame_count += 1
+
+        should_correct = (
+            rotate_camera
+            and deviation_frame_count >= 3
+            and now - last_correction_at >= 1
+        )
+        if should_correct:
+            self.rotate_camera(relative)
+            return 0.0, camera_aligned, 0, now
+        return relative, camera_aligned, deviation_frame_count, last_correction_at
+
+    def _movement_keys(
+            self,
+            relative,
+            current,
+            target,
+            line_start,
+            line_tolerance,
+            line_correction_done,
+    ):
+        """把目标方向转换为移动键，并进行一次路线横向纠偏。"""
+        direction_index = round(relative / 45.0) % 8
+        keys = self._MOVE_KEYS[direction_index]
+        should_correct_line = (
+            not line_correction_done
+            and keys == ("w",)
+            and line_start is not None
+            and line_tolerance is not None
+        )
+        if not should_correct_line:
+            return keys, line_correction_done
+
+        line_offset = self._signed_distance_to_line(current, line_start, target)
+        self.info["Line Offset"] = f"{abs(line_offset):.2f}"
+        if line_offset < -line_tolerance:
+            return ("w", "a"), line_correction_done
+        if line_offset > line_tolerance:
+            return ("w", "d"), line_correction_done
+        return keys, True
+
+    def _hold_move_keys(self, keys):
+        self._release_move_keys()
+        for key in keys:
+            self.send_key_down(key)
+        self._held_move_keys = keys
+
+    def _try_sprint(
+            self, enable_sprint, camera_aligned, keys, now, last_sprint_at):
+        """满足冲刺提示、朝向和冷却条件时触发冲刺。"""
+        should_sprint = (
+            enable_sprint
+            and self._sprint_prompt_visible()
+            and camera_aligned
+            and keys == ("w",)
+            and now - last_sprint_at >= self._SPRINT_COOLDOWN
+        )
+        if should_sprint:
+            self.send_key("shift", 0.1)
+            return now
+        return last_sprint_at
 
     def _sprint_prompt_visible(self):
         """检测是否能冲刺"""

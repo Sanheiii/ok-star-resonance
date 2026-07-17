@@ -65,13 +65,19 @@ class WaitOutOfCombatTest(unittest.TestCase):
 
 
 class _EnterTask:
-    HAS_NORMAL_DIFFICULTY = True
+    has_normal_difficulty = True
     frame = object()
 
     def __init__(self):
         self.clicks = []
         self.errors = []
-        self.info = {'entry_count': 0}
+        self.info = {
+            'Entry Count': 0,
+            'Pass Count': 0,
+            'Pass Rate': '0.00%',
+        }
+
+    _update_pass_rate = DungeonTaskBase._update_pass_rate
 
     def wait_feature(self, name):
         return name in {
@@ -125,23 +131,41 @@ class DungeonDifficultyTest(unittest.TestCase):
 
     def test_positions_shift_when_normal_is_unavailable(self):
         task = _EnterTask()
-        task.HAS_NORMAL_DIFFICULTY = False
+        task.has_normal_difficulty = False
 
         self.assertTrue(DungeonTaskBase.enter(task, Difficulty.HARD))
         self.assertIn((0.092, 0.154), task.clicks)
 
         task = _EnterTask()
-        task.HAS_NORMAL_DIFFICULTY = False
+        task.has_normal_difficulty = False
 
         self.assertTrue(DungeonTaskBase.enter(task, Difficulty.MASTER1))
         self.assertIn((0.092, 0.245), task.clicks)
 
     def test_normal_is_rejected_when_unavailable(self):
         task = _EnterTask()
-        task.HAS_NORMAL_DIFFICULTY = False
+        task.has_normal_difficulty = False
 
         self.assertFalse(DungeonTaskBase.enter(task, Difficulty.NORMAL))
         self.assertTrue(task.errors)
+
+
+class PassRateTest(unittest.TestCase):
+    def test_uses_entry_count_minus_one_as_denominator(self):
+        task = object.__new__(DungeonTaskBase)
+        task.info = {'Entry Count': 4, 'Pass Count': 3}
+
+        DungeonTaskBase._update_pass_rate(task)
+
+        self.assertEqual(task.info['Pass Rate'], '100.00%')
+
+    def test_handles_zero_denominator(self):
+        task = object.__new__(DungeonTaskBase)
+        task.info = {'Entry Count': 1, 'Pass Count': 0}
+
+        DungeonTaskBase._update_pass_rate(task)
+
+        self.assertEqual(task.info['Pass Rate'], '0.00%')
 
 
 if __name__ == '__main__':
