@@ -246,7 +246,9 @@ class Dungeon6593Task(DungeonTaskBase):
                 self.send_key('space')
                 self.sleep(0.2)
                 if index == len(route) - 1:
+                    self.send_key('space')
                     self.send_key('q')
+                    self.sleep(1)
                 self.send_key_up('w')
             finally:
                 self.send_key_up('w')
