@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package zproto;
+
+// Minimal protocol definition.
+message Position {
+  float x = 1 [json_name = "x"];
+  float y = 2 [json_name = "y"];
+  float z = 3 [json_name = "z"];
+  float dir = 4 [json_name = "dir"];
+}
+
+message Vector2 {
+  optional float x = 1 [json_name = "x"];
+  optional float y = 2 [json_name = "y"];
+}
+
+message Vector3 {
+  optional float x = 1 [json_name = "x"];
+  optional float y = 2 [json_name = "y"];
+  optional float z = 3 [json_name = "z"];
+}
+
+message UserControlInfo {
+  optional bool isBegin = 1 [json_name = "isBegin"];
+  optional int32 type = 2 [json_name = "type"];
+  optional int32 secondaryType = 3 [json_name = "secondaryType"];
+  optional float remainTime = 4 [json_name = "remainTime"];
+  optional int32 step = 5 [json_name = "step"];
+  optional float horVelocity = 6 [json_name = "horVelocity"];
+  optional float verVelocity = 7 [json_name = "verVelocity"];
+  optional float pitchAngle = 8 [json_name = "pitchAngle"];
+  optional int64 timeStamp = 9 [json_name = "timeStamp"];
+  optional Vector2 runDir = 10 [json_name = "runDir"];
+  optional Vector3 normal = 11 [json_name = "normal"];
+  optional Position curPos = 12 [json_name = "curPos"];
+  optional Position destPos = 13 [json_name = "destPos"];
+  optional int32 moveVersion = 14 [json_name = "moveVersion"];
+}
+
+message NewMove {
+  optional UserControlInfo info = 1 [json_name = "info"];
+}
+
+message SceneData {
+  uint32 mapId = 1 [json_name = "mapId"];
+  uint32 channelId = 2 [json_name = "channelId"];
+  Position pos = 3 [json_name = "pos"];
+}
+
+message CharSerialize {
+  int64 charId = 1 [json_name = "charId"];
+  SceneData sceneData = 3 [json_name = "sceneData"];
+}
+
+message Attr {
+  optional int32 id = 1 [json_name = "id"];
+  optional bytes rawData = 2 [json_name = "rawData"];
+}
+
+message AttrCollection {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  repeated Attr attrs = 2 [json_name = "attrs"];
+}
+
+message Entity {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  optional int32 entType = 2 [json_name = "entType"];
+  optional AttrCollection attrs = 3 [json_name = "attrs"];
+}
+
+enum EDisappearType {
+  EDisappearNone = 0;
+  EDisappearDead = 1;
+  EDisappearDestroy = 2;
+  EDisappearTransferLeave = 3;
+  EDisappearTransferPassLineLeave = 4;
+}
+
+message DisappearEntity {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  optional EDisappearType type = 2 [json_name = "type"];
+}
+
+message SyncNearEntities {
+  repeated Entity appear = 1 [json_name = "appear"];
+  repeated DisappearEntity disappear = 2 [json_name = "disappear"];
+}
+
+message EnterSceneInfo {
+  optional AttrCollection sceneAttrs = 1 [json_name = "sceneAttrs"];
+  optional Entity playerEnt = 2 [json_name = "playerEnt"];
+  optional string sceneGuid = 3 [json_name = "sceneGuid"];
+  optional string connectGuid = 4 [json_name = "connectGuid"];
+  optional AttrCollection subsceneAttrs = 5 [json_name = "subsceneAttrs"];
+}
+
+message AoiSyncDelta {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  optional AttrCollection attrs = 2 [json_name = "attrs"];
+}
+
+message AoiSyncToMeDelta {
+  optional AoiSyncDelta baseDelta = 1 [json_name = "baseDelta"];
+  repeated int64 syncHateIds = 2 [json_name = "syncHateIds"];
+  optional int64 uuid = 5 [json_name = "uuid"];
+}
+
+message WorldNtf {
+  message EnterScene {
+    optional EnterSceneInfo enterSceneInfo = 1 [json_name = "enterSceneInfo"];
+  }
+
+  message SyncContainerData {
+    CharSerialize vData = 1 [json_name = "vData"];
+  }
+
+  message SyncNearDeltaInfo {
+    repeated AoiSyncDelta deltaInfos = 1 [json_name = "deltaInfos"];
+  }
+
+  message SyncToMeDeltaInfo {
+    AoiSyncToMeDelta deltaInfo = 1 [json_name = "deltaInfo"];
+  }
+}

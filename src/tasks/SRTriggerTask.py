@@ -1,7 +1,8 @@
 from ok import TriggerTask
+from src.tasks.SRTaskBase import SRTaskBase
 
 
-class SRTriggerTask(TriggerTask):
+class SRTriggerTask(SRTaskBase, TriggerTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,17 +34,6 @@ class SRTriggerTask(TriggerTask):
             return self.config.get(setting['label'], setting['default'])
         return None
 
-    def get_game_language(self):
-        lang = self.get_global_config('Game Settings').get('Game Language')
-        if lang == '简体中文':
-            return 'zhs'
-        elif lang == '繁體中文':
-            return 'zht'
-        elif lang == '日本語':
-            return 'jp'
-        else:
-            return 'en'
-    
     def get_regex(self, key: str):
         return self.regex_map.get(self.get_game_language(), {}).get(key, None)
 

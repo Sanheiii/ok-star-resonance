@@ -363,6 +363,9 @@ msgstr "没有检测到全部手牌，如果无法正常打牌，请将游戏设
 msgid "Band"
 msgstr "乐队"
 
+msgid "Dungeon"
+msgstr "副本"
+
 msgid "Tutorial Chart Performance"
 msgstr "演奏教学谱面"
 
@@ -383,3 +386,177 @@ msgstr "已完成"
 
 msgid "Offset (ms)"
 msgstr "偏移（毫秒）"
+
+msgid "Packet Capture"
+msgstr "抓包工具"
+
+msgid "Network adapter"
+msgstr "网卡"
+
+msgid "Refresh adapters"
+msgstr "刷新网卡"
+
+msgid "Start capture"
+msgstr "开始抓包"
+
+msgid "Stop capture"
+msgstr "结束抓包"
+
+msgid "Capture has not started"
+msgstr "未开始抓包"
+
+msgid "Select an adapter and start capture"
+msgstr "请选择网卡并开始抓包"
+
+msgid "Select a network adapter first"
+msgstr "请先选择网卡"
+
+msgid "Capturing"
+msgstr "正在抓包"
+
+msgid "Capture stopped"
+msgstr "已结束抓包"
+
+msgid "Character facing: {facing}"
+msgstr "角色面向：{facing}"
+
+msgid "Copy local position XZ"
+msgstr "复制本地位置 XZ"
+
+msgid "Server position: {position}"
+msgstr "服务器位置：{position}"
+
+msgid "Local position: {position}"
+msgstr "本地位置：{position}"
+
+msgid "Character ID: {id}"
+msgstr "角色 ID：{id}"
+
+msgid "Scene ID: {id}"
+msgstr "场景 ID：{id}"
+
+msgid "Combat status: {status}"
+msgstr "战斗状态：{status}"
+
+msgid "In combat"
+msgstr "战斗中"
+
+msgid "Out of combat"
+msgstr "已脱战"
+
+msgid "Unknown value: {value}"
+msgstr "未知值：{value}"
+
+msgid "Actor state: {state}"
+msgstr "角色状态：{state}"
+
+msgid "Nearby entities"
+msgstr "附近实体"
+
+msgid "No nearby entities"
+msgstr "暂无附近实体"
+
+msgid "Entity {id}: Type {type} ({type_id}){flags}, XZ ({x}, {z}), Y {y}, Distance {distance}"
+msgstr "实体 {id}：类型 {type} ({type_id}){flags}，XZ ({x}, {z})，Y {y}，距离 {distance}"
+
+msgid "Unknown"
+msgstr "未知"
+
+msgid "Monster"
+msgstr "怪物"
+
+msgid "NPC"
+msgstr "NPC"
+
+msgid "Scene object"
+msgstr "场景物体"
+
+msgid "Zone"
+msgstr "区域"
+
+msgid "Bullet"
+msgstr "弹体"
+
+msgid "Client bullet"
+msgstr "客户端弹体"
+
+msgid "Pet"
+msgstr "宠物"
+
+msgid "Player"
+msgstr "玩家"
+
+msgid "Dummy"
+msgstr "假人"
+
+msgid "Drop"
+msgstr "掉落物"
+
+msgid "Field"
+msgstr "场域"
+
+msgid "Trap"
+msgstr "陷阱"
+
+msgid "Collection"
+msgstr "采集物"
+
+msgid "Static object"
+msgstr "静态物体"
+
+msgid "Vehicle"
+msgstr "载具"
+
+msgid "Toy"
+msgstr "玩具"
+
+msgid "Community house"
+msgstr "家园房屋"
+
+msgid "House item"
+msgstr "家园物品"
+
+msgid "Summoned"
+msgstr "召唤实例"
+
+msgid "Client-created"
+msgstr "客户端实例"
+
+msgid "{type}: {id}({index})-{direction}{distance}"
+msgstr "{type}: {id}({index})-{direction}{distance}"
+
+msgid "Front"
+msgstr "前"
+
+msgid "Front right"
+msgstr "右前"
+
+msgid "Right"
+msgstr "右"
+
+msgid "Back right"
+msgstr "右后"
+
+msgid "Back"
+msgstr "后"
+
+msgid "Back left"
+msgstr "左后"
+
+msgid "Left"
+msgstr "左"
+
+msgid "Front left"
+msgstr "左前"
+
+msgid "None"
+msgstr "无"
+
+msgid "Entity details"
+msgstr "实体详情"
+
+msgid "Copy XZ"
+msgstr "复制 XZ"
+
+msgid "UUID: {uuid}\nUID: {uid}\nType: {type} ({type_id})\nAttr ID: {attr_id}\nSequence: {sequence}\nXZ: {x}, {z}\nY: {y}\nEntity facing: {facing}\nRelative direction: {direction}\nDistance: {distance}\nFlags: {flags}\nUpdated at: {updated_at}"
+msgstr "UUID：{uuid}\nUID：{uid}\n类型：{type} ({type_id})\nAttr ID：{attr_id}\n序号：{sequence}\nXZ：{x}, {z}\nY：{y}\n实体朝向：{facing}\n相对方向：{direction}\n距离：{distance}\n标记：{flags}\n更新时间：{updated_at}"
