@@ -1,7 +1,7 @@
 import math
 
 from src.packet_capture.parser import ActorState
-from tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
+from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
 class Dungeon6593Task(DungeonTaskBase):
