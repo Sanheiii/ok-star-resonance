@@ -25,7 +25,7 @@ class Dungeon6593Task(DungeonTaskBase):
         # 进本与开启仪器
         if not self.begin():
             return False
-        self.investigate(None)
+        self.investigate((-29.350, -7.840))
 
         # 等人机去找怪打再动
         self.info['State'] = '等待人机往前冲'
@@ -200,9 +200,7 @@ class Dungeon6593Task(DungeonTaskBase):
         start_pos = (22.693, -12.085)
         camera_dir = 90
         # 大概走到位置
-        if not self.move_to_position(self.position, (0, 0), target_tolerance=2, max_path_deviation=3):
-            return False
-        if not self.move_to_position(self.position, start_pos, target_tolerance=2, max_path_deviation=3):
+        if self.move_to_positions([(0, 0), start_pos], node_tolerance=2, max_path_deviation=5, enable_sprint=True) is not None:
             return False
         # 看地面
         self._move_mouse_relative(0, 500)
@@ -222,6 +220,7 @@ class Dungeon6593Task(DungeonTaskBase):
         self.send_key('space', down_time=0.18, after_sleep=0.23)
         self.send_key('space', down_time=0.19, after_sleep=0.21)
         self.send_key('q', down_time=0.16, after_sleep=1.69)
+        self.send_key('q', down_time=0.11, after_sleep=0.11)
         self.send_key_up('w', after_sleep=5)
         # 检查是否被传送了
         return not self._is_teleported()
@@ -257,7 +256,7 @@ class Dungeon6593Task(DungeonTaskBase):
         self.send_key('space', down_time=0.18, after_sleep=0.32)
         self.send_key('q', down_time=0.17, after_sleep=1.37)
         self.send_key('q', down_time=0.11, after_sleep=0.11)
-        self.send_key_up('w', after_sleep=0.93)
+        self.send_key_up('w', after_sleep=5)
         # 检查是否被传送了
         return not self._is_teleported()
 

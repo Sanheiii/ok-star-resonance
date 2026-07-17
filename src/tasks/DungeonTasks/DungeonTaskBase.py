@@ -212,46 +212,59 @@ class DungeonTaskBase(SRTask):
             self.sleep(1)
             self.next_frame()
         self.info['State'] = '本次副本成功'
+        self._update_pass_rate()
         return True
 
     def return_to_initial_state(self):
         self.info['State'] = '副本流程出现错误，尝试退回状态'
-        sleep_flag = False
+        confirm = {
+            'en': 'confirm_en',
+            'jp': 'confirm_jp',
+            'zht': 'confirm_zht',
+        }.get(self.get_game_language(), 'confirm')
+        state_changed = False
+
         while not self.find_one('menu_icon'):
             self.next_frame()
             if self.find_one('loading'):
                 continue
 
-            confirm_flag = False
-            sleep_flag = True
-            if box:=self.find_one(['escape', 'leave_dungeon', 'dungeon_timeout']):
+            handled = False
+            needs_confirmation = False
+
+            if box := self.find_one(['escape', 'leave_dungeon', 'dungeon_timeout']):
                 self.click(box)
-                confirm_flag = True
+                handled = True
+                needs_confirmation = True
+
             box = self.get_box_by_name('close')
             if self.calculate_color_percentage({'r': (250, 255), 'g': (250, 255), 'b': (250, 255)}, box) > 0.15:
                 self.click(box)
-                confirm_flag = True
+                handled = True
+                needs_confirmation = True
+
             if self.find_one('dungeon_scene_icon'):
                 self.send_key('p')
-                confirm_flag = True
-            lang = self.get_game_language()
+                handled = True
+                needs_confirmation = True
 
-            confirm = {
-                'en': 'confirm_en',
-                'jp': 'confirm_jp',
-                'zht': 'confirm_zht',
-            }.get(lang, 'confirm')
-
-            if confirm_flag:
-                if box:=self.wait_feature(confirm, time_out=3):
+            if needs_confirmation:
+                if box := self.wait_feature(confirm, time_out=3):
                     self.click(box)
             elif self.find_one(confirm):
                 self.click(self.get_box_by_name('cancel'))
-        if sleep_flag:
+                handled = True
+
+            if not handled:
+                self.send_key('esc')
+
+            state_changed = True
+
+        if state_changed:
             self.sleep(1)
 
     def _update_pass_rate(self):
-        completed_entries = self.info['Entry Count'] - 1
+        completed_entries = self.info['Entry Count']
         pass_rate = (
             self.info['Pass Count'] / completed_entries
             if completed_entries > 0
