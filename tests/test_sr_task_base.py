@@ -283,6 +283,47 @@ class MovementReturnValueTest(unittest.TestCase):
         self.assertEqual(result, SRTaskBase._MOVE_RESULT_DEATH)
         self.assertEqual(task.release_count, 2)
 
+    def test_move_to_position_returns_false_when_loading_is_detected(self):
+        class LoadingTask(SRTaskBase):
+            _xz = staticmethod(SRTaskBase._xz)
+            _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
+            _MOVE_RESULT_DEATH = SRTaskBase._MOVE_RESULT_DEATH
+            _MOVE_RESULT_LOADING = SRTaskBase._MOVE_RESULT_LOADING
+            position = (0, 0)
+            is_dead = False
+            frame = object()
+
+            def __init__(self):
+                self.release_count = 0
+
+            def _begin_movement_session(self):
+                pass
+
+            def _end_movement_session(self):
+                pass
+
+            def _release_move_keys(self):
+                self.release_count += 1
+
+            def _require_packet_capture(self):
+                pass
+
+            def next_frame(self):
+                pass
+
+            def find_one(self, feature):
+                return feature == 'loading'
+
+            def handle_death(self):
+                raise AssertionError('loading must not be handled as death')
+
+        task = LoadingTask()
+
+        result = SRTaskBase.move_to_position(task, (0, 0), (0, 10))
+
+        self.assertFalse(result)
+        self.assertEqual(task.release_count, 2)
+
     @patch.object(
         sr_task_base_module.time,
         'monotonic',

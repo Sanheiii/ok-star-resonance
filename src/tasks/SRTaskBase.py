@@ -67,6 +67,7 @@ class SRTaskBase(BaseTask):
     _MOVE_RESULT_DEATH = 1
     _MOVE_RESULT_TIMEOUT = 2
     _MOVE_RESULT_PATH_DEVIATION = 3
+    _MOVE_RESULT_LOADING = 4
     _MOVE_BLOCKED_ACTOR_STATES = frozenset((
         ActorState.FALL,
         ActorState.TELEPORT,
@@ -348,6 +349,9 @@ class SRTaskBase(BaseTask):
         self._release_move_keys()
         self._require_packet_capture()
         self.next_frame()
+        if getattr(self, 'frame', None) is not None and self.find_one('loading'):
+            self._release_move_keys()
+            return self._MOVE_RESULT_LOADING
         self.detect_camera_direction()
         current, delta, closest_distance = self._movement_position(target)
         closest_distance_at = time.monotonic()
@@ -361,6 +365,9 @@ class SRTaskBase(BaseTask):
                 self._release_move_keys()
                 return self._MOVE_RESULT_DEATH
             self.next_frame()
+            if getattr(self, 'frame', None) is not None and self.find_one('loading'):
+                self._release_move_keys()
+                return self._MOVE_RESULT_LOADING
             self.detect_camera_direction()
 
             # 刷新位置，并同时处理正常到达和跨过目标点的情况。
