@@ -200,12 +200,12 @@ class DungeonTaskBase(SRTask):
 
     def handle_end(self):
         self.info['State'] = 'Boss战结束，等待结算'
-        if not self.wait_click_feature('next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92), time_out=30):
+        if not self.wait_click_feature('next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92), time_out=20, raise_if_not_found=False):
             self.log_error('Boss战结束后没等到结算')
             return False
         self.info['Pass Count'] += 1
         # 点击离开
-        self.wait_click_feature('exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97))
+        self.wait_click_feature('exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97), time_out=5, raise_if_not_found=False)
         self.wait_feature('loading')
         self.info['State'] = '等待出本加载'
         while self.find_one('loading'):
