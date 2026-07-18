@@ -39,6 +39,7 @@ class Dungeon1234Task(DungeonTaskBase):
             (
                 '第二段道中',
                 (
+                    (107.424, 91.754),
                     (108.310, 137.405),
                     (92.884, 134.451),
                     (83.987, 149.444),
@@ -53,7 +54,8 @@ class Dungeon1234Task(DungeonTaskBase):
             if not self._wait_for_combat_end(state):
                 return False
         self.send_key('h')
-        if not self._follow_route(((159.678, 154.856),), '前往第一处交互点'):
+        if not self._follow_route(
+                    ((151.631, 129.405), (159.678, 154.856),), '前往第一处交互点'):
             return False
         self.info['State'] = '交互并等待机关完成'
         self.sleep(1)
@@ -68,6 +70,7 @@ class Dungeon1234Task(DungeonTaskBase):
             return False
 
         if not self._follow_route((
+                (294.137, 232.450),
                 (320.840, 248.300),
                 (350.688, 239.436),
                 (381.305, 243.641),
@@ -122,6 +125,7 @@ class Dungeon1234Task(DungeonTaskBase):
 
     def _follow_route(self, route, state):
         self.info['State'] = state
+        self._move_mouse_relative(0, 1800)
         remaining = self.move_to_positions(
             route,
             node_tolerance=2,
