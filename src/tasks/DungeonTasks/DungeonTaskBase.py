@@ -222,11 +222,11 @@ class DungeonTaskBase(SRTask):
             'jp': 'confirm_jp',
             'zht': 'confirm_zht',
         }.get(self.get_game_language(), 'confirm')
-        state_changed = False
 
-        while not self.find_one('menu_icon') or self.find_one('dungeon_scene_icon'):
+        while not self.find_one('menu_icon') or self.scene_id not in [8, None]:
             self.next_frame()
             if self.find_one('loading'):
+                self.sleep(1)
                 continue
 
             handled = False
@@ -237,30 +237,22 @@ class DungeonTaskBase(SRTask):
                 handled = True
                 needs_confirmation = True
 
-            box = self.get_box_by_name('close')
-            if self.calculate_color_percentage({'r': (250, 255), 'g': (250, 255), 'b': (250, 255)}, box) > 0.15:
-                self.click(box)
+            elif self.calculate_color_percentage({'r': (250, 255), 'g': (250, 255), 'b': (250, 255)}, self.get_box_by_name('close')) > 0.15:
+                self.send_key('esc')
                 handled = True
                 needs_confirmation = True
 
-            if self.find_one('dungeon_scene_icon'):
+            elif self.find_one('dungeon_scene_icon'):
                 self.send_key('p')
                 handled = True
                 needs_confirmation = True
 
-            if needs_confirmation:
-                if box := self.wait_feature(confirm, time_out=3):
-                    self.click(box)
-            elif self.find_one(confirm):
-                self.click(self.get_box_by_name('cancel'))
-                handled = True
+            if needs_confirmation and (box := self.wait_feature(confirm, time_out=1)):
+                self.click(box)
 
             if not handled:
                 self.send_key('esc')
 
-            state_changed = True
-
-        if state_changed:
             self.sleep(1)
 
     def _update_pass_rate(self):

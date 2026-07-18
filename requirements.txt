@@ -28,7 +28,7 @@ numpy==2.2.6
     #   opencv-python
     #   openvino
     #   shapely
-ok-script==1.0.162
+ok-script==1.0.163
     # via -r requirements.in
 onnxocr-ppocrv5==0.0.18
     # via -r requirements.in
