@@ -190,7 +190,7 @@ class MovementReturnValueTest(unittest.TestCase):
         self.assertEqual(result, SRTaskBase._MOVE_RESULT_SUCCESS)
         self.assertEqual(task.rotations, [])
 
-    def test_enabled_sprint_does_not_depend_on_remaining_distance(self):
+    def test_enabled_sprint_waits_for_full_initial_cooldown(self):
         class SprintTask(SRTaskBase):
             _xz = staticmethod(SRTaskBase._xz)
             _angle_delta = staticmethod(SRTaskBase._angle_delta)
@@ -202,6 +202,7 @@ class MovementReturnValueTest(unittest.TestCase):
             _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
             _CAMERA_CORRECTION_THRESHOLD = SRTaskBase._CAMERA_CORRECTION_THRESHOLD
             _SPRINT_COOLDOWN = SRTaskBase._SPRINT_COOLDOWN
+            _SPRINT_MIN_DISTANCE = SRTaskBase._SPRINT_MIN_DISTANCE
             camera_direction = 0
             _camera_direction_detected = True
             actor_state = ActorState.DEFAULT
@@ -214,7 +215,7 @@ class MovementReturnValueTest(unittest.TestCase):
 
             @property
             def position(self):
-                return (0, 4) if self.frame_count >= 3 else (0, 0)
+                return (0, 6) if self.frame_count >= 4 else (0, 0)
 
             def _release_move_keys(self):
                 pass
@@ -245,15 +246,49 @@ class MovementReturnValueTest(unittest.TestCase):
 
         task = SprintTask()
 
-        result = SRTaskBase._move_direct(
-            task,
-            (0, 4),
-            tolerance=0.5,
-            enable_sprint=True,
-        )
+        with patch.object(
+                sr_task_base_module.time,
+                'monotonic',
+                side_effect=(100, 100, 100.99, 101),
+        ):
+            result = SRTaskBase._move_direct(
+                task,
+                (0, 6),
+                tolerance=0.5,
+                enable_sprint=True,
+            )
 
         self.assertEqual(result, SRTaskBase._MOVE_RESULT_SUCCESS)
         self.assertEqual(task.sent_keys, ['shift'])
+
+    def test_sprint_is_skipped_at_five_metres(self):
+        class SprintTask:
+            _SPRINT_COOLDOWN = SRTaskBase._SPRINT_COOLDOWN
+            _SPRINT_MIN_DISTANCE = SRTaskBase._SPRINT_MIN_DISTANCE
+
+            def __init__(self):
+                self.sent_keys = []
+
+            def _sprint_prompt_visible(self):
+                return True
+
+            def send_key(self, key, duration):
+                self.sent_keys.append((key, duration))
+
+        task = SprintTask()
+
+        last_sprint_at = SRTaskBase._try_sprint(
+            task,
+            enable_sprint=True,
+            camera_aligned=True,
+            keys=("w",),
+            now=101,
+            last_sprint_at=100,
+            remaining_distance=5,
+        )
+
+        self.assertEqual(last_sprint_at, 100)
+        self.assertEqual(task.sent_keys, [])
 
     def test_direct_move_releases_keys_before_returning_on_death(self):
         class DirectTask(SRTaskBase):

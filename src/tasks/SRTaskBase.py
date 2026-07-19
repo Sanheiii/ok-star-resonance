@@ -62,6 +62,7 @@ class SRTaskBase(BaseTask):
     _SPRINT_PROMPT_POSITION = (0.628, 0.968)
     _SPRINT_PROMPT_BGR = (0x35, 0xAE, 0xFF)
     _SPRINT_COOLDOWN = 1
+    _SPRINT_MIN_DISTANCE = 5
     _MOVE_STALL_TIMEOUT = 15
     _MOVE_RESULT_SUCCESS = 0
     _MOVE_RESULT_DEATH = 1
@@ -341,7 +342,8 @@ class SRTaskBase(BaseTask):
         line_start_xz = self._xz(line_start) if line_start is not None else None
         previous_position = None
         line_correction_done = False
-        last_sprint_at = float("-inf")
+        # 移动开始即进入冲刺冷却，避免启用冲刺后立刻触发 Shift。
+        last_sprint_at = time.monotonic()
         last_camera_correction_at = float("-inf")
         camera_deviation_frame_count = 0
 
@@ -425,7 +427,12 @@ class SRTaskBase(BaseTask):
             )
             self._hold_move_keys(keys)
             last_sprint_at = self._try_sprint(
-                enable_sprint, camera_aligned, keys, now, last_sprint_at,
+                enable_sprint,
+                camera_aligned,
+                keys,
+                now,
+                last_sprint_at,
+                remaining_distance,
             )
             self.sleep(self._MOVE_DURATION)
 
@@ -530,10 +537,18 @@ class SRTaskBase(BaseTask):
         self._held_move_keys = keys
 
     def _try_sprint(
-            self, enable_sprint, camera_aligned, keys, now, last_sprint_at):
+            self,
+            enable_sprint,
+            camera_aligned,
+            keys,
+            now,
+            last_sprint_at,
+            remaining_distance,
+    ):
         """满足冲刺提示、朝向和冷却条件时触发冲刺。"""
         should_sprint = (
             enable_sprint
+            and remaining_distance > self._SPRINT_MIN_DISTANCE
             and self._sprint_prompt_visible()
             and camera_aligned
             and keys == ("w",)
