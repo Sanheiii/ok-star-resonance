@@ -99,7 +99,7 @@ class Dungeon1234Task(DungeonTaskBase):
         self.look_at(0)
         self.send_key('w', down_time=3, after_sleep=0.2)
         self.send_key('esc')
-        self.sleep(5)
+        self.sleep(6)
         boss_position = self._wait_for_entity_position(
             self.BOSS_ATTR_ID,
             time_out=15,
@@ -109,13 +109,14 @@ class Dungeon1234Task(DungeonTaskBase):
             return False
 
         self.info['State'] = 'Boss战中'
-        if not self.move_to_position(
-                self.position,
-                boss_position,
-                target_tolerance=2,
-                enable_sprint=True):
-            self.log_error('无法前往Boss位置')
-            return False
+        self.send_key('e')
+        # if not self.move_to_position(
+        #         self.position,
+        #         boss_position,
+        #         target_tolerance=2,
+        #         enable_sprint=True):
+        #     self.log_error('无法前往Boss位置')
+        #     return False
         self.sleep(3)
         if not self.wait_out_of_combat(time_out=420):
             self.log_error('Boss战超时')
