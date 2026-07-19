@@ -44,6 +44,29 @@ class WaitOutOfCombatTest(unittest.TestCase):
         self.assertFalse(SRTaskBase.wait_out_of_combat(task, time_out=1))
 
 
+class HandleDeathTest(unittest.TestCase):
+    @patch.object(sr_task_base_module.time, 'monotonic', side_effect=[0, 45])
+    def test_returns_without_reviving_after_default_timeout(self, _monotonic):
+        class DeadTask:
+            is_dead = True
+
+            def __init__(self):
+                self.release_count = 0
+
+            def _release_move_keys(self):
+                self.release_count += 1
+
+            def next_frame(self):
+                raise AssertionError('timeout should stop death handling')
+
+        task = DeadTask()
+
+        result = SRTaskBase.handle_death(task)
+
+        self.assertIsNone(result)
+        self.assertEqual(task.release_count, 1)
+
+
 class CapturedStatePropertyTest(unittest.TestCase):
     def test_exposes_combat_and_actor_states(self):
         class CaptureData:

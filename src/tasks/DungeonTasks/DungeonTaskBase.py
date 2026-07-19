@@ -192,7 +192,7 @@ class DungeonTaskBase(SRTask):
             self.sleep(1)
             self.next_frame()
         self.info['State'] = '加载完成'
-        if not  self.wait_feature('dungeon_scene_icon'):
+        if not self.wait_feature('dungeon_scene_icon'):
             self.log_error('加载完成后没有找到副本UI')
             return False
         self.info['Entry Count'] += 1

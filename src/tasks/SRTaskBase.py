@@ -245,17 +245,19 @@ class SRTaskBase(BaseTask):
                 return True
             if move_result != self._MOVE_RESULT_DEATH:
                 return False
-            if not self.handle_death():
-                return False
+            self.handle_death()
             start_position = self.position
             if start_position is None:
                 raise PacketCaptureRequiredError("Player position has not been received from packet capture.")
 
-    def handle_death(self):
+    def handle_death(self, time_out=45):
         if not self.is_dead:
-            return True
+            return
         self._release_move_keys()
+        start_time = time.monotonic()
         while self.is_dead:
+            if time.monotonic() - start_time >= time_out:
+                return
             self.next_frame()
             # 点击复活
             if (box := self.find_one(
@@ -267,7 +269,6 @@ class SRTaskBase(BaseTask):
                 self.click(0.37, 0.74)
             self.sleep(1)
         self.sleep(1)
-        return True
 
     def move_to_positions(
             self,
