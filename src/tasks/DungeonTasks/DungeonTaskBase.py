@@ -4,6 +4,7 @@ import time
 from ok import og
 from qfluentwidgets import FluentIcon
 
+from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
 from src.tasks.SRTask import SRTask
 
 class DungeonTaskBase(SRTask):
@@ -223,6 +224,8 @@ class DungeonTaskBase(SRTask):
             'zht': 'confirm_zht',
         }.get(self.get_game_language(), 'confirm')
 
+        claim_monthly_pass_task = self.get_task_by_class(ClaimMonthlyPassTask)
+
         while not self.find_one('menu_icon') or self.scene_id not in [8, None]:
             self.next_frame()
             if self.find_one('loading'):
@@ -232,7 +235,10 @@ class DungeonTaskBase(SRTask):
             handled = False
             needs_confirmation = False
 
-            if box := self.find_one(['escape', 'leave_dungeon', 'dungeon_timeout']):
+            if claim_monthly_pass_task.handle_monthly_card():
+                handled = True
+
+            elif box := self.find_one(['escape', 'leave_dungeon', 'dungeon_timeout']):
                 self.click(box)
                 handled = True
                 needs_confirmation = True

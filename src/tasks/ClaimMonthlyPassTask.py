@@ -27,6 +27,10 @@ class ClaimMonthlyPassTask(SRTriggerTask):
         }
 
     def run(self):
+        self.handle_monthly_card()
+
+    def handle_monthly_card(self):
         if box:=self.ocr(0.40, 0.94, 0.60, 1, match=self.get_regex('close')):
             self.click_box(box)
-        return
+            return True
+        return False
