@@ -81,8 +81,9 @@ config = {
         ["src.tasks.MidiPlayerTask", "MidiPlayerTask"],
         ["src.tasks.MahjongTask", "MahjongTask"],
         ["src.tasks.TutorialTask", "TutorialTask"],
-        ["src.tasks.DungeonTasks.Dungeon1234Task", "Dungeon1234Task"],
         ["src.tasks.DungeonTasks.Dungeon6593Task", "Dungeon6593Task"],
+        ["src.tasks.DungeonTasks.Dungeon1234Task", "Dungeon1234Task"],
+        ["src.tasks.DungeonTasks.Dungeon6613Task", "Dungeon6613Task"],
     ],
     'trigger_tasks':[
         ["src.tasks.FishingTask", "FishingTask"],
