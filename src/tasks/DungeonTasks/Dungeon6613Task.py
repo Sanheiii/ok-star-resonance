@@ -80,9 +80,13 @@ class Dungeon6613Task(DungeonTaskBase):
             return False
 
         self.info['State'] = '进入Boss区域'
-        self.send_key('w', down_time=3,after_sleep=1)
-        self.send_key('esc')
-        self.sleep(3)
+        self.send_key('w', down_time=3,after_sleep=3)
+
+        for i in range(3):
+            self.send_key('esc',after_sleep=2)
+            self.next_frame()
+            if self.find_one('dungeon_scene_icon'):
+                break
         self.send_key('e')
 
         self.info['State'] = 'Boss战斗中'
@@ -100,8 +104,9 @@ class Dungeon6613Task(DungeonTaskBase):
         self.send_key('f', after_sleep=1)
         self.send_key('w', down_time=0.5, after_sleep=1)
         self.send_key('f', after_sleep=1)
-        self.sleep(5)
+        self.sleep(3)
         self.send_key('f')
+        self.send_key('w', down_time=2)
         self.sleep(10)
         if not self._wait_for_combat_end(name):
             return False

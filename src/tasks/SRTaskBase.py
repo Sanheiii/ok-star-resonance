@@ -62,7 +62,7 @@ class SRTaskBase(BaseTask):
     _SPRINT_PROMPT_POSITION = (0.628, 0.968)
     _SPRINT_PROMPT_BGR = (0x35, 0xAE, 0xFF)
     _SPRINT_COOLDOWN = 1
-    _SPRINT_MIN_DISTANCE = 5
+    _SPRINT_MIN_DISTANCE = 10
     _MOVE_STALL_TIMEOUT = 15
     _MOVE_RESULT_SUCCESS = 0
     _MOVE_RESULT_DEATH = 1
@@ -556,7 +556,7 @@ class SRTaskBase(BaseTask):
             and now - last_sprint_at >= self._SPRINT_COOLDOWN
         )
         if should_sprint:
-            self.send_key("shift", 0.1)
+            self.send_key("shift", 0.5)
             return now
         return last_sprint_at
 
