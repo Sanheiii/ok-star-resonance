@@ -69,6 +69,7 @@ class SRTaskBase(BaseTask):
     _MOVE_RESULT_TIMEOUT = 2
     _MOVE_RESULT_PATH_DEVIATION = 3
     _MOVE_RESULT_LOADING = 4
+    _MOVE_RESULT_SCENE_CHANGED = 5
     _MOVE_BLOCKED_ACTOR_STATES = frozenset((
         ActorState.FALL,
         ActorState.TELEPORT,
@@ -80,6 +81,7 @@ class SRTaskBase(BaseTask):
         self.camera_direction = 0
         self._camera_direction_detected = False
         self._movement_session_depth = 0
+        self._movement_scene_id = None
         self._held_move_keys = ()
 
     @property
@@ -142,8 +144,11 @@ class SRTaskBase(BaseTask):
 
     def rotate_camera(self, degrees):
         """Rotate the camera horizontally; positive values turn right."""
+        target_direction = (self.camera_direction + degrees) % 360.0
         pixels = round(float(degrees) * self._CAMERA_PIXELS_PER_DEGREE)
         self._move_mouse_relative(pixels, 0)
+        self.camera_direction = target_direction
+        self._camera_direction_detected = True
 
     def look_at(self, target):
         """Turn the camera toward an absolute yaw or a world position.
@@ -309,12 +314,21 @@ class SRTaskBase(BaseTask):
             self._end_movement_session()
 
     def _begin_movement_session(self):
+        if self._movement_session_depth == 0:
+            self._movement_scene_id = self.scene_id
         self._movement_session_depth += 1
 
     def _end_movement_session(self):
         self._movement_session_depth -= 1
         if self._movement_session_depth == 0:
             self._release_move_keys()
+            self._movement_scene_id = None
+
+    def _movement_scene_changed(self):
+        return (
+            getattr(self, '_movement_session_depth', 0) > 0
+            and self.scene_id != self._movement_scene_id
+        )
 
     def _release_move_keys(self):
         for key in reversed(self._held_move_keys):
@@ -352,6 +366,8 @@ class SRTaskBase(BaseTask):
         self._release_move_keys()
         self._require_packet_capture()
         self.next_frame()
+        if self._movement_scene_changed():
+            return self._MOVE_RESULT_SCENE_CHANGED
         if getattr(self, 'frame', None) is not None and self.find_one('loading'):
             self._release_move_keys()
             return self._MOVE_RESULT_LOADING
@@ -364,10 +380,13 @@ class SRTaskBase(BaseTask):
 
         while True:
             self._require_packet_capture()
+            self.next_frame()
+            if self._movement_scene_changed():
+                self._release_move_keys()
+                return self._MOVE_RESULT_SCENE_CHANGED
             if self.is_dead:
                 self._release_move_keys()
                 return self._MOVE_RESULT_DEATH
-            self.next_frame()
             if getattr(self, 'frame', None) is not None and self.find_one('loading'):
                 self._release_move_keys()
                 return self._MOVE_RESULT_LOADING

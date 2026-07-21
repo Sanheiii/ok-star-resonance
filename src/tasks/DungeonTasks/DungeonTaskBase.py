@@ -4,6 +4,7 @@ import time
 from ok import og
 from qfluentwidgets import FluentIcon
 
+from src.packet_capture.parser import ActorState
 from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
 from src.tasks.SRTask import SRTask
 
@@ -96,7 +97,7 @@ class DungeonTaskBase(SRTask):
         def is_out_of_combat():
             nonlocal inactive_since
             self._require_packet_capture()
-            in_combat = self.in_combat
+            in_combat = self.in_combat or self.actor_state == ActorState.SKILL
             is_dead = self.is_dead
             if in_combat or is_dead:
                 inactive_since = None
@@ -146,7 +147,7 @@ class DungeonTaskBase(SRTask):
     def enter(self, difficulty):
         # 交互副本入口
         self.info['State'] = '等待副本入口按钮'
-        if box:=self.wait_feature('dungeon_entrance'):
+        if box:=self.wait_feature('dungeon_entrance', threshold=0.7):
             self.info['State'] = '点击交互副本入口'
             self.send_key_down('lalt')
             self.sleep(0.1)
@@ -227,6 +228,7 @@ class DungeonTaskBase(SRTask):
 
     def return_to_initial_state(self):
         self.info['State'] = '副本流程出现错误，尝试退回状态'
+        self.screenshot('dungeon/recovery_error')
         confirm = {
             'en': 'confirm_en',
             'jp': 'confirm_jp',
@@ -235,7 +237,7 @@ class DungeonTaskBase(SRTask):
 
         claim_monthly_pass_task = self.get_task_by_class(ClaimMonthlyPassTask)
 
-        while not self.find_one('menu_icon') or self.scene_id not in [8, None]:
+        while not self.find_one('menu_icon', threshold=0.7) or self.scene_id not in [8, None]:
             self.next_frame()
             if self.find_one('loading'):
                 self.sleep(1)

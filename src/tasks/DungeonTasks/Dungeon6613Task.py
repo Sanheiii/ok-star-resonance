@@ -28,6 +28,7 @@ class Dungeon6613Task(DungeonTaskBase):
 
         if not self._follow_route((
                 (-28.258, -12.534),
+                (-26.366, -8.137),
                 (-8.380, 17.429),
                 (28.550, 18.090),
         ), '前往第一朵花'):
@@ -90,7 +91,8 @@ class Dungeon6613Task(DungeonTaskBase):
         self.send_key('e')
 
         self.info['State'] = 'Boss战斗中'
-        if not self.wait_out_of_combat(time_out=420):
+        self.sleep(10)
+        if not self.wait_out_of_combat(time_out=410):
             self.log_error('Boss战斗超时')
             return False
 
