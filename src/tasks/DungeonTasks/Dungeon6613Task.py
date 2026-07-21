@@ -28,6 +28,7 @@ class Dungeon6613Task(DungeonTaskBase):
 
         if not self._follow_route((
                 (-28.258, -12.534),
+                (-26.366, -8.137),
                 (-8.380, 17.429),
                 (28.550, 18.090),
         ), '前往第一朵花'):
