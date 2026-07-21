@@ -341,6 +341,42 @@ class MovementReturnValueTest(unittest.TestCase):
         self.assertEqual(result, SRTaskBase._MOVE_RESULT_DEATH)
         self.assertEqual(task.release_count, 2)
 
+    def test_move_to_position_stops_when_scene_changes(self):
+        class SceneChangeTask(SRTaskBase):
+            _xz = staticmethod(SRTaskBase._xz)
+            _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
+            _MOVE_RESULT_DEATH = SRTaskBase._MOVE_RESULT_DEATH
+            _MOVE_RESULT_SCENE_CHANGED = SRTaskBase._MOVE_RESULT_SCENE_CHANGED
+            position = (0, 0)
+            is_dead = False
+
+            def __init__(self):
+                self._movement_session_depth = 0
+                self._movement_scene_id = None
+                self._held_move_keys = ('w',)
+                self.current_scene_id = 100
+                self.released_keys = []
+
+            @property
+            def scene_id(self):
+                return self.current_scene_id
+
+            def _require_packet_capture(self):
+                pass
+
+            def next_frame(self):
+                self.current_scene_id = 200
+
+            def send_key_up(self, key):
+                self.released_keys.append(key)
+
+        task = SceneChangeTask()
+
+        result = SRTaskBase.move_to_position(task, (0, 0), (0, 10))
+
+        self.assertFalse(result)
+        self.assertEqual(task.released_keys, ['w'])
+
     def test_move_to_position_returns_false_when_loading_is_detected(self):
         class LoadingTask(SRTaskBase):
             _xz = staticmethod(SRTaskBase._xz)
