@@ -113,7 +113,7 @@ class SRTaskBase(BaseTask):
     @property
     def in_combat(self):
         """Return 0 out of combat, 1 in combat, or ``None`` before first sync."""
-        return og.packet_capture_data.get_combat_state()
+        return og.packet_capture_data.get_combat_state() or og.packet_capture_data.get_actor_state() in [ActorState.DEAD, ActorState.RESURRECTION, ActorState.SKILL]
 
     @property
     def actor_state(self):

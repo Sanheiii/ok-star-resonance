@@ -111,6 +111,15 @@ class DungeonTaskBase(SRTask):
 
         return bool(self.wait_until(is_out_of_combat, time_out=time_out))
 
+    def wait_in_combat(self, time_out=30):
+        self._require_packet_capture()
+
+        def is_in_combat():
+            self._require_packet_capture()
+            return bool(self.in_combat)
+
+        return bool(self.wait_until(is_in_combat, time_out=time_out))
+
     def investigate(self, pos=None):
         self.info['State'] = '准备交互开本仪器'
         self.sleep(2)

@@ -64,6 +64,45 @@ class WaitOutOfCombatTest(unittest.TestCase):
         self.assertEqual(task.death_handling_count, 1)
 
 
+class _WaitInCombatTask:
+    def __init__(self, states):
+        self._states = iter(states)
+        self.capture_checks = 0
+
+    def _require_packet_capture(self):
+        self.capture_checks += 1
+
+    def wait_until(self, condition, time_out=0):
+        self.time_out = time_out
+        for _ in range(3):
+            if condition():
+                return True
+        return None
+
+    @property
+    def in_combat(self):
+        return next(self._states)
+
+
+class WaitInCombatTest(unittest.TestCase):
+    def test_returns_true_after_entering_combat(self):
+        task = _WaitInCombatTask([None, 0, 1])
+
+        result = DungeonTaskBase.wait_in_combat(task, time_out=12)
+
+        self.assertTrue(result)
+        self.assertEqual(task.time_out, 12)
+        self.assertEqual(task.capture_checks, 4)
+
+    def test_returns_false_when_timeout_expires(self):
+        task = _WaitInCombatTask([None, 0, 0])
+
+        result = DungeonTaskBase.wait_in_combat(task, time_out=5)
+
+        self.assertFalse(result)
+        self.assertEqual(task.time_out, 5)
+
+
 class _EnterTask:
     has_normal_difficulty = True
     frame = object()
