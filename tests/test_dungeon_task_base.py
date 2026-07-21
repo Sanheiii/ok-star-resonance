@@ -8,6 +8,7 @@ from tasks.DungeonTasks.DungeonTaskBase import Difficulty, DungeonTaskBase
 class _WaitOutOfCombatTask:
     def __init__(self, states):
         self._states = iter(states)
+        self._actor_state = 0
         self.capture_checks = 0
         self.death_handling_count = 0
 
@@ -23,8 +24,15 @@ class _WaitOutOfCombatTask:
 
     @property
     def in_combat(self):
-        self._in_combat, self._is_dead = next(self._states)
+        state = next(self._states)
+        self._in_combat, self._is_dead = state[:2]
+        if len(state) > 2:
+            self._actor_state = state[2]
         return self._in_combat
+
+    @property
+    def actor_state(self):
+        return self._actor_state
 
     @property
     def is_dead(self):
@@ -35,6 +43,13 @@ class _WaitOutOfCombatTask:
 
 
 class WaitOutOfCombatTest(unittest.TestCase):
+    def test_actor_state_two_is_treated_as_in_combat(self):
+        task = _WaitOutOfCombatTask([(0, False, 2)] * 20)
+
+        result = DungeonTaskBase.wait_out_of_combat(task)
+
+        self.assertFalse(result)
+
     @patch.object(dungeon_task_base_module.time, 'monotonic')
     def test_requires_five_continuous_seconds_without_combat_or_death(self, monotonic):
         task = _WaitOutOfCombatTask([(0, False)] * 3)
