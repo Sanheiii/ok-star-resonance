@@ -142,8 +142,11 @@ class SRTaskBase(BaseTask):
 
     def rotate_camera(self, degrees):
         """Rotate the camera horizontally; positive values turn right."""
+        target_direction = (self.camera_direction + degrees) % 360.0
         pixels = round(float(degrees) * self._CAMERA_PIXELS_PER_DEGREE)
         self._move_mouse_relative(pixels, 0)
+        self.camera_direction = target_direction
+        self._camera_direction_detected = True
 
     def look_at(self, target):
         """Turn the camera toward an absolute yaw or a world position.
