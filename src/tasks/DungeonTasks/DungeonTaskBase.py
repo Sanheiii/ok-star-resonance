@@ -1,6 +1,7 @@
 from enum import Enum
 import time
 
+import numpy as np
 from ok import og
 from qfluentwidgets import FluentIcon
 
@@ -9,6 +10,22 @@ from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
 from src.tasks.SRTask import SRTask
 
 class DungeonTaskBase(SRTask):
+
+    _SKILL_UI_ANCHOR_BOX = (0.503, 0.898, 0.509, 0.904)
+    _SKILL_UI_DARK_BGR = np.array((0, 0, 4), dtype=np.int16)
+    _SKILL_UI_DARK_TOLERANCE = 2
+    _SKILL_UI_DARK_MIN_RATIO = 0.3
+    _SKILL_GAP_BOXES = (
+        (0.373, 0.881, 0.377, 0.902),
+        (0.398, 0.881, 0.402, 0.902),
+        (0.423, 0.881, 0.427, 0.902),
+        (0.448, 0.881, 0.452, 0.902),
+        (0.473, 0.881, 0.477, 0.902),
+        (0.497, 0.896, 0.501, 0.912),
+        (0.535, 0.875, 0.540, 0.899),
+        (0.573, 0.875, 0.577, 0.899),
+    )
+    _AUTO_COMBAT_OUTLINE_MIN_RATIO = 0.04
 
     task_name = 'Unnamed Dungeon Task'
     task_name_zh = '未命名副本任务'
@@ -36,6 +53,51 @@ class DungeonTaskBase(SRTask):
         self.info['Pass Count'] = 0
         self.info['Pass Rate'] = '0.00%'
         self._last_redeem_pass_count = None
+
+    def is_auto_combat_enabled(self):
+        """Return whether the current frame shows the auto-combat skill outline."""
+        return self._detect_auto_combat(self.frame)
+
+    @classmethod
+    def _detect_auto_combat(cls, frame):
+        """Return auto-combat state, or ``None`` when the skill UI is hidden."""
+        if frame is None or not isinstance(frame, np.ndarray) or frame.size == 0:
+            return None
+        if frame.ndim < 3 or frame.shape[2] < 3:
+            return None
+
+        anchor = cls._crop_normalized(frame, cls._SKILL_UI_ANCHOR_BOX)
+        anchor_delta = np.abs(
+            anchor[..., :3].astype(np.int16) - cls._SKILL_UI_DARK_BGR
+        )
+        dark_ratio = np.all(
+            anchor_delta <= cls._SKILL_UI_DARK_TOLERANCE,
+            axis=2,
+        ).mean()
+        if dark_ratio < cls._SKILL_UI_DARK_MIN_RATIO:
+            return None
+
+        for box in cls._SKILL_GAP_BOXES:
+            gap = cls._crop_normalized(frame, box)[..., :3].astype(np.int16)
+            blue, green, red = gap[..., 0], gap[..., 1], gap[..., 2]
+            outline = (
+                (blue >= 160)
+                & (green >= 100)
+                & (blue - red >= 50)
+                & (blue - green >= 10)
+            )
+            if outline.mean() >= cls._AUTO_COMBAT_OUTLINE_MIN_RATIO:
+                return True
+        return False
+
+    @staticmethod
+    def _crop_normalized(frame, box):
+        height, width = frame.shape[:2]
+        left = max(0, min(width - 1, round(box[0] * width)))
+        top = max(0, min(height - 1, round(box[1] * height)))
+        right = max(left + 1, min(width, round(box[2] * width)))
+        bottom = max(top + 1, min(height, round(box[3] * height)))
+        return frame[top:bottom, left:right]
 
     def begin(self):
         self._update_pass_rate()
@@ -112,7 +174,7 @@ class DungeonTaskBase(SRTask):
 
         return bool(self.wait_until(is_out_of_combat, time_out=time_out))
 
-    def wait_in_combat(self, time_out=30):
+    def wait_in_combat(self, time_out=15):
         self._require_packet_capture()
 
         def is_in_combat():

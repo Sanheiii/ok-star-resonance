@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import patch
 
+import numpy as np
+
 from tasks.DungeonTasks import DungeonTaskBase as dungeon_task_base_module
 from tasks.DungeonTasks.DungeonTaskBase import Difficulty, DungeonTaskBase
 
@@ -220,6 +222,109 @@ class PassRateTest(unittest.TestCase):
         DungeonTaskBase._update_pass_rate(task)
 
         self.assertEqual(task.info['Pass Rate'], '0.00%')
+
+
+class AutoCombatDetectionTest(unittest.TestCase):
+    @staticmethod
+    def _frame_with_skill_ui():
+        frame = np.full((720, 1280, 3), (40, 40, 40), dtype=np.uint8)
+        DungeonTaskBase._crop_normalized(
+            frame,
+            DungeonTaskBase._SKILL_UI_ANCHOR_BOX,
+        )[:] = DungeonTaskBase._SKILL_UI_DARK_BGR
+        return frame
+
+    def test_returns_none_when_skill_ui_is_hidden(self):
+        frame = np.full((720, 1280, 3), (210, 160, 40), dtype=np.uint8)
+
+        self.assertIsNone(DungeonTaskBase._detect_auto_combat(frame))
+
+    def test_returns_false_without_outline_in_skill_gaps(self):
+        frame = self._frame_with_skill_ui()
+
+        self.assertFalse(DungeonTaskBase._detect_auto_combat(frame))
+
+    def test_returns_true_when_any_skill_gap_has_blue_outline(self):
+        frame = self._frame_with_skill_ui()
+        DungeonTaskBase._crop_normalized(
+            frame,
+            DungeonTaskBase._SKILL_GAP_BOXES[3],
+        )[:] = (210, 160, 40)
+
+        self.assertTrue(DungeonTaskBase._detect_auto_combat(frame))
+
+
+class _EnsureAutoCombatTask:
+    def __init__(self, states, wait_results=()):
+        self.states = iter(states)
+        self.wait_results = iter(wait_results)
+        self.keys = []
+
+    def send_key(self, key):
+        self.keys.append(key)
+
+    def next_frame(self):
+        pass
+
+    def is_auto_combat_enabled(self):
+        return next(self.states)
+
+    def wait_until(self, condition, time_out=0):
+        self.wait_time_out = time_out
+        condition_result = condition()
+        return next(self.wait_results, condition_result)
+
+
+class EnsureAutoCombatTest(unittest.TestCase):
+    @patch.object(dungeon_task_base_module.time, 'monotonic')
+    def test_returns_immediately_when_state_already_matches(self, monotonic):
+        monotonic.return_value = 0
+        task = _EnsureAutoCombatTask([True])
+
+        result = DungeonTaskBase.ensure_auto_combat(task, True, time_out=10)
+
+        self.assertTrue(result)
+        self.assertEqual(task.keys, ['lctrl'])
+
+    @patch.object(dungeon_task_base_module.time, 'monotonic')
+    def test_presses_h_and_waits_up_to_two_seconds_for_update(self, monotonic):
+        monotonic.side_effect = [0, 1, 1]
+        task = _EnsureAutoCombatTask([False, True])
+
+        result = DungeonTaskBase.ensure_auto_combat(task, True, time_out=10)
+
+        self.assertTrue(result)
+        self.assertEqual(task.keys, ['lctrl', 'h'])
+        self.assertEqual(task.wait_time_out, 2)
+
+    @patch.object(dungeon_task_base_module.time, 'monotonic')
+    def test_presses_h_again_when_first_update_does_not_arrive(self, monotonic):
+        monotonic.side_effect = [0, 1, 1, 3, 3]
+        task = _EnsureAutoCombatTask(
+            [False, False, True],
+            wait_results=[False],
+        )
+
+        result = DungeonTaskBase.ensure_auto_combat(task, True, time_out=10)
+
+        self.assertTrue(result)
+        self.assertEqual(task.keys, ['lctrl', 'h', 'h'])
+
+    @patch.object(dungeon_task_base_module.time, 'monotonic')
+    def test_retries_h_until_timeout(self, monotonic):
+        monotonic.side_effect = [0, 1, 1, 11]
+        task = _EnsureAutoCombatTask([False, False], wait_results=[False])
+
+        result = DungeonTaskBase.ensure_auto_combat(task, True, time_out=10)
+
+        self.assertFalse(result)
+        self.assertEqual(task.keys, ['lctrl', 'h'])
+
+    def test_rejects_non_boolean_target(self):
+        task = _EnsureAutoCombatTask([])
+
+        with self.assertRaises(TypeError):
+            DungeonTaskBase.ensure_auto_combat(task, 1)
 
 
 class _RedeemItemsTask:

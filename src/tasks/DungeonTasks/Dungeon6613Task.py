@@ -28,19 +28,26 @@ class Dungeon6613Task(DungeonTaskBase):
 
         if not self._follow_route((
                 (-28.258, -12.534),
-                (-26.366, -8.137),
-                (-8.380, 17.429),
+                (-21.654, -3.858),
+                (-7.471, 14.240),
                 (28.550, 18.090),
         ), '前往第一朵花'):
+            return False
+        if not self.wait_in_combat():
+            self.log_error('第一朵花没有进入战斗')
             return False
         if not self._wait_for_combat_end('第一朵花'):
             return False
 
         if not self._follow_route((
+                (54.937, 17.827),
                 (130.514, 17.068),
                 (148.106, 36.960),
                 (143.460, 57.670),
         ), '前往第二朵花'):
+            return False
+        if not self.wait_in_combat():
+            self.log_error('第二朵花没有进入战斗')
             return False
         if not self._wait_for_combat_end('第二朵花'):
             return False
@@ -61,10 +68,16 @@ class Dungeon6613Task(DungeonTaskBase):
             return False
 
         if not self._activate_crystal(
-                (85.820, 72.450),
-                (25.440, -0.240),
-                '第三个水晶'):
+                (82.640, 65.050),
+                (32.890, 121.960),
+                '第二个水晶'):
             return False
+
+        # if not self._activate_crystal(
+        #         (85.820, 72.450),
+        #         (25.440, -0.240),
+        #         '第三个水晶'):
+        #     return False
 
         if not self._follow_route(
                 ((81.490, 64.870),), '前往最终传送门'):
@@ -91,8 +104,11 @@ class Dungeon6613Task(DungeonTaskBase):
         self.send_key('e')
 
         self.info['State'] = 'Boss战斗中'
-        self.sleep(10)
-        if not self.wait_out_of_combat(time_out=410):
+
+        if not self.wait_in_combat():
+            self.log_error('Boss没有进入战斗')
+            return False
+        if not self.wait_out_of_combat(time_out=420):
             self.log_error('Boss战斗超时')
             return False
 
@@ -109,7 +125,10 @@ class Dungeon6613Task(DungeonTaskBase):
         self.sleep(3)
         self.send_key('f')
         self.send_key('w', down_time=2)
-        self.sleep(10)
+
+        if not self.wait_in_combat():
+            self.log_error(f'{name}没有进入战斗')
+            return False
         if not self._wait_for_combat_end(name):
             return False
 
@@ -125,6 +144,7 @@ class Dungeon6613Task(DungeonTaskBase):
         # self._move_mouse_relative(0, 1800)
         remaining = self.move_to_positions(
             route,
+            line_tolerance=1,
             node_tolerance=1,
             max_path_deviation=8,
             enable_sprint=True,
