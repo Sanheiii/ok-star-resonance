@@ -32,7 +32,7 @@ class Dungeon6593Task(DungeonTaskBase):
         self.sleep(4)
         # 移动到右侧桩怪背后
         self.move_to_position(self.position,(-9.190, -19.024), enable_sprint = True)
-        self.send_key('h')
+        self.send_key(self.get_custom_key('Auto Battle'))
         # 按顺序解决三个桩怪
         monsters = (
             (34017, (-9.000, -19.000)),
@@ -209,18 +209,18 @@ class Dungeon6593Task(DungeonTaskBase):
         self.sleep(1)
         self.look_at(camera_dir)
         # 开启走路增加精度，然后走到起始点
-        self.send_key('rctrl', after_sleep=0.2)
+        self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
         self.send_key('s', down_time=2, after_sleep=0.1)
         self.send_key('w', down_time=1, after_sleep=0.1)
         if not self.move_to_position(self.position, start_pos, target_tolerance=0.1, max_path_deviation=3, rotate_camera=False):
             return False
-        self.send_key('rctrl', after_sleep=0.2)
+        self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
         # 录制的操作
         self.send_key_down('w', after_sleep=0.82) # key down 'w'
         self.send_key('space', down_time=0.18, after_sleep=0.23)
         self.send_key('space', down_time=0.19, after_sleep=0.21)
-        self.send_key('q', down_time=0.16, after_sleep=1.69)
-        self.send_key('q', down_time=0.11, after_sleep=0.11)
+        self.send_key(self.get_custom_key('Float'), down_time=0.16, after_sleep=1.69)
+        self.send_key(self.get_custom_key('Float'), down_time=0.11, after_sleep=0.11)
         self.send_key_up('w', after_sleep=5)
         # 检查是否被传送了
         return not self._is_teleported()
@@ -238,24 +238,24 @@ class Dungeon6593Task(DungeonTaskBase):
         self.sleep(1)
         self.look_at(camera_dir)
         # 开启走路增加精度，然后走到起始点
-        self.send_key('rctrl', after_sleep=0.2)
+        self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
         self.send_key('s', down_time=2, after_sleep=0.1)
         self.send_key('w', down_time=1, after_sleep=0.1)
         if not self.move_to_position(self.position, start_pos, target_tolerance=0.1, max_path_deviation=3, rotate_camera=False):
             return False
-        self.send_key('rctrl', after_sleep=0.2)
+        self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
         # 录制的操作
         self.send_key_down('w', after_sleep=0.19)
         self.send_key_down('shift', after_sleep=0.63)
         self.send_key('space', down_time=0.25, after_sleep=0.29)
         self.send_key('space', down_time=0.23)
         self.send_key_up('shift', after_sleep=0.19)
-        self.send_key('q', down_time=0.18, after_sleep=0.19)
-        self.send_key('q', down_time=0.14, after_sleep=0.83)
+        self.send_key(self.get_custom_key('Float'), down_time=0.18, after_sleep=0.19)
+        self.send_key(self.get_custom_key('Float'), down_time=0.14, after_sleep=0.83)
         self.send_key('space', down_time=0.17, after_sleep=0.28)
         self.send_key('space', down_time=0.18, after_sleep=0.32)
-        self.send_key('q', down_time=0.17, after_sleep=1.37)
-        self.send_key('q', down_time=0.11, after_sleep=0.11)
+        self.send_key(self.get_custom_key('Float'), down_time=0.17, after_sleep=1.37)
+        self.send_key(self.get_custom_key('Float'), down_time=0.11, after_sleep=0.11)
         self.send_key_up('w', after_sleep=5)
         # 检查是否被传送了
         return not self._is_teleported()

@@ -3,6 +3,7 @@ import os
 from ok import ConfigOption
 
 from src.interaction.SRInteraction import SRInteraction
+from src.key_config import KEY_SETTINGS
 
 
 version = "dev"
@@ -26,7 +27,7 @@ config = {
     'debug': False,  # Optional, default: False
     'use_gui': True,
     'config_folder': 'configs',
-    'global_configs': [key_config_option],
+    'global_configs': [key_config_option, KEY_SETTINGS],
     'gui_icon': 'icons/icon.png',
     'wait_until_before_delay': 0,
     'wait_until_check_delay': 0,
@@ -86,6 +87,7 @@ config = {
         ["src.tasks.DungeonTasks.Dungeon6593Task", "Dungeon6593Task"],
         ["src.tasks.DungeonTasks.Dungeon1234Task", "Dungeon1234Task"],
         ["src.tasks.DungeonTasks.Dungeon6613Task", "Dungeon6613Task"],
+        ["src.tasks.DungeonTasks.Dungeon1722Task", "Dungeon1722Task"],
     ],
     'trigger_tasks':[
         ["src.tasks.FishingTask", "FishingTask"],

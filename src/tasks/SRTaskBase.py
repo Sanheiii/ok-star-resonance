@@ -9,6 +9,7 @@ import numpy as np
 from ok import og, BaseTask
 
 from src.MinimapSectorAngleDetector import MinimapSectorAngleDetector
+from src.key_config import KEY_SETTINGS
 from src.packet_capture.parser import ActorState
 
 
@@ -312,6 +313,14 @@ class SRTaskBase(BaseTask):
             return None
         finally:
             self._end_movement_session()
+
+    def get_custom_key(self, action):
+        """Return a configured game hotkey, falling back to its default."""
+        default = KEY_SETTINGS.default_config[action]
+        get_global_config = getattr(self, 'get_global_config', None)
+        if get_global_config is None:
+            return default
+        return get_global_config(KEY_SETTINGS).get(action, default)
 
     def _begin_movement_session(self):
         if self._movement_session_depth == 0:

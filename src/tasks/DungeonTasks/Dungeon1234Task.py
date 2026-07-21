@@ -25,7 +25,7 @@ class Dungeon1234Task(DungeonTaskBase):
         if not self.begin():
             return False
         self.investigate(self.INSTRUMENT_POSITION)
-        self.send_key('h')
+        self.send_key(self.get_custom_key('Auto Battle'))
 
         combat_routes = (
             (
@@ -53,7 +53,7 @@ class Dungeon1234Task(DungeonTaskBase):
                 return False
             if not self._wait_for_combat_end(state):
                 return False
-        self.send_key('h')
+        self.send_key(self.get_custom_key('Auto Battle'))
         if not self._follow_route(
                     ((151.631, 129.405), (159.678, 154.856),), '前往第一处交互点'):
             return False
@@ -62,7 +62,7 @@ class Dungeon1234Task(DungeonTaskBase):
         self.send_key('space', after_sleep=0.5)
         self.send_key('f')
         self.sleep(13)
-        self.send_key('h')
+        self.send_key(self.get_custom_key('Auto Battle'))
 
         if not self._follow_route(((294.137, 232.450),), '第三段道中'):
             return False
@@ -109,7 +109,7 @@ class Dungeon1234Task(DungeonTaskBase):
             return False
 
         self.info['State'] = 'Boss战中'
-        self.send_key('e')
+        self.send_key(self.get_custom_key('Phantom Dash'))
         # if not self.move_to_position(
         #         self.position,
         #         boss_position,

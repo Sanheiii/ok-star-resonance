@@ -24,7 +24,7 @@ class Dungeon6613Task(DungeonTaskBase):
         if not self.begin():
             return False
         self.investigate(self.INSTRUMENT_POSITION)
-        self.send_key('h')
+        self.send_key(self.get_custom_key('Auto Battle'))
 
         if not self._follow_route((
                 (-28.258, -12.534),
@@ -101,7 +101,7 @@ class Dungeon6613Task(DungeonTaskBase):
             self.next_frame()
             if self.find_one('dungeon_scene_icon'):
                 break
-        self.send_key('e')
+        self.send_key(self.get_custom_key('Phantom Dash'))
 
         self.info['State'] = 'Boss战斗中'
 

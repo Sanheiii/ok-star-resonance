@@ -45,6 +45,21 @@ msgstr "游戏设置"
 msgid "Game Language"
 msgstr "游戏语言"
 
+msgid "Key Settings"
+msgstr "按键设置"
+
+msgid "Auto Battle"
+msgstr "自动战斗"
+
+msgid "Float"
+msgstr "飘浮"
+
+msgid "Phantom Dash"
+msgstr "幻影冲刺"
+
+msgid "Toggle Walk/Run"
+msgstr "步行"
+
 msgid "Inference Backend"
 msgstr "推理后端"
 
