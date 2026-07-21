@@ -169,6 +169,10 @@ class GamePacketParser:
         self._proto = _load_proto_module()
         self._warned_proto = False
 
+    def reset_transport(self):
+        """Discard TCP reassembly state before starting a new capture session."""
+        self.streams.clear()
+
     def set_datalink(self, datalink):
         self.datalink = datalink
 

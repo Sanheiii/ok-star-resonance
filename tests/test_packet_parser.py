@@ -22,6 +22,20 @@ except ImportError:
 
 
 class GamePacketParserTest(unittest.TestCase):
+    def test_reset_transport_discards_incomplete_streams_but_preserves_state(self):
+        parser = GamePacketParser()
+        parser.streams[(b"source", 1, b"destination", 2)] = object()
+        parser.scene_id = 123
+        parser.local_position = (1.0, 2.0, 3.0)
+        parser.local_position_revision = 4
+
+        parser.reset_transport()
+
+        self.assertEqual(parser.streams, {})
+        self.assertEqual(parser.scene_id, 123)
+        self.assertEqual(parser.local_position, (1.0, 2.0, 3.0))
+        self.assertEqual(parser.local_position_revision, 4)
+
     def test_enter_scene_reads_initial_dead_actor_state(self):
         parser = GamePacketParser()
         message = parser._proto.WorldNtf.EnterScene()

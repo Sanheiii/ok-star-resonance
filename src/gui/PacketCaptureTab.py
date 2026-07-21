@@ -254,25 +254,29 @@ class PacketCaptureTab(CustomTab):
         self.status_label.setText(og.app.tr("Capturing"))
         self._stop_requested = False
         self._capture_error = None
+        self._parser.reset_transport()
         self._capture_thread = threading.Thread(
             target=self._capture_loop, args=(self._devices[index].name,), daemon=True, name="NpcapCapture"
         )
         self._capture_thread.start()
 
     def _capture_loop(self, device_name):
+        capture = None
         try:
-            self._capture = NpcapCapture(device_name)
+            capture = NpcapCapture(device_name)
+            self._capture = capture
             if self._stop_requested:
-                self._capture.stop()
-            self._parser.set_datalink(self._capture.datalink)
-            self._capture.run(self._on_packet)
+                return
+            self._parser.set_datalink(capture.datalink)
+            capture.run(self._on_packet)
         except Exception as exc:
             self.logger.error(f"Npcap capture failed: {exc}")
             self._capture_error = str(exc)
         finally:
-            if self._capture:
-                self._capture.close()
-            self._capture = None
+            if capture:
+                capture.close()
+            if self._capture is capture:
+                self._capture = None
 
     def _on_packet(self, packet):
         transform = self._parser.feed_packet(packet)
@@ -299,13 +303,15 @@ class PacketCaptureTab(CustomTab):
         self._stop_requested = True
         if self._capture:
             self._capture.stop()
-        self._set_idle(og.app.tr("Capture stopped"))
+        self.capture_button.setEnabled(False)
+        self.status_label.setText(og.app.tr("Capture stopped"))
 
     def _capture_failed(self, message):
         self._set_idle(message)
 
     def _set_idle(self, message):
         self.capture_button.setText(og.app.tr("Start capture"))
+        self.capture_button.setEnabled(True)
         self.device_combo.setEnabled(True)
         self.refresh_button.setEnabled(True)
         self.status_label.setText(message)
