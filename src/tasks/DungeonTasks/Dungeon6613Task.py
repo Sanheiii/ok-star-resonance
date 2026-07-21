@@ -91,7 +91,8 @@ class Dungeon6613Task(DungeonTaskBase):
         self.send_key('e')
 
         self.info['State'] = 'Boss战斗中'
-        if not self.wait_out_of_combat(time_out=420):
+        self.sleep(10)
+        if not self.wait_out_of_combat(time_out=410):
             self.log_error('Boss战斗超时')
             return False
 
