@@ -80,7 +80,9 @@ jobs:
 
       - name: Build with PyAppify
         id: pyappify
-        uses: ok-oldking/pyappify-action@master
+        # Fork moves the Tauri/NSIS build tree under RUNNER_TEMP to avoid
+        # Windows MAX_PATH failures while packaging PySide6 QML files.
+        uses: Sanheiii/pyappify-action@9251d32fd61bf983d4c03a47882c48e2d3261ea8
         with:
           # Pin the PyAppify launcher/source version as recommended by its docs.
           version: 'v1.1.7'
