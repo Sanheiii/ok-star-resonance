@@ -5,85 +5,102 @@ on:
     tags:
       - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to rebuild, e.g. v1.3.2'
+        required: true
+        type: string
 
 permissions:
   contents: write
 
+concurrency:
+  group: build-application-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
-    name: Build exe with launcher
-    runs-on: windows-latest
+    name: Build Windows application
+    runs-on: windows-2022
+    timeout-minutes: 60
 
     env:
+      BUILD_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      CI: 'false'
       PYTHONIOENCODING: 'UTF-8'
       PYTHONLEGACYWINDOWSSTDIO: 'utf-8'
 
-    strategy:
-      matrix:
-        python-version: [ '3.12' ]
-
     steps:
+      - name: Validate build tag
+        shell: pwsh
+        run: |
+          if ($env:BUILD_TAG -notmatch '^v\d+\.\d+\.\d+(?:-[A-Za-z0-9._-]+)?$') {
+            throw "Invalid tag '$env:BUILD_TAG'. Expected a tag such as v1.3.2."
+          }
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.BUILD_TAG }}
+          submodules: recursive
+          lfs: true
+          fetch-depth: 0
+
       - name: Configure git
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           git config --global core.autocrlf false
           git config --global core.eol lf
-          git config --global user.email "Sanheiii@users.noreply.github.com"
-          git config --global user.name "Sanheiii"
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
         with:
-          submodules: true
-          lfs: true
-          fetch-depth: 0
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.12'
           cache: pip
+          cache-dependency-path: requirements.txt
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         shell: pwsh
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install --requirement requirements.txt
 
-      - name: Inline ok requirements
+      - name: Inline ok-script requirements
+        shell: pwsh
+        run: python -m ok.update.inline_ok_requirements --tag "$env:BUILD_TAG"
+
+      # pyappify-action uses the pnpm found on PATH. Pin it so runner image
+      # updates cannot silently change the package manager used for the build.
+      - name: Set up pnpm
         shell: pwsh
         run: |
-          python -m ok.update.inline_ok_requirements --tag ${{ github.ref_name }}
+          npm install --global pnpm@9.15.9
+          pnpm --version
 
-      - name: Check release version
-        id: release-version
-        shell: pwsh
-        run: |
-          $tag = "${{ github.ref_name }}"
-          $isRelease = $tag -match '^v?\d+\.\d+\.\d+$'
-          "is_release=$($isRelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
-          Write-Host "Release version: $isRelease"
-
-      - name: Build with PyAppify Action
-        id: build-app
+      - name: Build with PyAppify
+        id: pyappify
         uses: ok-oldking/pyappify-action@master
         with:
+          # Pin the PyAppify launcher/source version as recommended by its docs.
           version: 'v1.1.7'
 
-      - name: Upload Artifact
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: ok-star-resonance-${{ env.BUILD_TAG }}-windows
           path: pyappify_dist/*
+          if-no-files-found: error
+          retention-days: 14
 
-      - name: Create Release And Upload Asset
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
-        if: steps.release-version.outputs.is_release == 'true' && startsWith(github.ref, 'refs/tags/v')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          tag_name: ${{ env.BUILD_TAG }}
           files: pyappify_dist/*
           draft: false
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: true
+          overwrite_files: true
