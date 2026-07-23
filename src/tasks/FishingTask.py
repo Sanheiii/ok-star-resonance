@@ -11,19 +11,20 @@ from src.pushdeer_config import PUSHDEER_SETTINGS
 from src.Yolo8Detect import Yolo8Detect
 from src.tasks.SRTriggerTask import SRTriggerTask
 
+
 class FishingTask(SRTriggerTask):
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "Auto Fish"
         self.description = "Auto fish after interaction"
-        
+
         self.default_config.update({
             'Yolo Detection Use DirectML(Need Restart)': False,
             'Always Rapid Click': False,
             'Disable Yolo Detect': False,
         })
-        
+
         self.trigger_count = 0
 
         # "溜鱼"小游戏的状态变量
@@ -72,7 +73,7 @@ class FishingTask(SRTriggerTask):
         self.yolo_count = 0
         self.last_stat_time = time.time()
         self.stat_lock = threading.Lock()
-        self._yolo_model : Yolo8Detect | None = None
+        self._yolo_model: Yolo8Detect | None = None
 
     def _splash_finder_worker(self, frame):
         """
@@ -111,7 +112,7 @@ class FishingTask(SRTriggerTask):
             # 检查鱼竿是否损坏
             if self.ocr(0.90, 0.92, 0.96, 0.96, match=self.get_regex('pole')):
                 self.log_info('更换鱼竿', notify=False)
-                self.send_key(self.get_key_config_value('Switch Pole'))
+                self.send_key(self.get_custom_key('Switch Pole'))
                 use_boxes = self.wait_ocr(box=None, match=self.get_regex('use'), log=False, threshold=0.8, time_out=15)
                 if use_boxes:
                     self.log_info('点击使用鱼竿', notify=False)
@@ -208,9 +209,9 @@ class FishingTask(SRTriggerTask):
 
         if self.pushdeer is None:
             if regex.fullmatch(server) is not None and 'PDU' in key:
-                self.pushdeer = PushDeer(server = server, pushkey= key)
+                self.pushdeer = PushDeer(server=server, pushkey=key)
             elif 'PDU' in key:
-                self.pushdeer = PushDeer(pushkey= key)
+                self.pushdeer = PushDeer(pushkey=key)
 
         if self.pushdeer:
             now = time.time()
@@ -230,7 +231,6 @@ class FishingTask(SRTriggerTask):
                 return False
         else:
             raise Exception('未设置正确的PushDeer参数')
-
 
     def _play_the_fish(self, fish_pos: float, hint_left, hint_right):
         delta_time = self._update_time()
@@ -275,7 +275,7 @@ class FishingTask(SRTriggerTask):
             if self.pos <= 0 and not self.key_a_pressed:
                 self.send_key_down('a')
                 self.key_a_pressed = True
-        else: 
+        else:
             # 鱼在竿右边，竿在屏幕左边松开A键
             if self.pos < 0 and self.key_a_pressed:
                 self.send_key_up('a')
@@ -309,24 +309,24 @@ class FishingTask(SRTriggerTask):
         """更新鱼竿的位置。"""
         # 未按任何键时，向中心点漂移
         if not self.key_a_pressed and not self.key_d_pressed:
-            if self.pos > 0: 
+            if self.pos > 0:
                 self.pos -= 1.0 * delta_time
                 if self.pos < 0: self.pos = 0
-            else : 
+            else:
                 self.pos += 1.0 * delta_time
                 if self.pos > 0: self.pos = 0
-        
+
         # 当按下 'A' 键且 pos < 0 时，向 -1 移动
         if self.key_a_pressed and self.pos <= 0:
             self.pos -= 0.5 * delta_time
-            
+
         # 当按下 'D' 键且 pos > 0 时，向 1 移动
         if self.key_d_pressed and self.pos >= 0:
             self.pos += 0.5 * delta_time
-            
+
         # 将位置限制在 [-1, 1] 的范围内
         self.pos = min(max(self.pos, -1.0), 1.0)
-    
+
     def _reset_minigame_state(self):
         """在拉鱼结束时重置溜鱼状态。"""
         self.log_info('重置溜鱼', notify=False)
@@ -399,7 +399,8 @@ class FishingTask(SRTriggerTask):
             if elapsed >= 1.0:
                 run_rate = self.run_count / elapsed
                 yolo_rate = self.yolo_count / elapsed
-                self.log_info(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 每秒运行次数={run_rate:.2f}, 水花识别次数={yolo_rate:.2f}")
+                self.log_info(
+                    f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 每秒运行次数={run_rate:.2f}, 水花识别次数={yolo_rate:.2f}")
                 self.run_count = 0
                 self.yolo_count = 0
                 self.last_stat_time = now
