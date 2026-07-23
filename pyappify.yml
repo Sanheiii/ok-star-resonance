@@ -1,5 +1,6 @@
 name: "ok-star-resonance"
 uac: true
+icon: "icons/icon.png"
 profiles:
   - name: "Global"
     git_url: "https://github.com/sanheiii/ok-star-resonance.git"
