@@ -4,10 +4,10 @@ import datetime
 import re
 import threading
 
-from ok import og
 from ok.util.file import get_path_relative_to_exe
 from pypushdeer import PushDeer
 
+from src.pushdeer_config import PUSHDEER_SETTINGS
 from src.Yolo8Detect import Yolo8Detect
 from src.tasks.SRTriggerTask import SRTriggerTask
 
@@ -22,10 +22,6 @@ class FishingTask(SRTriggerTask):
             'Yolo Detection Use DirectML(Need Restart)': False,
             'Always Rapid Click': False,
             'Disable Yolo Detect': False,
-            'Switch Pole Key': 'm',
-            'Fishing Interruption Notice': False,
-            'PushDeer Server': og.app.tr('Put your server url here if not using official server') if og.app else None,
-            'PushDeer ApiKey': og.app.tr('Get from your PushDeer app') if og.app else None,
         })
         
         self.trigger_count = 0
@@ -115,7 +111,7 @@ class FishingTask(SRTriggerTask):
             # 检查鱼竿是否损坏
             if self.ocr(0.90, 0.92, 0.96, 0.96, match=self.get_regex('pole')):
                 self.log_info('更换鱼竿', notify=False)
-                self.send_key(self.config.get('Switch Pole Key'))
+                self.send_key(self.get_key_config_value('Switch Pole Key'))
                 use_boxes = self.wait_ocr(box=None, match=self.get_regex('use'), log=False, threshold=0.8, time_out=15)
                 if use_boxes:
                     self.log_info('点击使用鱼竿', notify=False)
@@ -193,10 +189,11 @@ class FishingTask(SRTriggerTask):
         return False
 
     def _handle_interruption_notice(self) -> bool:
-        server = self.config.get('PushDeer Server')
-        key = self.config.get('PushDeer ApiKey')
+        pushdeer_config = self.get_global_config(PUSHDEER_SETTINGS)
+        server = pushdeer_config.get('PushDeer Server')
+        key = pushdeer_config.get('PushDeer ApiKey')
 
-        if not self.config.get('Fishing Interruption Notice'):
+        if not pushdeer_config.get('Enable PushDeer'):
             return False
 
         regex = re.compile(

@@ -24,7 +24,7 @@ msgstr "使用专注采集"
 msgid "Gathering Key"
 msgstr "采集按键"
 
-msgid "Switch Pole Key"
+msgid "Switch Pole"
 msgstr "切换鱼竿按键"
 
 msgid "Disable Yolo Detection"
@@ -206,6 +206,15 @@ msgstr "禁用 Yolo 目标检测"
 
 msgid "Fishing Interruption Notice"
 msgstr "钓鱼中断通知"
+
+msgid "PushDeer Settings"
+msgstr "PushDeer 设置"
+
+msgid "Configure PushDeer notifications for supported tasks"
+msgstr "在支持的任务使用推送服务"
+
+msgid "Enable PushDeer"
+msgstr "启用 PushDeer"
 
 msgid "PushDeer Server"
 msgstr "PushDeer 服务器"

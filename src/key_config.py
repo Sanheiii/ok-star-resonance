@@ -9,6 +9,7 @@ KEY_SETTINGS = ConfigOption(
         "Float": "q",
         "Phantom Dash": "e",
         "Toggle Walk/Run": "rctrl",
+        "Switch Pole": "m",
     },
-    icon=FluentIcon.GAME,
+    icon=FluentIcon.COMMAND_PROMPT,
 )
