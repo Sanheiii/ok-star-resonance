@@ -27,6 +27,7 @@ jobs:
     env:
       BUILD_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
       CI: 'false'
+      PIP_EXTRA_INDEX_URL: 'https://pypi.org/simple'
       PYTHONIOENCODING: 'UTF-8'
       PYTHONLEGACYWINDOWSSTDIO: 'utf-8'
 
