@@ -25,7 +25,7 @@ msgid "Gathering Key"
 msgstr "采集按键"
 
 msgid "Switch Pole"
-msgstr "切换鱼竿按键"
+msgstr "添加鱼竿"
 
 msgid "Disable Yolo Detection"
 msgstr "禁用Yolo识别"

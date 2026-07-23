@@ -77,6 +77,11 @@ config = {
         'default_threshold': 0.8, #默认threshold
     },
     'version': version, #版本
+    'update_pyappify': {
+        'to_version': '1.1.7',
+        'zip_url': 'https://github.com/Sanheiii/ok-star-resonance/releases/download/v1.3.2/ok-star-resonance-win32.zip',
+        'sha256': '7e6239c6807db11d705ee154ff96e0541d4a3681f26f1a14fe9d909071713ed6',
+    },
     'my_app': ['src.globals', 'Globals'], # 全局单例对象, 可以存放加载的模型, 使用og.my_app调用
     'custom_tabs': [["src.gui.PacketCaptureTab", "PacketCaptureTab"]],
     'onetime_tasks': [  # tasks to execute

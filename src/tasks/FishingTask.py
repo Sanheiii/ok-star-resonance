@@ -111,7 +111,7 @@ class FishingTask(SRTriggerTask):
             # 检查鱼竿是否损坏
             if self.ocr(0.90, 0.92, 0.96, 0.96, match=self.get_regex('pole')):
                 self.log_info('更换鱼竿', notify=False)
-                self.send_key(self.get_key_config_value('Switch Pole Key'))
+                self.send_key(self.get_key_config_value('Switch Pole'))
                 use_boxes = self.wait_ocr(box=None, match=self.get_regex('use'), log=False, threshold=0.8, time_out=15)
                 if use_boxes:
                     self.log_info('点击使用鱼竿', notify=False)

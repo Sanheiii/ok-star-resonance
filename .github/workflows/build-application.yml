@@ -84,9 +84,14 @@ jobs:
         # Fork moves the Tauri/NSIS build tree under RUNNER_TEMP to avoid
         # Windows MAX_PATH failures while packaging PySide6 QML files.
         uses: Sanheiii/pyappify-action@9251d32fd61bf983d4c03a47882c48e2d3261ea8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # Pin the PyAppify launcher/source version as recommended by its docs.
           version: 'v1.1.7'
+          # Reuse the launcher binary built for v1.3.2. Update or remove this
+          # URL whenever pyappify.yml, icons, or the PyAppify version changes.
+          use_release: 'https://api.github.com/repos/Sanheiii/ok-star-resonance/releases/tags/v1.3.2'
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
