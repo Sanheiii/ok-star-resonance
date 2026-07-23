@@ -325,12 +325,19 @@ class DungeonTaskBase(SRTask):
 
             elif self.find_one('single_confirm'):
                 self.click(0.5, 0.74)
+                handled = True
 
             elif self.find_one('anchor_login'):
                 self.click(0.5, 0.83)
+                handled = True
 
             elif self.find_one('anchor_select_chara'):
                 self.click(0.86, 0.88)
+                handled = True
+
+            elif self.find_one(confirm):
+                self.click(0.37, 0.74)
+                handled = True
 
             elif self.calculate_color_percentage({'r': (250, 255), 'g': (250, 255), 'b': (250, 255)}, self.get_box_by_name('close')) > 0.15:
                 self.send_key('esc')
