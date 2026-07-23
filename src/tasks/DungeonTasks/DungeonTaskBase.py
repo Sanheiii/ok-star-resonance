@@ -318,13 +318,22 @@ class DungeonTaskBase(SRTask):
                 handled = True
                 needs_confirmation = True
 
-            elif self.calculate_color_percentage({'r': (250, 255), 'g': (250, 255), 'b': (250, 255)}, self.get_box_by_name('close')) > 0.15:
-                self.send_key('esc')
+            elif self.find_one('dungeon_scene_icon'):
+                self.send_key('p')
                 handled = True
                 needs_confirmation = True
 
-            elif self.find_one('dungeon_scene_icon'):
-                self.send_key('p')
+            elif self.find_one('single_confirm'):
+                self.click(0.5, 0.74)
+
+            elif self.find_one('anchor_login'):
+                self.click(0.5, 0.83)
+
+            elif self.find_one('anchor_select_chara'):
+                self.click(0.86, 0.88)
+
+            elif self.calculate_color_percentage({'r': (250, 255), 'g': (250, 255), 'b': (250, 255)}, self.get_box_by_name('close')) > 0.15:
+                self.send_key('esc')
                 handled = True
                 needs_confirmation = True
 

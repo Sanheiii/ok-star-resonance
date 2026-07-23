@@ -269,6 +269,24 @@
             "file_name": "images/0.png",
             "width": 1920,
             "height": 1080
+        },
+        {
+            "id": 45,
+            "file_name": "images/1.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 46,
+            "file_name": "images/1.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 47,
+            "file_name": "images/2.png",
+            "width": 1920,
+            "height": 1080
         }
     ],
     "categories": [
@@ -732,6 +750,21 @@
         {
             "id": 107,
             "name": "dungeon_timeout",
+            "supercategory": ""
+        },
+        {
+            "id": 108,
+            "name": "single_confirm",
+            "supercategory": ""
+        },
+        {
+            "id": 109,
+            "name": "anchor_login",
+            "supercategory": ""
+        },
+        {
+            "id": 110,
+            "name": "anchor_select_chara",
             "supercategory": ""
         }
     ],
@@ -2204,6 +2237,45 @@
                 13
             ],
             "area": 4420,
+            "iscrowd": 0
+        },
+        {
+            "id": 108,
+            "image_id": 45,
+            "category_id": 108,
+            "bbox": [
+                671,
+                755,
+                176,
+                89
+            ],
+            "area": 15664,
+            "iscrowd": 0
+        },
+        {
+            "id": 109,
+            "image_id": 46,
+            "category_id": 109,
+            "bbox": [
+                1832,
+                46,
+                41,
+                218
+            ],
+            "area": 8938,
+            "iscrowd": 0
+        },
+        {
+            "id": 110,
+            "image_id": 47,
+            "category_id": 110,
+            "bbox": [
+                9,
+                23,
+                84,
+                139
+            ],
+            "area": 11676,
             "iscrowd": 0
         }
     ],
