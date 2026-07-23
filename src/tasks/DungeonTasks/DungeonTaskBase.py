@@ -290,7 +290,9 @@ class DungeonTaskBase(SRTask):
 
     def return_to_initial_state(self):
         self.info['State'] = '副本流程出现错误，尝试退回状态'
-        self.screenshot('dungeon/recovery_error')
+        # 在主城不截图
+        if self.scene_id is not 8:
+            self.screenshot('dungeon/recovery_error')
         confirm = {
             'en': 'confirm_en',
             'jp': 'confirm_jp',
