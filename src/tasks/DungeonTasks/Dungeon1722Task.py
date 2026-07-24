@@ -120,7 +120,7 @@ class Dungeon1722Task(DungeonTaskBase):
             return False
         self.send_key('f')
         self.send_key('w', down_time=0.5)
-        self.send_key('f', after_sleep=2)
+        self.send_key('f', after_sleep=4)
         return True
 
     def _move_to_entity(self, position, state):
