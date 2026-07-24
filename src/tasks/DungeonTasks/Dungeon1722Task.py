@@ -70,6 +70,14 @@ class Dungeon1722Task(DungeonTaskBase):
         if not self.wait_out_of_combat(time_out=420):
             self.log_error('Boss战斗超时')
             return False
+
+        self.info['State'] = '跳过Boss结算动画'
+        for _ in range(3):
+            self.send_key('esc', after_sleep=2)
+            self.next_frame()
+            if self.find_one('dungeon_scene_icon'):
+                break
+
         return self.handle_end()
 
     def _clear_round(self, scene_object_attr_id, monster_attr_id):

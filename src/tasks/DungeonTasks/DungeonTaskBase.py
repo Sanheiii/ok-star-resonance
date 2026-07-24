@@ -291,7 +291,7 @@ class DungeonTaskBase(SRTask):
     def return_to_initial_state(self):
         self.info['State'] = '副本流程出现错误，尝试退回状态'
         # 在主城不截图
-        if self.scene_id is not 8:
+        if self.scene_id != 8:
             self.screenshot('dungeon/recovery_error')
         confirm = {
             'en': 'confirm_en',
@@ -301,8 +301,15 @@ class DungeonTaskBase(SRTask):
 
         claim_monthly_pass_task = self.get_task_by_class(ClaimMonthlyPassTask)
 
-        while not self.find_one('menu_icon', threshold=0.7) or self.scene_id not in [8, None]:
-            self.next_frame()
+        while True:
+            if self.next_frame() is None:
+                self.log_warning('Unable to capture the game window while recovering; retrying')
+                self.sleep(1)
+                continue
+
+            if self.find_one('menu_icon', threshold=0.7) and self.scene_id in [8, None]:
+                break
+
             if self.find_one('loading'):
                 self.sleep(1)
                 continue

@@ -385,5 +385,53 @@ class RedeemItemsTest(unittest.TestCase):
         self.assertFalse(task.errors)
 
 
+class _RecoverTask:
+    scene_id = 8
+
+    def __init__(self):
+        self.info = {}
+        self._frames = iter([None, object()])
+        self.current_frame = None
+        self.find_calls = []
+        self.warnings = []
+        self.sleep_calls = []
+
+    def screenshot(self, _name):
+        raise AssertionError('The initial-state scene must not be screenshotted')
+
+    def get_game_language(self):
+        return 'en'
+
+    def get_task_by_class(self, _task_class):
+        return object()
+
+    def next_frame(self):
+        self.current_frame = next(self._frames)
+        return self.current_frame
+
+    def find_one(self, feature_name, **_kwargs):
+        if self.current_frame is None:
+            raise AssertionError('Feature detection must not run without a frame')
+        self.find_calls.append(feature_name)
+        return feature_name == 'menu_icon'
+
+    def log_warning(self, message):
+        self.warnings.append(message)
+
+    def sleep(self, seconds):
+        self.sleep_calls.append(seconds)
+
+
+class ReturnToInitialStateTest(unittest.TestCase):
+    def test_retries_capture_before_running_feature_detection(self):
+        task = _RecoverTask()
+
+        DungeonTaskBase.return_to_initial_state(task)
+
+        self.assertEqual(task.find_calls, ['menu_icon'])
+        self.assertEqual(task.sleep_calls, [1])
+        self.assertEqual(len(task.warnings), 1)
+
+
 if __name__ == '__main__':
     unittest.main()
