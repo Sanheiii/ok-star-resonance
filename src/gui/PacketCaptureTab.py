@@ -16,8 +16,10 @@ from PySide6.QtWidgets import (
 from qfluentwidgets import BodyLabel, ComboBox, FluentIcon, PrimaryPushButton, PushButton
 
 from ok import Config, og
+from ok.gui.Communicate import communicate
 from ok.gui.widget.CustomTab import CustomTab
 from src.packet_capture import NpcapCapture, list_devices
+from src.packet_capture.adapter_detection import detect_process_device, game_window_pid
 from src.packet_capture.parser import ActorState, GamePacketParser
 
 
@@ -123,10 +125,12 @@ class PacketCaptureTab(CustomTab):
         controls_layout.setContentsMargins(0, 0, 0, 0)
         self.device_combo = ComboBox(controls)
         self.refresh_button = PushButton(FluentIcon.SYNC, og.app.tr("Refresh adapters"), controls)
+        self.auto_select_button = PushButton(og.app.tr("Auto select"), controls)
         self.capture_button = PrimaryPushButton(og.app.tr("Start capture"), controls)
         controls_layout.addWidget(BodyLabel(og.app.tr("Network adapter"), controls))
         controls_layout.addWidget(self.device_combo, 1)
         controls_layout.addWidget(self.refresh_button)
+        controls_layout.addWidget(self.auto_select_button)
         controls_layout.addWidget(self.capture_button)
         self.add_widget(controls)
 
@@ -179,6 +183,7 @@ class PacketCaptureTab(CustomTab):
         self.add_widget(state, 1)
 
         self.refresh_button.clicked.connect(self._refresh_devices)
+        self.auto_select_button.clicked.connect(self._auto_select_device)
         self.device_combo.currentIndexChanged.connect(self._save_selected_device)
         self.capture_button.clicked.connect(self._toggle_capture)
         self.copy_button.clicked.connect(self._copy_position)
@@ -240,6 +245,52 @@ class PacketCaptureTab(CustomTab):
         if not self._refreshing_devices and 0 <= index < len(self._devices):
             self._config["device_name"] = self._devices[index].name
 
+    def _auto_select_device(self):
+        if self.is_capturing:
+            return
+        try:
+            hwnd_window = getattr(og.device_manager, "hwnd_window", None)
+            pid = game_window_pid(getattr(hwnd_window, "hwnd", 0))
+            if not pid:
+                self._show_auto_select_error("Connect to the game window first")
+                return
+            device = detect_process_device(pid, self._devices)
+            if device is None:
+                self._show_auto_select_error("No active game network adapter was detected")
+                return
+            index = next(
+                (i for i, candidate in enumerate(self._devices) if candidate.name == device.name),
+                -1,
+            )
+            if index < 0:
+                self._show_auto_select_error("The detected adapter is unavailable in Npcap")
+                return
+            self.device_combo.setCurrentIndex(index)
+            self._config["device_name"] = device.name
+            self._show_auto_select_message(
+                "Selected adapter: {adapter}",
+                error=False,
+                adapter=device.display_name,
+            )
+        except Exception as exc:
+            self.logger.warning(f"Automatic adapter detection failed: {exc}")
+            self._show_auto_select_error("Failed to detect the game network adapter")
+
+    @staticmethod
+    def _show_auto_select_error(message):
+        PacketCaptureTab._show_auto_select_message(message, error=True)
+
+    @staticmethod
+    def _show_auto_select_message(message, error=False, **params):
+        communicate.notification.emit(
+            og.app.tr(message).format(**params),
+            og.app.tr("Auto select"),
+            error,
+            False,
+            None,
+            None,
+        )
+
     def _toggle_capture(self):
         if self.capture_button.text() == og.app.tr("Stop capture"):
             self._stop_capture()
@@ -250,6 +301,7 @@ class PacketCaptureTab(CustomTab):
             return
         self.device_combo.setEnabled(False)
         self.refresh_button.setEnabled(False)
+        self.auto_select_button.setEnabled(False)
         self.capture_button.setText(og.app.tr("Stop capture"))
         self.status_label.setText(og.app.tr("Capturing"))
         self._stop_requested = False
@@ -314,6 +366,7 @@ class PacketCaptureTab(CustomTab):
         self.capture_button.setEnabled(True)
         self.device_combo.setEnabled(True)
         self.refresh_button.setEnabled(True)
+        self.auto_select_button.setEnabled(True)
         self.status_label.setText(message)
 
     def _refresh_transform(self):

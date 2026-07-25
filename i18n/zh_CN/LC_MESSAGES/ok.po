@@ -429,6 +429,24 @@ msgstr "网卡"
 msgid "Refresh adapters"
 msgstr "刷新网卡"
 
+msgid "Auto select"
+msgstr "自动选择"
+
+msgid "Connect to the game window first"
+msgstr "请先连接游戏窗口"
+
+msgid "No active game network adapter was detected"
+msgstr "未检测到游戏正在使用的网卡"
+
+msgid "The detected adapter is unavailable in Npcap"
+msgstr "Npcap 中没有检测到的网卡"
+
+msgid "Selected adapter: {adapter}"
+msgstr "已选择网卡：{adapter}"
+
+msgid "Failed to detect the game network adapter"
+msgstr "检测游戏网卡失败"
+
 msgid "Start capture"
 msgstr "开始抓包"
 

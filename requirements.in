@@ -4,6 +4,7 @@ onnxruntime-directml==1.24.4
 openvino
 opencv-python
 pynput
+psutil
 pypushdeer
 mido
 mahjong-utils
