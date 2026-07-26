@@ -213,6 +213,50 @@ class MovementReturnValueTest(unittest.TestCase):
         self.assertEqual(result, SRTaskBase._MOVE_RESULT_SUCCESS)
         self.assertEqual(task.rotations, [])
 
+    def test_direct_move_waits_after_initial_camera_rotation(self):
+        class DirectTask(SRTaskBase):
+            _xz = staticmethod(SRTaskBase._xz)
+            _angle_delta = staticmethod(SRTaskBase._angle_delta)
+            _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
+            _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
+            is_dead = False
+            camera_direction = 0
+            _camera_direction_detected = True
+            info = {}
+
+            def __init__(self):
+                self.frame_count = 0
+                self.events = []
+
+            @property
+            def position(self):
+                return (10, 0) if self.frame_count >= 2 else (0, 0)
+
+            def _release_move_keys(self):
+                pass
+
+            def _require_packet_capture(self):
+                pass
+
+            def next_frame(self):
+                self.frame_count += 1
+
+            def detect_camera_direction(self):
+                pass
+
+            def rotate_camera(self, degrees):
+                self.events.append(('rotate', degrees))
+
+            def sleep(self, seconds):
+                self.events.append(('sleep', seconds))
+
+        task = DirectTask()
+
+        result = SRTaskBase._move_direct(task, (10, 0), tolerance=1)
+
+        self.assertEqual(result, SRTaskBase._MOVE_RESULT_SUCCESS)
+        self.assertEqual(task.events, [('rotate', 90), ('sleep', 0.1)])
+
     def test_enabled_sprint_waits_for_full_initial_cooldown(self):
         class SprintTask(SRTaskBase):
             _xz = staticmethod(SRTaskBase._xz)

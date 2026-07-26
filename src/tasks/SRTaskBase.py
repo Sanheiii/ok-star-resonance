@@ -385,6 +385,7 @@ class SRTaskBase(BaseTask):
         closest_distance_at = time.monotonic()
         if rotate_camera and closest_distance > tolerance:
             self.rotate_camera(self._relative_target_angle(delta))
+            self.sleep(0.1)
             last_camera_correction_at = closest_distance_at
 
         while True:
