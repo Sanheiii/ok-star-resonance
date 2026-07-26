@@ -7,6 +7,7 @@ KEY_SETTINGS = ConfigOption(
     default={
         "Auto Battle": "h",
         "Float": "q",
+        "Invert Gliding Controls": False,
         "Phantom Dash": "e",
         "Toggle Walk/Run": "rctrl",
         "Switch Pole": "m",

@@ -8,8 +8,8 @@ class Dungeon1343Task(DungeonTaskBase):
     def __init__(self, *args, **kwargs):
         self.task_name = 'Delusion - Shadow Fortress - Hard'
         self.task_name_zh = '弥妄·黯影堡垒 - 困难'
-        self.task_desc = 'Automatically clears Delusion - Shadow Fortress - Hard.'
-        self.task_desc_zh = '自动通关弥妄·黯影堡垒 - 困难。'
+        self.task_desc = 'Tank classes are not supported.'
+        self.task_desc_zh = '不支持守护职业。'
         self.difficulty = Difficulty.HARD
         self.has_normal_difficulty = False
         super().__init__(*args, **kwargs)
@@ -254,7 +254,8 @@ class Dungeon1343Task(DungeonTaskBase):
         self.send_key(self.get_custom_key('Float'))
         self.sleep(1)
         self.click(0.5, 0.5)
-        self.send_key('s', down_time=3)
+        glide_key = 's' if self.get_custom_key('Invert Gliding Controls') else 'w'
+        self.send_key(glide_key, down_time=3)
 
         if not self._wait_until_below_height(35):
             return False
@@ -275,7 +276,7 @@ class Dungeon1343Task(DungeonTaskBase):
         self.send_key_up('shift', after_sleep=0.77) # key up 'shift'
         self.send_key('space', down_time=0.21, after_sleep=0.33) # press key 'space'
         self.send_key('space', down_time=0.19, after_sleep=0.27) # press key 'space'
-        self.send_key('q', down_time=0.17, after_sleep=1.86) # press key 'q'
+        self.send_key(self.get_custom_key('Float'), after_sleep=1.86)
         self.send_key('space', down_time=0.22, after_sleep=0.27) # press key 'space'
         self.send_key_down('space', after_sleep=0.16) # key down 'space'
         self.send_key_down('a') # key down 'a'
@@ -286,39 +287,6 @@ class Dungeon1343Task(DungeonTaskBase):
         self.send_key_up('w', after_sleep=2.19) # key up 'w'
 
         return True
-
-    def _prepare_recorded_jump(
-            self,
-            approach_position,
-            start_position,
-            camera_direction,
-            state):
-        if not self._follow_route((approach_position,), state):
-            return False
-        self._move_mouse_relative(0, 500)
-        self._look_at_twice(camera_direction)
-
-        walk_key = self.get_custom_key('Toggle Walk/Run')
-        positioned = False
-        try:
-            self.send_key(walk_key, after_sleep=0.2)
-            self.send_key('s', down_time=2, after_sleep=0.1)
-            self.send_key('w', down_time=1, after_sleep=0.1)
-            positioned = self.move_to_position(
-                self.position,
-                start_position,
-                target_tolerance=0.1,
-                max_path_deviation=8,
-                enable_sprint=False,
-                rotate_camera=False,
-            )
-        finally:
-            self.send_key(walk_key, after_sleep=0.2)
-
-        if positioned:
-            return True
-        self.log_error(f'{state}精确移动失败: {start_position}')
-        return False
 
     def _look_at_twice(self, direction):
         self.look_at(direction)
