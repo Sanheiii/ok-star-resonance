@@ -100,11 +100,14 @@ class Dungeon1343Task(DungeonTaskBase):
         if not self._jump_floating_platform():
             return False
 
+        self.move_to_position(self.position, (437.503, -152.330), 1,1)
+        self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.5)
         if not self._follow_route((
-                (437.503, -152.330),
                 (429.543, -138.043),
         ), '跳楼并前往第四处战斗', enable_sprint = False):
             return False
+        self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.5)
+
         if not self._follow_route((
                 (437.742, -156.903),
                 (456.451, -173.201),
@@ -132,6 +135,8 @@ class Dungeon1343Task(DungeonTaskBase):
             self.next_frame()
             if self.find_one('dungeon_scene_icon'):
                 break
+
+        self.sleep(1)
 
         self.send_key(self.get_custom_key('Phantom Dash'), after_sleep=1)
         self.click(0.5, 0.5, after_sleep=0.5)
@@ -270,21 +275,46 @@ class Dungeon1343Task(DungeonTaskBase):
         self.look_at(97)
         self.send_key('w', 2, after_sleep=2)
 
-        self.send_key_down('w', after_sleep=0.18) # key down 'w'
-        self.send_key_down('shift', after_sleep=0.38) # key down 'shift'
-        self.send_key('space', down_time=0.26, after_sleep=0.13) # press key 'space'
-        self.send_key_up('shift', after_sleep=0.77) # key up 'shift'
-        self.send_key('space', down_time=0.21, after_sleep=0.33) # press key 'space'
-        self.send_key('space', down_time=0.19, after_sleep=0.27) # press key 'space'
-        self.send_key(self.get_custom_key('Float'), after_sleep=1.86)
-        self.send_key('space', down_time=0.22, after_sleep=0.27) # press key 'space'
-        self.send_key_down('space', after_sleep=0.16) # key down 'space'
+        # 无移动速度加成
+        self.send_key_down('w', after_sleep=0.16) # key down 'w'
+        self.send_key_down('shift', after_sleep=0.43) # key down 'shift'
+        self.send_key_down('space', after_sleep=0.19) # key down 'space'
+        self.send_key_up('shift') # key up 'shift'
+        self.send_key_up('space', after_sleep=0.57) # key up 'space'
+        self.send_key_down('a', after_sleep=0.25) # key down 'a'
+        self.send_key('space', down_time=0.18, after_sleep=0.37) # press key 'space'
+        self.send_key_up('a', after_sleep=0.42) # key up 'a'
+        self.send_key('space', down_time=0.18, after_sleep=0.12) # press key 'space'
+        self.send_key('space', down_time=0.15, after_sleep=0.76) # press key 'space'
+        self.send_key_down('d', after_sleep=0.10) # key down 'd'
+        self.send_key('space', down_time=0.34, after_sleep=0.21) # press key 'space'
+        self.send_key_up('d', after_sleep=0.84) # key up 'd'
+        self.send_key('space', down_time=0.17, after_sleep=0.15) # press key 'space'
+        self.send_key('space', down_time=0.15, after_sleep=0.69) # press key 'space'
         self.send_key_down('a') # key down 'a'
-        self.send_key_up('space', after_sleep=0.82) # key up 'space'
-        self.send_key('space', down_time=0.22, after_sleep=0.14) # press key 'space'
-        self.send_key_up('a') # key up 'a'
-        self.send_key('space', down_time=0.14, after_sleep=1.00) # press key 'space'
-        self.send_key_up('w', after_sleep=2.19) # key up 'w'
+        self.send_key_up('w', after_sleep=0.87) # key up 'w'
+        self.send_key_down('w') # key down 'w'
+        self.send_key_down('space') # key down 'space'
+        self.send_key_up('a', after_sleep=0.20) # key up 'a'
+        self.send_key_up('space', after_sleep=0.15) # key up 'space'
+        self.send_key('space', down_time=0.19, after_sleep=1.24) # press key 'space'
+        self.send_key_up('w', after_sleep=1) # key up 'w'
+
+        # self.send_key_down('w', after_sleep=0.18) # key down 'w'
+        # self.send_key_down('shift', after_sleep=0.38) # key down 'shift'
+        # self.send_key('space', down_time=0.26, after_sleep=0.13) # press key 'space'
+        # self.send_key_up('shift', after_sleep=0.77) # key up 'shift'
+        # self.send_key('space', down_time=0.21, after_sleep=0.33) # press key 'space'
+        # self.send_key('space', down_time=0.19, after_sleep=0.27) # press key 'space'
+        # self.send_key(self.get_custom_key('Float'), after_sleep=1.86)
+        # self.send_key('space', down_time=0.22, after_sleep=0.27) # press key 'space'
+        # self.send_key_down('space', after_sleep=0.16) # key down 'space'
+        # self.send_key_down('a') # key down 'a'
+        # self.send_key_up('space', after_sleep=0.82) # key up 'space'
+        # self.send_key('space', down_time=0.22, after_sleep=0.14) # press key 'space'
+        # self.send_key_up('a') # key up 'a'
+        # self.send_key('space', down_time=0.14, after_sleep=1.00) # press key 'space'
+        # self.send_key_up('w', after_sleep=2.19) # key up 'w'
 
         return True
 

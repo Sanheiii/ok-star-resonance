@@ -174,7 +174,7 @@ class DungeonTaskBase(SRTask):
 
         return bool(self.wait_until(is_out_of_combat, time_out=time_out))
 
-    def wait_in_combat(self, time_out=15):
+    def wait_in_combat(self, time_out=30):
         self._require_packet_capture()
 
         def is_in_combat():
@@ -307,7 +307,11 @@ class DungeonTaskBase(SRTask):
                 self.sleep(1)
                 continue
 
-            if self.find_one('menu_icon', threshold=0.7) and self.scene_id in [8, None]:
+            menu_icon_white_percentage = self.calculate_color_percentage(
+                {'r': (255, 255), 'g': (255, 255), 'b': (255, 255)},
+                self.get_box_by_name('menu_icon'),
+            )
+            if 0.5 < menu_icon_white_percentage < 1.0 and self.scene_id in [8, None]:
                 break
 
             if self.find_one('loading'):

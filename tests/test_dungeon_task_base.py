@@ -393,6 +393,7 @@ class _RecoverTask:
         self._frames = iter([None, object()])
         self.current_frame = None
         self.find_calls = []
+        self.color_percentage_calls = []
         self.warnings = []
         self.sleep_calls = []
 
@@ -413,7 +414,16 @@ class _RecoverTask:
         if self.current_frame is None:
             raise AssertionError('Feature detection must not run without a frame')
         self.find_calls.append(feature_name)
-        return feature_name == 'menu_icon'
+        return False
+
+    def get_box_by_name(self, feature_name):
+        return f'{feature_name}_box'
+
+    def calculate_color_percentage(self, color, box):
+        if self.current_frame is None:
+            raise AssertionError('Color detection must not run without a frame')
+        self.color_percentage_calls.append((color, box))
+        return 0.8
 
     def log_warning(self, message):
         self.warnings.append(message)
@@ -428,7 +438,11 @@ class ReturnToInitialStateTest(unittest.TestCase):
 
         DungeonTaskBase.return_to_initial_state(task)
 
-        self.assertEqual(task.find_calls, ['menu_icon'])
+        self.assertEqual(task.find_calls, [])
+        self.assertEqual(task.color_percentage_calls, [(
+            {'r': (255, 255), 'g': (255, 255), 'b': (255, 255)},
+            'menu_icon_box',
+        )])
         self.assertEqual(task.sleep_calls, [1])
         self.assertEqual(len(task.warnings), 1)
 
