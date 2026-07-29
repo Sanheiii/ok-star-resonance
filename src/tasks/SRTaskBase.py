@@ -65,6 +65,7 @@ class SRTaskBase(BaseTask):
     _SPRINT_COOLDOWN = 1
     _SPRINT_MIN_DISTANCE = 10
     _MOVE_STALL_TIMEOUT = 15
+    _MOVE_STALL_JUMP_EXTENSION = 3
     _MOVE_RESULT_SUCCESS = 0
     _MOVE_RESULT_DEATH = 1
     _MOVE_RESULT_TIMEOUT = 2
@@ -383,6 +384,7 @@ class SRTaskBase(BaseTask):
         self.detect_camera_direction()
         current, delta, closest_distance = self._movement_position(target)
         closest_distance_at = time.monotonic()
+        stall_jump_used = False
         if rotate_camera and closest_distance > tolerance:
             self.rotate_camera(self._relative_target_angle(delta))
             self.sleep(0.1)
@@ -423,7 +425,17 @@ class SRTaskBase(BaseTask):
             if remaining_distance < closest_distance:
                 closest_distance = remaining_distance
                 closest_distance_at = now
+                stall_jump_used = False
             elif now - closest_distance_at >= self._MOVE_STALL_TIMEOUT:
+                if not stall_jump_used:
+                    self._release_move_keys()
+                    self.send_key('space')
+                    closest_distance_at = (
+                        now - self._MOVE_STALL_TIMEOUT
+                        + self._MOVE_STALL_JUMP_EXTENSION
+                    )
+                    stall_jump_used = True
+                    continue
                 self._release_move_keys()
                 return self._MOVE_RESULT_TIMEOUT
 

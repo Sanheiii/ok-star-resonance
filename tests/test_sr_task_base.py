@@ -465,20 +465,27 @@ class MovementReturnValueTest(unittest.TestCase):
     @patch.object(
         sr_task_base_module.time,
         'monotonic',
-        side_effect=[0, SRTaskBase._MOVE_STALL_TIMEOUT],
+        side_effect=[
+            0,
+            SRTaskBase._MOVE_STALL_TIMEOUT,
+            SRTaskBase._MOVE_STALL_TIMEOUT
+            + SRTaskBase._MOVE_STALL_JUMP_EXTENSION,
+        ],
     )
-    def test_direct_move_fails_after_stall_timeout_without_progress(self, _monotonic):
+    def test_direct_move_jumps_once_and_extends_stall_timeout(self, _monotonic):
         class StalledTask(SRTaskBase):
             _xz = staticmethod(SRTaskBase._xz)
             _angle_delta = staticmethod(SRTaskBase._angle_delta)
             _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
             _MOVE_STALL_TIMEOUT = SRTaskBase._MOVE_STALL_TIMEOUT
+            _MOVE_STALL_JUMP_EXTENSION = SRTaskBase._MOVE_STALL_JUMP_EXTENSION
             _MOVE_RESULT_TIMEOUT = SRTaskBase._MOVE_RESULT_TIMEOUT
             position = (0, 0)
             is_dead = False
             camera_direction = 0
             _camera_direction_detected = True
             release_count = 0
+            sent_keys = []
             info = {}
 
             def _release_move_keys(self):
@@ -496,12 +503,16 @@ class MovementReturnValueTest(unittest.TestCase):
             def rotate_camera(self, _degrees):
                 pass
 
+            def send_key(self, key):
+                self.sent_keys.append(key)
+
         task = StalledTask()
 
         result = SRTaskBase._move_direct(task, (0, 10), tolerance=1)
 
         self.assertEqual(result, SRTaskBase._MOVE_RESULT_TIMEOUT)
-        self.assertEqual(task.release_count, 2)
+        self.assertEqual(task.sent_keys, ['space'])
+        self.assertEqual(task.release_count, 3)
 
     def test_direct_move_does_not_press_direction_keys_in_blocked_actor_states(self):
         for blocked_state in (

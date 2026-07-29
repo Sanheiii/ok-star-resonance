@@ -95,6 +95,7 @@ config = {
         ["src.tasks.DungeonTasks.Dungeon6613Task", "Dungeon6613Task"],
         ["src.tasks.DungeonTasks.Dungeon1722Task", "Dungeon1722Task"],
         ["src.tasks.DungeonTasks.Dungeon1343Task", "Dungeon1343Task"],
+        ["src.tasks.DungeonTasks.Dungeon1931Task", "Dungeon1931Task"],
     ],
     'trigger_tasks':[
         ["src.tasks.FishingTask", "FishingTask"],

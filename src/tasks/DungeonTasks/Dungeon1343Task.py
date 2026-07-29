@@ -250,7 +250,7 @@ class Dungeon1343Task(DungeonTaskBase):
         self.info['State'] = '跳下第二处高台'
         self._look_at_twice(315)
 
-        self.send_key_down('w', after_sleep=0.24) # key down 'w'
+        self.send_key_down('w', after_sleep=0.5) # key down 'w'
         self.send_key('space', down_time=0.21, after_sleep=1.26) # press key 'space'
         self.send_key_up('w', after_sleep=0.11) # key up 'w'
         self.send_key('s', down_time=0.33, after_sleep=0.21) # press key 's'

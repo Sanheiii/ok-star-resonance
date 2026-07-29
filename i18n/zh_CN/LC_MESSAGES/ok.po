@@ -621,6 +621,9 @@ msgstr "状态"
 msgid "Pass Count"
 msgstr "通过次数"
 
+msgid "Special Reward Count"
+msgstr "特殊奖励拾取次数"
+
 msgid "Pass Rate"
 msgstr "通过率"
 

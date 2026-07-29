@@ -52,6 +52,7 @@ class DungeonTaskBase(SRTask):
         self.info['Entry Count'] = 0
         self.info['Pass Count'] = 0
         self.info['Pass Rate'] = '0.00%'
+        self.info['Special Reward Count'] = 0
         self._last_redeem_pass_count = None
 
     def is_auto_combat_enabled(self):
@@ -205,6 +206,36 @@ class DungeonTaskBase(SRTask):
         self.click(0.632,0.857)
         self.info['State'] = f'等待开本读秒'
         self.sleep(8)
+
+    def pickup_special_reward(self, entity_id):
+        """Move to a nearby special reward and interact with it."""
+        try:
+            reward_position = next((
+                entity.get('position')
+                for entity in self.nearby_entities.values()
+                if (entity.get('attr_id') == entity_id
+                    and entity.get('position') is not None)
+            ), None)
+            if reward_position is None:
+                return False
+
+            self.info['State'] = '前往特殊奖励'
+            if not self.move_to_position(
+                    self.position,
+                    reward_position,
+                    target_tolerance=1.5,
+                    enable_sprint=True):
+                return False
+
+            self.info['State'] = '拾取特殊奖励'
+            self.send_key('f')
+            self.info['Special Reward Count'] = (
+                self.info.get('Special Reward Count', 0) + 1
+            )
+            return True
+        except Exception as error:
+            self.log_error(f'拾取特殊奖励失败: {error}')
+            return False
 
     def enter(self, difficulty):
         # 交互副本入口

@@ -447,5 +447,76 @@ class ReturnToInitialStateTest(unittest.TestCase):
         self.assertEqual(len(task.warnings), 1)
 
 
+class _PickupSpecialRewardTask:
+    def __init__(self, entities, move_result=True):
+        self.nearby_entities = entities
+        self.position = (1, 2, 3)
+        self.info = {'Special Reward Count': 0}
+        self.move_result = move_result
+        self.moves = []
+        self.keys = []
+        self.errors = []
+
+    def move_to_position(self, current, target, **kwargs):
+        self.moves.append((current, target, kwargs))
+        return self.move_result
+
+    def send_key(self, key):
+        self.keys.append(key)
+
+    def log_error(self, message):
+        self.errors.append(message)
+
+
+class PickupSpecialRewardTest(unittest.TestCase):
+    def test_moves_to_reward_and_presses_f(self):
+        task = _PickupSpecialRewardTask({
+            1: {'attr_id': 9999, 'position': (4, 5, 6)},
+            2: {'attr_id': 1207, 'position': (7, 8, 9)},
+        })
+
+        self.assertTrue(DungeonTaskBase.pickup_special_reward(task, 1207))
+        self.assertEqual(task.moves, [(
+            (1, 2, 3),
+            (7, 8, 9),
+            {'target_tolerance': 1.5, 'enable_sprint': True},
+        )])
+        self.assertEqual(task.keys, ['f'])
+        self.assertEqual(task.info['Special Reward Count'], 1)
+
+    def test_returns_false_when_reward_is_missing(self):
+        task = _PickupSpecialRewardTask({
+            1: {'attr_id': 1207, 'position': None},
+        })
+
+        self.assertFalse(DungeonTaskBase.pickup_special_reward(task, 1207))
+        self.assertFalse(task.moves)
+        self.assertFalse(task.keys)
+        self.assertEqual(task.info['Special Reward Count'], 0)
+
+    def test_returns_false_without_pressing_f_when_movement_fails(self):
+        task = _PickupSpecialRewardTask({
+            1: {'attr_id': 1207, 'position': (7, 8, 9)},
+        }, move_result=False)
+
+        self.assertFalse(DungeonTaskBase.pickup_special_reward(task, 1207))
+        self.assertFalse(task.keys)
+        self.assertEqual(task.info['Special Reward Count'], 0)
+
+    def test_returns_false_when_an_unexpected_error_occurs(self):
+        task = _PickupSpecialRewardTask({
+            1: {'attr_id': 1207, 'position': (7, 8, 9)},
+        })
+
+        def fail_to_send(_key):
+            raise RuntimeError('input failed')
+
+        task.send_key = fail_to_send
+
+        self.assertFalse(DungeonTaskBase.pickup_special_reward(task, 1207))
+        self.assertTrue(task.errors)
+        self.assertEqual(task.info['Special Reward Count'], 0)
+
+
 if __name__ == '__main__':
     unittest.main()
