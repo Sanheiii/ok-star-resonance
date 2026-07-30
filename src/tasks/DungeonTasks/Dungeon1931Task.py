@@ -36,20 +36,30 @@ class Dungeon1931Task(DungeonTaskBase):
                 (25.015, 47.788),
                 (42.934, 28.295),
                 (53.763, 4.169),
-                (48.321, -18.409),
-                (31.769, -41.090),
         ), '前往第一处战斗区域'):
             return False
-        if not self._wait_for_combat_end('第一处战斗'):
+        if not self._wait_for_combat_end(
+                '第一处战斗', adjust_camera=True):
+            return False
+
+        if not self._follow_route((
+                (53.763, 4.169),
+                (48.321, -18.409),
+                (31.769, -41.090),
+        ), '前往第二处战斗区域'):
+            return False
+        if not self._wait_for_combat_end(
+                '第二处战斗', adjust_camera=True):
             return False
 
         if not self._follow_route((
                 (31.769, -41.090),
                 (4.714, -50.665),
                 (-37.944, -37.833),
-        ), '前往第二处战斗区域'):
+        ), '前往第三处战斗区域'):
             return False
-        if not self._wait_for_combat_end('第二处战斗'):
+        if not self._wait_for_combat_end(
+                '第三处战斗', adjust_camera=True):
             return False
 
         if not self._follow_route((
@@ -59,9 +69,9 @@ class Dungeon1931Task(DungeonTaskBase):
             return False
         self._interact('激活第一处机关')
 
-        if not self._follow_route(((0.000, 0.000),), '前往第三处战斗区域'):
+        if not self._follow_route(((0.000, 0.000),), '前往第四处战斗区域'):
             return False
-        if not self._wait_for_combat_end('第三处战斗'):
+        if not self._wait_for_combat_end('第四处战斗'):
             return False
 
         if not self._follow_route(((0.000, 0.000),), '前往Boss机关'):
@@ -93,7 +103,12 @@ class Dungeon1931Task(DungeonTaskBase):
             return False
         return True
 
-    def _wait_for_combat_end(self, state, time_out=180):
+    def _wait_for_combat_end(
+            self, state, time_out=180, adjust_camera=False):
+        if adjust_camera:
+            self._move_mouse_relative(0, -900)
+            self.sleep(1)
+
         auto_combat_key = self.get_custom_key('Auto Battle')
         self.send_key(auto_combat_key)
         self.info['State'] = f'等待进入{state}'
@@ -105,6 +120,13 @@ class Dungeon1931Task(DungeonTaskBase):
             self.log_error(f'{state}超时')
             return False
         self.send_key(auto_combat_key)
+        if adjust_camera:
+            self._move_mouse_relative(0, 1800)
+            self.scroll(
+                self.width_of_screen(0.5),
+                self.height_of_screen(0.5),
+                20,
+            )
         self.pickup_special_reward(1207)
         return True
 
