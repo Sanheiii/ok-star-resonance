@@ -18,7 +18,7 @@ from qfluentwidgets import BodyLabel, ComboBox, FluentIcon, PrimaryPushButton, P
 from ok import Config, og
 from ok.gui.Communicate import communicate
 from ok.gui.widget.CustomTab import CustomTab
-from src.packet_capture import NpcapCapture, list_devices
+from src.packet_capture import NpcapCapture, WinDivertCapture, list_devices
 from src.packet_capture.adapter_detection import detect_process_device, game_window_pid
 from src.packet_capture.parser import ActorState, GamePacketParser
 
@@ -96,6 +96,9 @@ DIRECTION_NAMES = (
     "Front left",
 )
 
+CAPTURE_METHOD_NPCAP = "Npcap"
+CAPTURE_METHOD_WINDIVERT = "WinDivert"
+
 
 class PacketCaptureTab(CustomTab):
     def __init__(self):
@@ -116,17 +119,26 @@ class PacketCaptureTab(CustomTab):
         self._next_sequence_by_attr_id = {}
         self._visible_entity_details = {}
         self._entity_list_signature = None
-        self._config = Config("packet_capture", {"device_name": ""})
+        self._config = Config(
+            "packet_capture",
+            {"capture_method": CAPTURE_METHOD_NPCAP, "device_name": ""},
+        )
         self._refreshing_devices = False
         og.packet_capture_tool = self
 
         controls = QWidget(self.view)
         controls_layout = QHBoxLayout(controls)
         controls_layout.setContentsMargins(0, 0, 0, 0)
+        self.capture_method_combo = ComboBox(controls)
+        self.capture_method_combo.addItems(
+            [CAPTURE_METHOD_NPCAP, CAPTURE_METHOD_WINDIVERT]
+        )
         self.device_combo = ComboBox(controls)
         self.refresh_button = PushButton(FluentIcon.SYNC, og.app.tr("Refresh adapters"), controls)
         self.auto_select_button = PushButton(og.app.tr("Auto select"), controls)
         self.capture_button = PrimaryPushButton(og.app.tr("Start capture"), controls)
+        controls_layout.addWidget(BodyLabel(og.app.tr("Capture method"), controls))
+        controls_layout.addWidget(self.capture_method_combo)
         controls_layout.addWidget(BodyLabel(og.app.tr("Network adapter"), controls))
         controls_layout.addWidget(self.device_combo, 1)
         controls_layout.addWidget(self.refresh_button)
@@ -182,6 +194,10 @@ class PacketCaptureTab(CustomTab):
         state_layout.addStretch(1)
         self.add_widget(state, 1)
 
+        saved_method = self._config.get("capture_method")
+        method_index = self.capture_method_combo.findText(saved_method)
+        self.capture_method_combo.setCurrentIndex(max(method_index, 0))
+        self.capture_method_combo.currentIndexChanged.connect(self._capture_method_changed)
         self.refresh_button.clicked.connect(self._refresh_devices)
         self.auto_select_button.clicked.connect(self._auto_select_device)
         self.device_combo.currentIndexChanged.connect(self._save_selected_device)
@@ -191,7 +207,9 @@ class PacketCaptureTab(CustomTab):
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._refresh_transform)
         self._timer.start(200)
-        QTimer.singleShot(0, self._refresh_devices)
+        self._update_adapter_controls()
+        if self._uses_npcap():
+            QTimer.singleShot(0, self._refresh_devices)
 
     @property
     def name(self):
@@ -205,7 +223,27 @@ class PacketCaptureTab(CustomTab):
     def is_capturing(self):
         return bool(self._capture_thread and self._capture_thread.is_alive() and not self._stop_requested)
 
+    def _uses_npcap(self):
+        return self.capture_method_combo.currentText() == CAPTURE_METHOD_NPCAP
+
+    def _capture_method_changed(self, _index):
+        method = self.capture_method_combo.currentText()
+        self._config["capture_method"] = method
+        self._update_adapter_controls()
+        if method == CAPTURE_METHOD_NPCAP and not self._devices:
+            self._refresh_devices()
+        elif method == CAPTURE_METHOD_WINDIVERT:
+            self.status_label.setText(og.app.tr("WinDivert does not require an adapter"))
+
+    def _update_adapter_controls(self):
+        enabled = self._uses_npcap() and not self.is_capturing
+        self.device_combo.setEnabled(enabled)
+        self.refresh_button.setEnabled(enabled)
+        self.auto_select_button.setEnabled(enabled)
+
     def _refresh_devices(self):
+        if not self._uses_npcap():
+            return
         try:
             self._refreshing_devices = True
             self._devices = list_devices()
@@ -295,10 +333,15 @@ class PacketCaptureTab(CustomTab):
         if self.capture_button.text() == og.app.tr("Stop capture"):
             self._stop_capture()
             return
-        index = self.device_combo.currentIndex()
-        if index < 0 or index >= len(self._devices):
-            self.status_label.setText(og.app.tr("Select a network adapter first"))
-            return
+        method = self.capture_method_combo.currentText()
+        device_name = None
+        if method == CAPTURE_METHOD_NPCAP:
+            index = self.device_combo.currentIndex()
+            if index < 0 or index >= len(self._devices):
+                self.status_label.setText(og.app.tr("Select a network adapter first"))
+                return
+            device_name = self._devices[index].name
+        self.capture_method_combo.setEnabled(False)
         self.device_combo.setEnabled(False)
         self.refresh_button.setEnabled(False)
         self.auto_select_button.setEnabled(False)
@@ -308,21 +351,28 @@ class PacketCaptureTab(CustomTab):
         self._capture_error = None
         self._parser.reset_transport()
         self._capture_thread = threading.Thread(
-            target=self._capture_loop, args=(self._devices[index].name,), daemon=True, name="NpcapCapture"
+            target=self._capture_loop,
+            args=(method, device_name),
+            daemon=True,
+            name=f"{method}Capture",
         )
         self._capture_thread.start()
 
-    def _capture_loop(self, device_name):
+    def _capture_loop(self, method, device_name):
         capture = None
         try:
-            capture = NpcapCapture(device_name)
+            capture = (
+                NpcapCapture(device_name)
+                if method == CAPTURE_METHOD_NPCAP
+                else WinDivertCapture()
+            )
             self._capture = capture
             if self._stop_requested:
                 return
             self._parser.set_datalink(capture.datalink)
             capture.run(self._on_packet)
         except Exception as exc:
-            self.logger.error(f"Npcap capture failed: {exc}")
+            self.logger.error(f"{method} capture failed: {exc}")
             self._capture_error = str(exc)
         finally:
             if capture:
@@ -364,9 +414,8 @@ class PacketCaptureTab(CustomTab):
     def _set_idle(self, message):
         self.capture_button.setText(og.app.tr("Start capture"))
         self.capture_button.setEnabled(True)
-        self.device_combo.setEnabled(True)
-        self.refresh_button.setEnabled(True)
-        self.auto_select_button.setEnabled(True)
+        self.capture_method_combo.setEnabled(True)
+        self._update_adapter_controls()
         self.status_label.setText(message)
 
     def _refresh_transform(self):

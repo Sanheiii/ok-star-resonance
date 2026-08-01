@@ -429,6 +429,12 @@ msgstr "抓包工具"
 msgid "Network adapter"
 msgstr "网卡"
 
+msgid "Capture method"
+msgstr "抓包方式"
+
+msgid "WinDivert does not require an adapter"
+msgstr "WinDivert 无需选择网卡"
+
 msgid "Refresh adapters"
 msgstr "刷新网卡"
 
