@@ -1,9 +1,12 @@
+from ok import og
+
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
 class Dungeon1931Task(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (9.920, 50.740)
+    TWO_OUTDOOR_WAVES_CONFIG = 'Fight Only Two Outdoor Waves'
 
     def __init__(self, *args, **kwargs):
         self.task_name = 'Divine Threshold of the Distant Sky - Hard'
@@ -14,6 +17,12 @@ class Dungeon1931Task(DungeonTaskBase):
         self.task_desc_zh = '自动通关远天的神槛 - 困难。'
         self.difficulty = Difficulty.HARD
         super().__init__(*args, **kwargs)
+        if og.app.po_translation and (
+                catalog := getattr(og.app.po_translation, '_catalog', None)):
+            catalog[self.TWO_OUTDOOR_WAVES_CONFIG] = '道中外场仅打两波'
+        self.default_config.update({
+            self.TWO_OUTDOOR_WAVES_CONFIG: False,
+        })
 
     def run(self):
         super().run()
@@ -32,34 +41,46 @@ class Dungeon1931Task(DungeonTaskBase):
 
         self.investigate(self.INSTRUMENT_POSITION)
 
-        if not self._follow_route((
-                (25.015, 47.788),
-                (42.934, 28.295),
-                (53.763, 4.169),
-        ), '前往第一处战斗区域'):
-            return False
-        if not self._wait_for_combat_end(
-                '第一处战斗', adjust_camera=True):
-            return False
-
-        if not self._follow_route((
-                (53.763, 4.169),
+        two_outdoor_waves = self.config.get(
+            self.TWO_OUTDOOR_WAVES_CONFIG, False)
+        first_route = [
+            (25.015, 47.788),
+            (42.934, 28.295),
+            (53.763, 4.169),
+        ]
+        if two_outdoor_waves:
+            first_route.extend((
                 (48.321, -18.409),
                 (31.769, -41.090),
-        ), '前往第二处战斗区域'):
+            ))
+
+        if not self._follow_route(first_route, '前往第一处战斗区域'):
             return False
         if not self._wait_for_combat_end(
-                '第二处战斗', adjust_camera=True):
+                '第一处战斗', adjust_camera=not two_outdoor_waves):
             return False
+
+        if not two_outdoor_waves:
+            if not self._follow_route((
+                    (53.763, 4.169),
+                    (48.321, -18.409),
+                    (31.769, -41.090),
+            ), '前往第二处战斗区域'):
+                return False
+            if not self._wait_for_combat_end(
+                    '第二处战斗', adjust_camera=True):
+                return False
+
+        outdoor_wave_name = '第二' if two_outdoor_waves else '第三'
 
         if not self._follow_route((
                 (31.769, -41.090),
                 (4.714, -50.665),
                 (-37.944, -37.833),
-        ), '前往第三处战斗区域'):
+        ), f'前往{outdoor_wave_name}处战斗区域'):
             return False
         if not self._wait_for_combat_end(
-                '第三处战斗', adjust_camera=True):
+                f'{outdoor_wave_name}处战斗', adjust_camera=True):
             return False
 
         if not self._follow_route((
@@ -69,9 +90,11 @@ class Dungeon1931Task(DungeonTaskBase):
             return False
         self._interact('激活第一处机关')
 
-        if not self._follow_route(((0.000, 0.000),), '前往第四处战斗区域'):
+        indoor_wave_name = '第三' if two_outdoor_waves else '第四'
+        if not self._follow_route(
+                ((0.000, 0.000),), f'前往{indoor_wave_name}处战斗区域'):
             return False
-        if not self._wait_for_combat_end('第四处战斗'):
+        if not self._wait_for_combat_end(f'{indoor_wave_name}处战斗'):
             return False
 
         if not self._follow_route(((0.000, 0.000),), '前往Boss机关'):
