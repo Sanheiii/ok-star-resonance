@@ -1,8 +1,10 @@
+import re
 from enum import Enum
 import time
+from re import Pattern
 
 import numpy as np
-from ok import og
+from ok import og, Box
 from qfluentwidgets import FluentIcon
 
 from src.packet_capture.parser import ActorState
@@ -45,6 +47,7 @@ class DungeonTaskBase(SRTask):
             'Purchase Items': False,
             'Purchase Every N Clears': 8,
             'Purchase Item Index': 1,
+            'Purchase Quota-limited Items First': False,
         })
 
     def run(self):
@@ -141,10 +144,17 @@ class DungeonTaskBase(SRTask):
             self.log_error(f'Purchase item index out of range: {item_index}')
             self._last_redeem_pass_count = pass_count
             return True
-        item_position = item_positions[item_index - 1]
 
         self.send_key('o', after_sleep=2)
         self.click(0.035, 0.454, after_sleep=1)
+        #Detect Purchase First
+        if self.config.get('Purchase Quota-limited Items First'):
+            purchasable, index = self.detect_quota_limited_purchasable_item_index()
+            if purchasable:
+                item_index = index
+                self.log_info("可被购买的index为" + str(item_index))
+        # Get Position
+        item_position = item_positions[item_index - 1]
         self.click(item_position[0], item_position[1], after_sleep=1)
         self.click(0.812, 0.676, after_sleep=1)
         self.click(0.633, 0.856, after_sleep=1)
@@ -152,6 +162,40 @@ class DungeonTaskBase(SRTask):
 
         self._last_redeem_pass_count = pass_count
         return True
+
+    def detect_quota_limited_purchasable_item_index(self) -> tuple[bool, int]:
+        out_of_stock_indexes = {
+            self.detect_purchase_index(box)
+            for box in self.ocr(0.118, 0.420, 0.834, 0.465, "已售罄")
+        }
+        quota_limited_indexes = [
+            self.detect_purchase_index(box)
+            for box in self.ocr(0.118, 0.388, 0.834, 0.415, re.compile(r'本周限购', flags=0))
+        ]
+        purchasable_indexes = [
+            i for i in quota_limited_indexes if i not in out_of_stock_indexes
+        ]
+        if not purchasable_indexes:
+            return False, 0
+        first = min(purchasable_indexes)
+        return first != 0, first
+
+    def detect_purchase_index(self, box: Box) -> int:
+        x = box.x / self.width
+        index = 0
+        if x < 0.235:
+            index = 1
+        elif x < 0.356:
+            index = 2
+        elif x < 0.475:
+            index = 3
+        elif x < 0.596:
+            index = 4
+        elif x < 0.717:
+            index = 5
+        elif x < 0.835:
+            index = 6
+        return index
 
     def wait_out_of_combat(self, time_out=300):
         self._require_packet_capture()
