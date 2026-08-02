@@ -647,3 +647,6 @@ msgstr "剩余距离"
 
 msgid "Line Offset"
 msgstr "路线偏移"
+
+msgid "Purchase Quota-limited Items First"
+msgstr "优先购买限购商品"
