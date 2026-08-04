@@ -12,6 +12,69 @@ msgstr ""
 msgid "English"
 msgstr "English"
 
+msgid "Environment Check"
+msgstr "运行环境检查"
+
+msgid "Checking the runtime environment..."
+msgstr "正在检查运行环境，请稍候……"
+
+msgid "Download source"
+msgstr "下载源"
+
+msgid "Default"
+msgstr "默认"
+
+msgid "Tsinghua"
+msgstr "清华"
+
+msgid "Aliyun"
+msgstr "阿里云"
+
+msgid "USTC"
+msgstr "中国科技大学"
+
+msgid "Huawei Cloud"
+msgstr "华为云"
+
+msgid "Tencent Cloud"
+msgstr "腾讯云"
+
+msgid "Repair and restart"
+msgstr "修复并重启"
+
+msgid "The environment configuration file is missing. Please download or extract the app again."
+msgstr "缺少运行环境配置文件，请重新下载或完整解压程序。"
+
+msgid "The environment check failed. Please restart the app and try again. Details: {error}"
+msgstr "运行环境检查失败，请重启程序后重试。详情：{error}"
+
+msgid "All dependencies are installed correctly."
+msgstr "所有依赖均已正确安装"
+
+msgid "current version"
+msgstr "当前版本"
+
+msgid "Missing dependencies: {packages}."
+msgstr "缺少依赖：{packages}。"
+
+msgid "Dependencies requiring an update: {packages}."
+msgstr "需要更新的依赖：{packages}。"
+
+msgid "Choose a download source, then repair the environment. The app will restart automatically."
+msgstr "请选择下载源并修复运行环境，完成后程序会自动重启。"
+
+msgid "Repair runtime environment"
+msgstr "修复运行环境"
+
+msgid "The app will close before repairing the environment and restart automatically when the repair succeeds."
+msgstr "修复运行环境前程序将自动关闭，修复成功后会重新启动。"
+
+msgid "The updater could not be started. Please try again."
+msgstr "无法启动更新程序，请重试。"
+
+msgid "Closing the app and preparing the repair..."
+msgstr "正在关闭程序并准备修复……"
+
 msgid "简体中文"
 msgstr "简体中文"
 

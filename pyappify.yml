@@ -18,4 +18,4 @@ profiles:
     requirements: "requirements.txt"
     use_pythonw: true
     show_add_defender: true
-    pip_args: "--index-url https://pypi.tuna.tsinghua.edu.cn"
+    pip_args: "--index-url https://mirrors.ustc.edu.cn/pypi/simple"
