@@ -148,6 +148,7 @@ class MovementReturnValueTest(unittest.TestCase):
             [(1, 1), (2, 2)],
             enable_sprint=True,
             rotate_camera=False,
+            camera_offset=90,
         )
 
         self.assertEqual(
@@ -158,6 +159,10 @@ class MovementReturnValueTest(unittest.TestCase):
             [call[2]['rotate_camera'] for call in task.calls],
             [False, False],
         )
+        self.assertEqual(
+            [call[2]['camera_offset'] for call in task.calls],
+            [90, 90],
+        )
 
     def test_movement_options_default_to_sprint_off_and_camera_rotation_on(self):
         task = _PathTask([True])
@@ -166,6 +171,64 @@ class MovementReturnValueTest(unittest.TestCase):
 
         self.assertFalse(task.calls[0][2]['enable_sprint'])
         self.assertTrue(task.calls[0][2]['rotate_camera'])
+        self.assertEqual(task.calls[0][2]['camera_offset'], 0)
+
+    def test_clockwise_camera_offset_uses_left_strafe_to_move_forward(self):
+        class DirectTask(SRTaskBase):
+            _xz = staticmethod(SRTaskBase._xz)
+            _angle_delta = staticmethod(SRTaskBase._angle_delta)
+            _segment_reaches_target = staticmethod(SRTaskBase._segment_reaches_target)
+            _MOVE_KEYS = SRTaskBase._MOVE_KEYS
+            _MOVE_RESULT_SUCCESS = SRTaskBase._MOVE_RESULT_SUCCESS
+            camera_direction = 0
+            _camera_direction_detected = True
+            actor_state = ActorState.DEFAULT
+            is_dead = False
+            info = {}
+
+            def __init__(self):
+                self.frame_count = 0
+                self.rotations = []
+                self.pressed_keys = []
+
+            @property
+            def position(self):
+                return (0, 10) if self.frame_count >= 3 else (0, 0)
+
+            def _release_move_keys(self):
+                pass
+
+            def _require_packet_capture(self):
+                pass
+
+            def next_frame(self):
+                self.frame_count += 1
+
+            def detect_camera_direction(self):
+                pass
+
+            def rotate_camera(self, degrees):
+                self.rotations.append(degrees)
+                self.camera_direction = (self.camera_direction + degrees) % 360
+
+            def send_key_down(self, key):
+                self.pressed_keys.append(key)
+
+            def sleep(self, _seconds):
+                pass
+
+        task = DirectTask()
+
+        result = SRTaskBase._move_direct(
+            task,
+            (0, 10),
+            tolerance=1,
+            camera_offset=90,
+        )
+
+        self.assertEqual(result, SRTaskBase._MOVE_RESULT_SUCCESS)
+        self.assertEqual(task.rotations, [90])
+        self.assertEqual(task.pressed_keys, ['a'])
 
     def test_direct_move_can_disable_camera_rotation(self):
         class DirectTask(SRTaskBase):
@@ -330,6 +393,7 @@ class MovementReturnValueTest(unittest.TestCase):
 
     def test_sprint_is_skipped_at_five_metres(self):
         class SprintTask:
+            _MOVE_KEYS = SRTaskBase._MOVE_KEYS
             _SPRINT_COOLDOWN = SRTaskBase._SPRINT_COOLDOWN
             _SPRINT_MIN_DISTANCE = SRTaskBase._SPRINT_MIN_DISTANCE
 
@@ -356,6 +420,37 @@ class MovementReturnValueTest(unittest.TestCase):
 
         self.assertEqual(last_sprint_at, 100)
         self.assertEqual(task.sent_keys, [])
+
+    def test_sprint_uses_strafe_key_for_clockwise_camera_offset(self):
+        class SprintTask:
+            _MOVE_KEYS = SRTaskBase._MOVE_KEYS
+            _SPRINT_COOLDOWN = SRTaskBase._SPRINT_COOLDOWN
+            _SPRINT_MIN_DISTANCE = SRTaskBase._SPRINT_MIN_DISTANCE
+
+            def __init__(self):
+                self.sent_keys = []
+
+            def _sprint_prompt_visible(self):
+                return True
+
+            def send_key(self, key, duration):
+                self.sent_keys.append((key, duration))
+
+        task = SprintTask()
+
+        last_sprint_at = SRTaskBase._try_sprint(
+            task,
+            enable_sprint=True,
+            camera_aligned=True,
+            keys=("a",),
+            now=101,
+            last_sprint_at=100,
+            remaining_distance=20,
+            camera_offset=90,
+        )
+
+        self.assertEqual(last_sprint_at, 101)
+        self.assertEqual(task.sent_keys, [("shift", 0.5)])
 
     def test_direct_move_releases_keys_before_returning_on_death(self):
         class DirectTask(SRTaskBase):

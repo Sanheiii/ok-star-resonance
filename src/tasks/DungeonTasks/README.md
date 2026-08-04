@@ -204,6 +204,7 @@ move_to_position(
     max_path_deviation=None,
     enable_sprint=False,
     rotate_camera=True,
+    camera_offset=0,
 )
 ```
 
@@ -214,6 +215,7 @@ move_to_position(
 - `max_path_deviation`：与规划路线最大允许偏离，如果超过此值中止本次移动；`None` 表示不按此条件中止。
 - `enable_sprint`：是否使用冲刺。
 - `rotate_camera`：是否自动识别并修正镜头朝向。如果为 `False` 则只使用移动方向键而不转动镜头。
+- `camera_offset`：镜头相对移动方向的水平偏转角；正数顺时针向右。比如 `90` 会让镜头看向移动方向右侧，并以 `A` 代替 `W` 横向移动。
 - 返回值：到达为 `True`；停滞、偏离路线过大、加载或场景变化等失败为 `False`。移动中死亡会先尝试复活再继续。
 
 ### `move_to_positions(...)`
@@ -226,6 +228,7 @@ move_to_positions(
     max_path_deviation=None,
     enable_sprint=False,
     rotate_camera=True,
+    camera_offset=0,
 )
 ```
 

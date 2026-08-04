@@ -211,6 +211,7 @@ class SRTaskBase(BaseTask):
             max_path_deviation=None,
             enable_sprint=False,
             rotate_camera=True,
+            camera_offset=0,
     ):
         """Move to one target, with optional sprinting and camera rotation."""
         target_x, target_z = self._xz(target_position)
@@ -236,6 +237,7 @@ class SRTaskBase(BaseTask):
                         line_tolerance,
                         enable_sprint=enable_sprint,
                         rotate_camera=rotate_camera,
+                        camera_offset=camera_offset,
                     )
                 if move_result == self._MOVE_RESULT_SUCCESS:
                     move_result = self._move_direct(
@@ -246,6 +248,7 @@ class SRTaskBase(BaseTask):
                         max_path_deviation=max_path_deviation,
                         enable_sprint=enable_sprint,
                         rotate_camera=rotate_camera,
+                        camera_offset=camera_offset,
                     )
             finally:
                 self._end_movement_session()
@@ -287,6 +290,7 @@ class SRTaskBase(BaseTask):
             max_path_deviation=None,
             enable_sprint=False,
             rotate_camera=True,
+            camera_offset=0,
     ):
         """Move a path; return remaining nodes on movement failure, otherwise ``None``."""
         positions = list(positions)
@@ -306,6 +310,7 @@ class SRTaskBase(BaseTask):
                     max_path_deviation=max_path_deviation,
                     enable_sprint=enable_sprint,
                     rotate_camera=rotate_camera,
+                    camera_offset=camera_offset,
                 )
                 if not completed:
                     return positions[index:]
@@ -363,6 +368,7 @@ class SRTaskBase(BaseTask):
             max_path_deviation=None,
             enable_sprint=False,
             rotate_camera=True,
+            camera_offset=0,
     ) -> int:
         """Move directly to a target and return a ``_MOVE_RESULT_*`` status."""
         target = self._xz(target_position)
@@ -388,7 +394,12 @@ class SRTaskBase(BaseTask):
         closest_distance_at = time.monotonic()
         stall_jump_used = False
         if rotate_camera and closest_distance > tolerance:
-            self.rotate_camera(self._relative_target_angle(delta))
+            self.rotate_camera(
+                self._angle_delta(
+                    self._relative_target_angle(delta) + camera_offset,
+                    0,
+                )
+            )
             self.sleep(0.1)
             last_camera_correction_at = closest_distance_at
 
@@ -460,6 +471,7 @@ class SRTaskBase(BaseTask):
                 last_camera_correction_at,
                 now,
                 rotate_camera,
+                camera_offset,
             )
             keys, line_correction_done = self._movement_keys(
                 relative,
@@ -477,6 +489,7 @@ class SRTaskBase(BaseTask):
                 now,
                 last_sprint_at,
                 remaining_distance,
+                camera_offset,
             )
             self.sleep(self._MOVE_DURATION)
 
@@ -523,14 +536,16 @@ class SRTaskBase(BaseTask):
             last_correction_at,
             now,
             rotate_camera,
+            camera_offset=0,
     ):
         """累计镜头偏差帧，并在满足条件时执行一次修正。"""
+        camera_deviation = self._angle_delta(relative + camera_offset, 0)
         camera_aligned = (
             self._camera_direction_detected
-            and abs(relative) < self._CAMERA_CORRECTION_THRESHOLD
+            and abs(camera_deviation) < self._CAMERA_CORRECTION_THRESHOLD
         )
         if (not self._camera_direction_detected
-                or abs(relative) <= self._CAMERA_CORRECTION_THRESHOLD):
+                or abs(camera_deviation) <= self._CAMERA_CORRECTION_THRESHOLD):
             deviation_frame_count = 0
         else:
             deviation_frame_count += 1
@@ -541,8 +556,8 @@ class SRTaskBase(BaseTask):
             and now - last_correction_at >= 1
         )
         if should_correct:
-            self.rotate_camera(relative)
-            return 0.0, camera_aligned, 0, now
+            self.rotate_camera(camera_deviation)
+            return self._angle_delta(-camera_offset, 0), camera_aligned, 0, now
         return relative, camera_aligned, deviation_frame_count, last_correction_at
 
     def _movement_keys(
@@ -588,14 +603,18 @@ class SRTaskBase(BaseTask):
             now,
             last_sprint_at,
             remaining_distance,
+            camera_offset=0,
     ):
         """满足冲刺提示、朝向和冷却条件时触发冲刺。"""
+        forward_keys = self._MOVE_KEYS[
+            round(-camera_offset / 45.0) % len(self._MOVE_KEYS)
+        ]
         should_sprint = (
             enable_sprint
             and remaining_distance > self._SPRINT_MIN_DISTANCE
             and self._sprint_prompt_visible()
             and camera_aligned
-            and keys == ("w",)
+            and keys == forward_keys
             and now - last_sprint_at >= self._SPRINT_COOLDOWN
         )
         if should_sprint:

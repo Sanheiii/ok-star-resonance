@@ -34,11 +34,6 @@ class Dungeon1931Task(DungeonTaskBase):
         if not self.begin():
             return False
 
-        self.info['State'] = '低头'
-        self._move_mouse_relative(0, 1800)
-        self.sleep(0.5)
-        self.scroll(self.width_of_screen(0.5), self.height_of_screen(0.5), 20)
-
         self.investigate(self.INSTRUMENT_POSITION)
 
         two_outdoor_waves = self.config.get(
@@ -54,10 +49,10 @@ class Dungeon1931Task(DungeonTaskBase):
                 (31.769, -41.090),
             ))
 
-        if not self._follow_route(first_route, '前往第一处战斗区域'):
+        if not self._follow_route(first_route, '前往第一处战斗区域', camera_offset=135):
             return False
         if not self._wait_for_combat_end(
-                '第一处战斗', adjust_camera=not two_outdoor_waves):
+                '第一处战斗'):
             return False
 
         if not two_outdoor_waves:
@@ -65,10 +60,10 @@ class Dungeon1931Task(DungeonTaskBase):
                     (53.763, 4.169),
                     (48.321, -18.409),
                     (31.769, -41.090),
-            ), '前往第二处战斗区域'):
+            ), '前往第二处战斗区域', camera_offset=135):
                 return False
             if not self._wait_for_combat_end(
-                    '第二处战斗', adjust_camera=True):
+                    '第二处战斗'):
                 return False
 
         outdoor_wave_name = '第二' if two_outdoor_waves else '第三'
@@ -77,10 +72,10 @@ class Dungeon1931Task(DungeonTaskBase):
                 (31.769, -41.090),
                 (4.714, -50.665),
                 (-37.944, -37.833),
-        ), f'前往{outdoor_wave_name}处战斗区域'):
+        ), f'前往{outdoor_wave_name}处战斗区域', camera_offset=135):
             return False
         if not self._wait_for_combat_end(
-                f'{outdoor_wave_name}处战斗', adjust_camera=True):
+                f'{outdoor_wave_name}处战斗'):
             return False
 
         if not self._follow_route((
@@ -112,7 +107,7 @@ class Dungeon1931Task(DungeonTaskBase):
         self._skip_boss_animation('跳过Boss结算动画')
         return self.handle_end()
 
-    def _follow_route(self, route, state):
+    def _follow_route(self, route, state, camera_offset=0):
         self.info['State'] = state
         remaining = self.move_to_positions(
             route,
@@ -120,18 +115,14 @@ class Dungeon1931Task(DungeonTaskBase):
             node_tolerance=1,
             max_path_deviation=8,
             enable_sprint=True,
+            camera_offset=camera_offset
         )
         if remaining is not None:
             self.log_error(f'{state}移动失败，剩余路径: {remaining}')
             return False
         return True
 
-    def _wait_for_combat_end(
-            self, state, time_out=180, adjust_camera=False):
-        if adjust_camera:
-            self._move_mouse_relative(0, -900)
-            self.sleep(1)
-
+    def _wait_for_combat_end(self, state, time_out=180):
         auto_combat_key = self.get_custom_key('Auto Battle')
         self.send_key(auto_combat_key)
         self.info['State'] = f'等待进入{state}'
@@ -143,13 +134,6 @@ class Dungeon1931Task(DungeonTaskBase):
             self.log_error(f'{state}超时')
             return False
         self.send_key(auto_combat_key)
-        if adjust_camera:
-            self._move_mouse_relative(0, 1800)
-            self.scroll(
-                self.width_of_screen(0.5),
-                self.height_of_screen(0.5),
-                20,
-            )
         self.pickup_special_reward(1207)
         return True
 
