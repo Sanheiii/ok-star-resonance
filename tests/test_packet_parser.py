@@ -12,6 +12,10 @@ from src.packet_capture.parser import (
     MSG_SYNC_CONTAINER_DATA,
     MSG_SYNC_NEAR_ENTITIES,
     MSG_SYNC_TO_ME_DELTA_INFO,
+    MSG_JOIN_TEAM,
+    MSG_LEAVE_TEAM,
+    MSG_TEAM_DISSOLVE,
+    MSG_UPDATE_TEAM_MEMBER_INFO,
     MSG_NEW_MOVE,
     WORLD_CALL_SERVICE_ID,
     GamePacketParser,
@@ -24,6 +28,52 @@ except ImportError:
 
 
 class GamePacketParserTest(unittest.TestCase):
+    def test_join_team_marks_nearby_player_as_teammate(self):
+        parser = GamePacketParser()
+        teammate_id = 456
+        teammate_uuid = parser._player_uuid(teammate_id)
+        parser._store_entity(teammate_uuid, (1.0, 2.0, 3.0), 0.0)
+        message = parser._proto.NotifyJoinTeam()
+        message.vRequest.memberData.add().charId = teammate_id
+
+        self.assertTrue(
+            parser._decode_team_notify(MSG_JOIN_TEAM, message.SerializeToString())
+        )
+        self.assertTrue(parser.world_state()[3][teammate_uuid]["is_teammate"])
+
+    def test_team_member_update_adds_both_member_sources(self):
+        parser = GamePacketParser()
+        message = parser._proto.NoticeUpdateTeamMemberInfo()
+        message.vRequest.teamMemberSocialDatas.add().charId = 111
+        message.vRequest.teamMemberSyncDatas.add().charId = 222
+
+        self.assertTrue(
+            parser._decode_team_notify(
+                MSG_UPDATE_TEAM_MEMBER_INFO, message.SerializeToString()
+            )
+        )
+        self.assertEqual(
+            parser.team_member_uuids,
+            {parser._player_uuid(111), parser._player_uuid(222)},
+        )
+
+    def test_leave_and_dissolve_remove_team_members(self):
+        parser = GamePacketParser()
+        parser.local_player_uuid = parser._player_uuid(100)
+        parser.team_member_uuids = {
+            parser.local_player_uuid,
+            parser._player_uuid(200),
+        }
+        leave = parser._proto.NotifyLeaveTeam()
+        leave.vRequest.charId = 200
+
+        self.assertTrue(
+            parser._decode_team_notify(MSG_LEAVE_TEAM, leave.SerializeToString())
+        )
+        self.assertEqual(parser.team_member_uuids, {parser.local_player_uuid})
+        self.assertTrue(parser._decode_team_notify(MSG_TEAM_DISSOLVE, b""))
+        self.assertEqual(parser.team_member_uuids, set())
+
     def test_reset_transport_discards_incomplete_streams_but_preserves_state(self):
         parser = GamePacketParser()
         parser.streams[(b"source", 1, b"destination", 2)] = object()
@@ -300,6 +350,29 @@ class GamePacketParserTest(unittest.TestCase):
         self.assertEqual(entity["current_hp"], 300)
         self.assertEqual(entity["max_hp"], 400)
         self.assertFalse(entity["is_dead"])
+
+    def test_entity_tracks_combat_state(self):
+        parser = GamePacketParser()
+        entity_uuid = (789 << 16) | (10 << 6)
+        message = parser._proto.SyncNearEntities()
+        appeared = message.appear.add()
+        appeared.uuid = entity_uuid
+        appeared.entType = 10
+        combat_state = appeared.attrs.attrs.add()
+        combat_state.id = ATTR_COMBAT_STATE
+        combat_state.rawData = b"\x01"
+
+        parser._decode_notify(
+            MSG_SYNC_NEAR_ENTITIES, message.SerializeToString()
+        )
+        self.assertTrue(parser.nearby_entities[entity_uuid]["in_combat"])
+
+        delta = parser._proto.AoiSyncDelta(uuid=entity_uuid)
+        combat_state = delta.attrs.attrs.add()
+        combat_state.id = ATTR_COMBAT_STATE
+        combat_state.rawData = b""
+        parser._record_entity_delta(delta)
+        self.assertFalse(parser.nearby_entities[entity_uuid]["in_combat"])
 
     def test_entity_delta_marks_dead_and_tracks_zero_health(self):
         parser = GamePacketParser()

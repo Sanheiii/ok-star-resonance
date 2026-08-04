@@ -19,12 +19,18 @@ logger = Logger.get_logger(__name__)
 
 WORLD_NTF_SERVICE_ID = 1_664_308_034
 WORLD_CALL_SERVICE_ID = 103_198_054
+TEAM_NTF_SERVICE_ID = 966_773_353
 MSG_NEW_MOVE = 0x20005
 MSG_ENTER_SCENE = 0x03
 MSG_SYNC_NEAR_ENTITIES = 0x06
 MSG_SYNC_CONTAINER_DATA = 0x15
 MSG_SYNC_NEAR_DELTA_INFO = 0x2D
 MSG_SYNC_TO_ME_DELTA_INFO = 0x2E
+MSG_UPDATE_TEAM_INFO = 0x01
+MSG_UPDATE_TEAM_MEMBER_INFO = 0x02
+MSG_JOIN_TEAM = 0x03
+MSG_LEAVE_TEAM = 0x04
+MSG_TEAM_DISSOLVE = 0x0D
 ATTR_SCENE_BASIC_ID = 0x155
 ATTR_ENTITY_ID = 0x0A
 ATTR_FACING = 0x32
@@ -159,6 +165,7 @@ class GamePacketParser:
         self.scene_guid = None
         self.connect_guid = None
         self.nearby_entities = {}
+        self.team_member_uuids = set()
         self.metadata_revision = 0
         self.server_position = None
         self.facing = None
@@ -274,10 +281,75 @@ class GamePacketParser:
                 if body is not None:
                     if service_id == WORLD_NTF_SERVICE_ID:
                         changed |= self._decode_notify(method_id, body)
+                    elif service_id == TEAM_NTF_SERVICE_ID:
+                        self._decode_team_notify(method_id, body)
                     elif service_id == WORLD_CALL_SERVICE_ID and method_id == MSG_NEW_MOVE:
                         self._decode_new_move(body)
             offset += size
         return changed
+
+    def _decode_team_notify(self, method_id, body):
+        message_name = {
+            MSG_UPDATE_TEAM_INFO: "NoticeUpdateTeamInfo",
+            MSG_UPDATE_TEAM_MEMBER_INFO: "NoticeUpdateTeamMemberInfo",
+            MSG_JOIN_TEAM: "NotifyJoinTeam",
+            MSG_LEAVE_TEAM: "NotifyLeaveTeam",
+            MSG_TEAM_DISSOLVE: "NoticeTeamDissolve",
+        }.get(method_id)
+        message_class = getattr(self._proto, message_name, None) if message_name else None
+        if message_class is None:
+            return False
+        message = message_class()
+        try:
+            message.ParseFromString(body)
+        except Exception as exc:
+            logger.warning(f"failed to decode {message_name}: {exc}")
+            return False
+
+        previous = set(self.team_member_uuids)
+        if method_id == MSG_TEAM_DISSOLVE:
+            self.team_member_uuids.clear()
+        elif not message.HasField("vRequest"):
+            return False
+        elif method_id == MSG_JOIN_TEAM:
+            self.team_member_uuids.clear()
+            if message.vRequest.HasField("baseInfo"):
+                self._add_team_member(message.vRequest.baseInfo.leaderId)
+            for member in message.vRequest.memberData:
+                self._add_team_member(member.charId)
+            for char_id, member in message.vRequest.memberSyncDatas.items():
+                self._add_team_member(char_id)
+                self._add_team_member(member.charId)
+        elif method_id == MSG_UPDATE_TEAM_INFO:
+            if message.vRequest.HasField("baseInfo"):
+                self._add_team_member(message.vRequest.baseInfo.leaderId)
+        elif method_id == MSG_UPDATE_TEAM_MEMBER_INFO:
+            for member in message.vRequest.teamMemberSocialDatas:
+                self._add_team_member(member.charId)
+            for member in message.vRequest.teamMemberSyncDatas:
+                self._add_team_member(member.charId)
+        elif method_id == MSG_LEAVE_TEAM:
+            member_uuid = self._player_uuid(message.vRequest.charId)
+            if member_uuid == self.local_player_uuid:
+                self.team_member_uuids.clear()
+            else:
+                self.team_member_uuids.discard(member_uuid)
+
+        if previous != self.team_member_uuids:
+            self.metadata_revision += 1
+            return True
+        return False
+
+    def _add_team_member(self, char_id):
+        if char_id:
+            self.team_member_uuids.add(self._player_uuid(char_id))
+
+    @staticmethod
+    def _player_uuid(char_id):
+        return (
+            (int(char_id) << ENTITY_UID_SHIFT)
+            | (ENTITY_TYPE_CHAR << ENTITY_TYPE_SHIFT)
+        )
 
     def _decode_new_move(self, body):
         message = self._proto.NewMove()
@@ -499,6 +571,7 @@ class GamePacketParser:
         facing = previous.get("facing")
         attr_id = previous.get("attr_id")
         actor_state = previous.get("actor_state")
+        combat_state = previous.get("combat_state")
         current_hp = previous.get("current_hp")
         max_hp = previous.get("max_hp")
         if entity.HasField("attrs"):
@@ -525,6 +598,8 @@ class GamePacketParser:
                         attr_id = raw_attr_id
                 elif attr.id == ATTR_ACTOR_STATE:
                     actor_state = _decode_varint(raw_data)
+                elif attr.id == ATTR_COMBAT_STATE:
+                    combat_state = _decode_varint(raw_data)
                 elif attr.id == ATTR_CURRENT_HP:
                     current_hp = _decode_varint(raw_data)
                 elif attr.id == ATTR_MAX_HP:
@@ -537,6 +612,7 @@ class GamePacketParser:
             entity_type,
             attr_id,
             actor_state,
+            combat_state,
             current_hp,
             max_hp,
         )
@@ -569,6 +645,7 @@ class GamePacketParser:
         facing = previous.get("facing")
         attr_id = previous.get("attr_id")
         actor_state = previous.get("actor_state")
+        combat_state = previous.get("combat_state")
         current_hp = previous.get("current_hp")
         max_hp = previous.get("max_hp")
         changed = False
@@ -599,6 +676,11 @@ class GamePacketParser:
                 if value is not None and value != actor_state:
                     actor_state = value
                     changed = True
+            elif attr.id == ATTR_COMBAT_STATE:
+                value = _decode_varint(raw_data)
+                if value is not None and value != combat_state:
+                    combat_state = value
+                    changed = True
             elif attr.id == ATTR_CURRENT_HP:
                 value = _decode_varint(raw_data)
                 if value is not None and value != current_hp:
@@ -616,6 +698,7 @@ class GamePacketParser:
                 facing,
                 attr_id=attr_id,
                 actor_state=actor_state,
+                combat_state=combat_state,
                 current_hp=current_hp,
                 max_hp=max_hp,
             )
@@ -628,6 +711,7 @@ class GamePacketParser:
         entity_type=None,
         attr_id=None,
         actor_state=None,
+        combat_state=None,
         current_hp=None,
         max_hp=None,
     ):
@@ -641,6 +725,8 @@ class GamePacketParser:
             attr_id = previous.get("attr_id")
         if actor_state is None:
             actor_state = previous.get("actor_state")
+        if combat_state is None:
+            combat_state = previous.get("combat_state")
         if current_hp is None:
             current_hp = previous.get("current_hp")
         if max_hp is None:
@@ -651,6 +737,8 @@ class GamePacketParser:
             "entity_type": entity_type,
             "attr_id": attr_id,
             "actor_state": actor_state,
+            "combat_state": combat_state,
+            "in_combat": bool(combat_state),
             "current_hp": current_hp,
             "max_hp": max_hp,
             "is_dead": actor_state == ActorState.DEAD,
@@ -662,5 +750,6 @@ class GamePacketParser:
 
     def world_state(self):
         return self.scene_id, self.player_id, self.local_player_uuid, {
-            uuid: dict(entity) for uuid, entity in self.nearby_entities.items()
+            uuid: {**entity, "is_teammate": uuid in self.team_member_uuids}
+            for uuid, entity in self.nearby_entities.items()
         }

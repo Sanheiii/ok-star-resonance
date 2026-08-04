@@ -621,6 +621,9 @@ msgstr "宠物"
 msgid "Player"
 msgstr "玩家"
 
+msgid "Teammate"
+msgstr "队友"
+
 msgid "Dummy"
 msgstr "假人"
 

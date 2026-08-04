@@ -80,6 +80,22 @@ class WaitOutOfCombatTest(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(task.death_handling_count, 1)
 
+    def test_waits_while_a_teammate_player_is_in_combat(self):
+        task = _WaitOutOfCombatTask([(0, False)] * 20)
+        task.player_uuid = 1
+        task.nearby_entities = {
+            2: {
+                'entity_type': 10,
+                'is_teammate': True,
+                'in_combat': True,
+            },
+        }
+
+        result = DungeonTaskBase.wait_out_of_combat(task)
+
+        self.assertFalse(result)
+        self.assertEqual(task.death_handling_count, 0)
+
 
 class _WaitInCombatTask:
     def __init__(self, states):
@@ -118,6 +134,53 @@ class WaitInCombatTest(unittest.TestCase):
 
         self.assertFalse(result)
         self.assertEqual(task.time_out, 5)
+
+    def test_returns_true_when_a_teammate_player_enters_combat(self):
+        task = _WaitInCombatTask([0])
+        task.player_uuid = 1
+        task.nearby_entities = {
+            2: {
+                'entity_type': 10,
+                'is_teammate': True,
+                'in_combat': True,
+            },
+        }
+
+        result = DungeonTaskBase.wait_in_combat(task, time_out=5)
+
+        self.assertTrue(result)
+
+
+class TeammateCombatTest(unittest.TestCase):
+    def test_detects_only_other_teammate_players_in_combat(self):
+        class Task:
+            player_uuid = 1
+            nearby_entities = {
+                1: {
+                    'entity_type': 10,
+                    'is_teammate': True,
+                    'in_combat': True,
+                },
+                2: {
+                    'entity_type': 10,
+                    'is_teammate': True,
+                    'in_combat': True,
+                },
+                3: {
+                    'entity_type': 16,
+                    'is_teammate': True,
+                    'in_combat': True,
+                },
+            }
+
+        self.assertTrue(
+            DungeonTaskBase._is_any_teammate_in_combat(Task())
+        )
+
+        Task.nearby_entities[2]['in_combat'] = False
+        self.assertFalse(
+            DungeonTaskBase._is_any_teammate_in_combat(Task())
+        )
 
 
 class _EnterTask:

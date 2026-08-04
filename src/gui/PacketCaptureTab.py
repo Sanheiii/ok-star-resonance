@@ -512,7 +512,11 @@ class PacketCaptureTab(CustomTab):
                     entity_position[2] - player_position[2],
                 )
                 entity_type = entity.get("entity_type", 0)
-                type_name = ENTITY_TYPE_NAMES.get(entity_type, "Unknown")
+                type_name = (
+                    "Teammate"
+                    if entity_type == 10 and entity.get("is_teammate")
+                    else ENTITY_TYPE_NAMES.get(entity_type, "Unknown")
+                )
                 translated_type = og.app.tr(type_name)
                 attr_id = entity.get("attr_id")
                 sequence = self._entity_sequence(entity_id, attr_id)

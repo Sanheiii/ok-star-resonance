@@ -214,7 +214,11 @@ class DungeonTaskBase(SRTask):
         def is_out_of_combat():
             nonlocal inactive_since
             self._require_packet_capture()
-            in_combat = self.in_combat or self.actor_state == ActorState.SKILL
+            in_combat = (
+                self.in_combat
+                or self.actor_state == ActorState.SKILL
+                or self._is_any_teammate_in_combat()
+            )
             is_dead = self.is_dead
             if in_combat or is_dead:
                 inactive_since = None
@@ -234,9 +238,22 @@ class DungeonTaskBase(SRTask):
 
         def is_in_combat():
             self._require_packet_capture()
-            return bool(self.in_combat)
+            return bool(
+                self.in_combat or self._is_any_teammate_in_combat()
+            )
 
         return bool(self.wait_until(is_in_combat, time_out=time_out))
+
+    def _is_any_teammate_in_combat(self):
+        player_uuid = getattr(self, 'player_uuid', None)
+        nearby_entities = getattr(self, 'nearby_entities', {})
+        return any(
+            entity_uuid != player_uuid
+            and entity.get('entity_type') == 10
+            and entity.get('is_teammate', False)
+            and entity.get('in_combat', False)
+            for entity_uuid, entity in nearby_entities.items()
+        )
 
     def investigate(self, pos=None):
         self.info['State'] = '准备交互开本仪器'

@@ -123,3 +123,54 @@ message WorldNtf {
     AoiSyncToMeDelta deltaInfo = 1 [json_name = "deltaInfo"];
   }
 }
+
+message TeamBaseInfo {
+  optional int64 teamId = 1 [json_name = "teamId"];
+  optional int64 leaderId = 3 [json_name = "leaderId"];
+}
+
+message TeamMemData {
+  optional int64 charId = 1 [json_name = "charId"];
+}
+
+message TeamMemberFastSyncData {
+  optional int64 charId = 1 [json_name = "charId"];
+}
+
+message NoticeUpdateTeamInfoRequest {
+  optional TeamBaseInfo baseInfo = 1 [json_name = "baseInfo"];
+}
+
+message NoticeUpdateTeamInfo {
+  optional NoticeUpdateTeamInfoRequest vRequest = 1 [json_name = "vRequest"];
+}
+
+message NoticeUpdateTeamMemberInfoRequest {
+  repeated TeamMemberFastSyncData teamMemberSyncDatas = 5 [json_name = "teamMemberSyncDatas"];
+  repeated TeamMemData teamMemberSocialDatas = 6 [json_name = "teamMemberSocialDatas"];
+}
+
+message NoticeUpdateTeamMemberInfo {
+  optional NoticeUpdateTeamMemberInfoRequest vRequest = 1 [json_name = "vRequest"];
+}
+
+message NotifyJoinTeamRequest {
+  optional TeamBaseInfo baseInfo = 1 [json_name = "baseInfo"];
+  repeated TeamMemData memberData = 2 [json_name = "memberData"];
+  map<int64, TeamMemberFastSyncData> memberSyncDatas = 6 [json_name = "memberSyncDatas"];
+}
+
+message NotifyJoinTeam {
+  optional NotifyJoinTeamRequest vRequest = 1 [json_name = "vRequest"];
+}
+
+message NotifyLeaveTeamRequest {
+  optional int64 charId = 1 [json_name = "charId"];
+}
+
+message NotifyLeaveTeam {
+  optional NotifyLeaveTeamRequest vRequest = 1 [json_name = "vRequest"];
+}
+
+message NoticeTeamDissolve {
+}
