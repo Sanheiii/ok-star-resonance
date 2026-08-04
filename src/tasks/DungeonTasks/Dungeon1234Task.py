@@ -26,33 +26,27 @@ class Dungeon1234Task(DungeonTaskBase):
             return False
         self.investigate(self.INSTRUMENT_POSITION)
         self.send_key(self.get_custom_key('Auto Battle'))
-
-        combat_routes = (
-            (
-                '第一段道中',
-                (
-                    (23.543, 37.156),
+        if not self._follow_route((
+                    (23.177, 32.644),
                     (26.375, 83.674),
                     (107.424, 91.754),
-                ),
-            ),
-            (
-                '第二段道中',
-                (
+                ), '第一段道中', camera_offset=180):
+            return False
+        if not self._wait_for_combat_end('第一段道中'):
+            return False
+
+        if not self._follow_route((
                     (107.424, 91.754),
                     (108.310, 137.405),
                     (92.884, 134.451),
                     (83.987, 149.444),
                     (128.464, 158.061),
                     (151.631, 129.405)
-                )
-            ),
-        )
-        for state, route in combat_routes:
-            if not self._follow_route(route, state):
-                return False
-            if not self._wait_for_combat_end(state):
-                return False
+                ), '第二段道中'):
+            return False
+        if not self._wait_for_combat_end('第二段道中'):
+            return False
+
         self.send_key(self.get_custom_key('Auto Battle'))
         if not self._follow_route(
                     ((151.631, 129.405), (159.678, 154.856),), '前往第一处交互点'):
@@ -124,14 +118,15 @@ class Dungeon1234Task(DungeonTaskBase):
 
         return self.handle_end()
 
-    def _follow_route(self, route, state):
+    def _follow_route(self, route, state, camera_offset=0):
         self.info['State'] = state
         self._move_mouse_relative(0, 1800)
         remaining = self.move_to_positions(
             route,
-            node_tolerance=2,
+            node_tolerance=1,
             max_path_deviation=8,
             enable_sprint=True,
+            camera_offset=camera_offset
         )
         if remaining is not None:
             self.log_error(f'{state}移动失败，剩余路径: {remaining}')
