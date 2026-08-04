@@ -728,3 +728,6 @@ msgstr "路线偏移"
 
 msgid "Purchase Quota-limited Items First"
 msgstr "优先购买限购商品"
+
+msgid "Reject Frost Mage Teammates"
+msgstr "拒绝冰魔导师成为队友"

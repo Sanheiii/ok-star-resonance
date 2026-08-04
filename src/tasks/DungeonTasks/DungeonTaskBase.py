@@ -361,9 +361,21 @@ class DungeonTaskBase(SRTask):
         self.click(0.812,0.859)
         self.sleep(1)
         # 点击进入副本
-        self.info['State'] = '点击进入副本'
-        self.click(0.933,0.920)
-        self.sleep(1)
+        while True:
+            self.info['State'] = '点击进入副本'
+            self.click(0.933,0.920)
+            self.sleep(1)
+            if (not DungeonTaskBase.get_dungeon_setting(
+                    self, 'Reject Frost Mage Teammates')
+                    or not self.find_one('teammate_frost_mage', box=self.box_of_screen(0.236,0.38,0.931,0.469))):
+                break
+            self.info['State'] = '拒绝冰魔导师队友'
+            self.click(0.902,0.922)
+            self.sleep(1)
+            self.info['State'] = '等待进入副本按钮'
+            if not self.wait_feature('dungeon_icon'):
+                self.log_error('拒绝冰魔导师队友后没有找到进入副本按钮')
+                return False
         # 等待副本UI
         if not self.wait_feature('loading'):
             self.log_error('没有找到加载页面')

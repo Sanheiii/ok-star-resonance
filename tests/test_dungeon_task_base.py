@@ -248,6 +248,22 @@ class DungeonDifficultyTest(unittest.TestCase):
 
         self.assertIn((0.092, 0.245), task.clicks)
 
+    def test_retries_entry_when_frost_mage_teammate_is_rejected(self):
+        task = _EnterTask()
+        task.config = {'Reject Frost Mage Teammates': True}
+        frost_mage_checks = iter((object(), None))
+
+        def find_one(name):
+            if name == 'teammate_frost_mage':
+                return next(frost_mage_checks)
+            return None
+
+        task.find_one = find_one
+
+        self.assertTrue(DungeonTaskBase.enter(task, Difficulty.HARD))
+        self.assertEqual(task.clicks.count((0.933, 0.920)), 2)
+        self.assertIn((0.902, 0.922), task.clicks)
+
     def test_positions_shift_when_normal_is_unavailable(self):
         task = _EnterTask()
         task.has_normal_difficulty = False
