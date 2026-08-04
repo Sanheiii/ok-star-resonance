@@ -483,6 +483,12 @@ msgstr "正在抓包"
 msgid "Capture stopped"
 msgstr "已结束抓包"
 
+msgid "Packet capture must be started before using movement helpers."
+msgstr "使用移动辅助功能前必须先开始抓包。"
+
+msgid "Player position was not captured. Select the correct network adapter or use WinDivert capture."
+msgstr "未抓取到玩家位置，请选择正确的网卡或使用 WinDivert 抓包。"
+
 msgid "Character facing: {facing}"
 msgstr "角色面向：{facing}"
 

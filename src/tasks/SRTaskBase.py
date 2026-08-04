@@ -133,7 +133,9 @@ class SRTaskBase(BaseTask):
     def _require_packet_capture(self):
         tool = self.packet_capture_tool
         if tool is None or not tool.is_capturing:
-            raise PacketCaptureRequiredError("Packet capture must be started before using movement helpers.")
+            raise PacketCaptureRequiredError(
+                og.app.tr("Packet capture must be started before using movement helpers.")
+            )
         return tool
 
     def detect_camera_direction(self):

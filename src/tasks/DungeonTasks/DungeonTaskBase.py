@@ -11,6 +11,7 @@ from src.dungeon_config import DUNGEON_SETTINGS
 from src.packet_capture.parser import ActorState
 from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
 from src.tasks.SRTask import SRTask
+from src.tasks.SRTaskBase import PacketCaptureRequiredError
 
 class DungeonTaskBase(SRTask):
 
@@ -240,6 +241,13 @@ class DungeonTaskBase(SRTask):
     def investigate(self, pos=None):
         self.info['State'] = '准备交互开本仪器'
         self.sleep(2)
+        current_position = self.position
+        if current_position is None:
+            raise PacketCaptureRequiredError(
+                og.app.tr(
+                    "Player position was not captured. Select the correct network adapter or use WinDivert capture."
+                )
+            )
         if pos is None:
             pos = next((
                 entity.get('position')
@@ -250,7 +258,7 @@ class DungeonTaskBase(SRTask):
                 self.log_error('没有找到开本仪器')
                 return False
         self.info['State'] = f'前往开本仪器: {pos}'
-        self.move_to_position(self.position, pos, target_tolerance=1.5)
+        self.move_to_position(current_position, pos, target_tolerance=1.5)
         self.info['State'] = f'交互开本仪器'
         self.sleep(2)
         self.send_key('f')
