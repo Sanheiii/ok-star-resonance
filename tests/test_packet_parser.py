@@ -4,8 +4,10 @@ from src.packet_capture.parser import (
     ActorState,
     ATTR_ACTOR_STATE,
     ATTR_COMBAT_STATE,
+    ATTR_CURRENT_HP,
     ATTR_ENTITY_ID,
     ATTR_FACING,
+    ATTR_MAX_HP,
     ATTR_POSITION,
     MSG_SYNC_CONTAINER_DATA,
     MSG_SYNC_NEAR_ENTITIES,
@@ -273,6 +275,58 @@ class GamePacketParserTest(unittest.TestCase):
         entity = parser.nearby_entities[entity_uuid]
         self.assertEqual(entity["attr_id"], 300)
         self.assertEqual(entity["position"], (10.0, 20.0, 30.0))
+
+    def test_appeared_entity_tracks_health_and_actor_state(self):
+        parser = GamePacketParser()
+        entity_uuid = (789 << 16) | (16 << 6)
+        message = parser._proto.SyncNearEntities()
+        appeared = message.appear.add()
+        appeared.uuid = entity_uuid
+        for attr_id, raw_data in (
+            (ATTR_ACTOR_STATE, bytes([ActorState.SKILL])),
+            (ATTR_CURRENT_HP, b"\xac\x02"),
+            (ATTR_MAX_HP, b"\x90\x03"),
+        ):
+            attr = appeared.attrs.attrs.add()
+            attr.id = attr_id
+            attr.rawData = raw_data
+
+        parser._decode_notify(
+            MSG_SYNC_NEAR_ENTITIES, message.SerializeToString()
+        )
+
+        entity = parser.nearby_entities[entity_uuid]
+        self.assertEqual(entity["actor_state"], ActorState.SKILL)
+        self.assertEqual(entity["current_hp"], 300)
+        self.assertEqual(entity["max_hp"], 400)
+        self.assertFalse(entity["is_dead"])
+
+    def test_entity_delta_marks_dead_and_tracks_zero_health(self):
+        parser = GamePacketParser()
+        entity_uuid = (789 << 16) | (16 << 6)
+        parser._store_entity(
+            entity_uuid,
+            (1.0, 2.0, 3.0),
+            4.0,
+            actor_state=ActorState.SKILL,
+            current_hp=300,
+            max_hp=400,
+        )
+        delta = parser._proto.AoiSyncDelta(uuid=entity_uuid)
+        actor_state = delta.attrs.attrs.add()
+        actor_state.id = ATTR_ACTOR_STATE
+        actor_state.rawData = bytes([ActorState.DEAD])
+        current_hp = delta.attrs.attrs.add()
+        current_hp.id = ATTR_CURRENT_HP
+        current_hp.rawData = b""
+
+        parser._record_entity_delta(delta)
+
+        entity = parser.nearby_entities[entity_uuid]
+        self.assertEqual(entity["actor_state"], ActorState.DEAD)
+        self.assertEqual(entity["current_hp"], 0)
+        self.assertEqual(entity["max_hp"], 400)
+        self.assertTrue(entity["is_dead"])
 
     @unittest.skipUnless(zstandard is not None, "zstandard is not installed")
     def test_decompresses_zstd_frame_without_content_size(self):

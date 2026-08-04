@@ -1,12 +1,28 @@
-from ok import og
-
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
 class Dungeon1931Task(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (9.920, 50.740)
-    TWO_OUTDOOR_WAVES_CONFIG = 'Fight Only Two Outdoor Waves'
+    FIRST_WAVE_MONSTER_UUIDS = frozenset({
+        8650816,
+        1900608,
+        1966144,
+        8912960,
+        4653120,
+        4718656,
+        9175104,
+        8847424,
+        8781888,
+        8716352,
+    })
+    SECOND_WAVE_MONSTER_UUIDS = frozenset({
+        8978496,
+        9044032,
+        11141184,
+        9306176,
+        9240640,
+    })
 
     def __init__(self, *args, **kwargs):
         self.task_name = 'Divine Threshold of the Distant Sky - Hard'
@@ -17,12 +33,6 @@ class Dungeon1931Task(DungeonTaskBase):
         self.task_desc_zh = '自动通关远天的神槛 - 困难。'
         self.difficulty = Difficulty.HARD
         super().__init__(*args, **kwargs)
-        if og.app.po_translation and (
-                catalog := getattr(og.app.po_translation, '_catalog', None)):
-            catalog[self.TWO_OUTDOOR_WAVES_CONFIG] = '道中外场仅打两波'
-        self.default_config.update({
-            self.TWO_OUTDOOR_WAVES_CONFIG: False,
-        })
 
     def run(self):
         super().run()
@@ -36,46 +46,40 @@ class Dungeon1931Task(DungeonTaskBase):
 
         self.investigate(self.INSTRUMENT_POSITION)
 
-        two_outdoor_waves = self.config.get(
-            self.TWO_OUTDOOR_WAVES_CONFIG, False)
         first_route = [
             (25.015, 47.788),
             (42.934, 28.295),
             (53.763, 4.169),
+            (48.321, -18.409),
+            (31.769, -41.090),
         ]
-        if two_outdoor_waves:
-            first_route.extend((
-                (48.321, -18.409),
-                (31.769, -41.090),
-            ))
 
         if not self._follow_route(first_route, '前往第一处战斗区域', camera_offset=135):
             return False
         if not self._wait_for_combat_end(
                 '第一处战斗'):
             return False
+        if not self._retry_route_for_remaining_monsters(
+                first_route,
+                self.FIRST_WAVE_MONSTER_UUIDS,
+                '第一处战斗'):
+            return False
 
-        if not two_outdoor_waves:
-            if not self._follow_route((
-                    (53.763, 4.169),
-                    (48.321, -18.409),
-                    (31.769, -41.090),
-            ), '前往第二处战斗区域', camera_offset=135):
-                return False
-            if not self._wait_for_combat_end(
-                    '第二处战斗'):
-                return False
-
-        outdoor_wave_name = '第二' if two_outdoor_waves else '第三'
-
-        if not self._follow_route((
+        second_route = (
                 (31.769, -41.090),
                 (4.714, -50.665),
                 (-37.944, -37.833),
-        ), f'前往{outdoor_wave_name}处战斗区域', camera_offset=135):
+        )
+        if not self._follow_route(
+                second_route, '前往第二处战斗区域', camera_offset=135):
             return False
         if not self._wait_for_combat_end(
-                f'{outdoor_wave_name}处战斗'):
+                '第二处战斗'):
+            return False
+        if not self._retry_route_for_remaining_monsters(
+                second_route,
+                self.SECOND_WAVE_MONSTER_UUIDS,
+                '第二处战斗'):
             return False
 
         if not self._follow_route((
@@ -85,11 +89,10 @@ class Dungeon1931Task(DungeonTaskBase):
             return False
         self._interact('激活第一处机关')
 
-        indoor_wave_name = '第三' if two_outdoor_waves else '第四'
         if not self._follow_route(
-                ((0.000, 0.000),), f'前往{indoor_wave_name}处战斗区域'):
+                ((0.000, 0.000),), '前往第三处战斗区域'):
             return False
-        if not self._wait_for_combat_end(f'{indoor_wave_name}处战斗'):
+        if not self._wait_for_combat_end('第三处战斗'):
             return False
 
         if not self._follow_route(((0.000, 0.000),), '前往Boss机关'):
@@ -134,6 +137,48 @@ class Dungeon1931Task(DungeonTaskBase):
             self.log_error(f'{state}超时')
             return False
         self.send_key(auto_combat_key)
+        self.pickup_special_reward(1207)
+        return True
+
+    def _retry_route_for_remaining_monsters(
+            self, route, monster_uuids, state):
+        nearby_entities = self.nearby_entities
+        remaining_uuids = {
+            entity_uuid
+            for entity_uuid in monster_uuids.intersection(nearby_entities)
+            if not nearby_entities[entity_uuid].get('is_dead', False)
+        }
+        if not remaining_uuids:
+            return True
+
+        self.log_info(
+            f'{state}发现漏怪: {sorted(remaining_uuids)}，倒退路线重新清理')
+        auto_combat_key = self.get_custom_key('Auto Battle')
+        self.send_key(auto_combat_key)
+        if not self._follow_route(
+                reversed(route),
+                f'{state}漏怪，倒退返回起点',
+                camera_offset=-45):
+            self.send_key(auto_combat_key)
+            return False
+        self.info['State'] = f'{state}漏怪，等待返回起点后脱战'
+        if not self.wait_out_of_combat(time_out=180):
+            self.send_key(auto_combat_key)
+            self.log_error(f'{state}返回起点后战斗超时')
+            return False
+        if not self._follow_route(
+                route,
+                f'{state}漏怪，重新前往终点',
+                camera_offset=135):
+            self.send_key(auto_combat_key)
+            return False
+
+        self.info['State'] = f'{state}漏怪清理中'
+        combat_finished = self.wait_out_of_combat(time_out=180)
+        self.send_key(auto_combat_key)
+        if not combat_finished:
+            self.log_error(f'{state}漏怪清理超时')
+            return False
         self.pickup_special_reward(1207)
         return True
 
