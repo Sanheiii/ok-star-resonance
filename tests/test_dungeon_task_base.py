@@ -352,6 +352,17 @@ class _RedeemItemsTask:
 
 
 class RedeemItemsTest(unittest.TestCase):
+    def test_uses_configured_season_hub_key(self):
+        task = _RedeemItemsTask()
+        task.get_global_config = lambda _option: {
+            **task.config,
+            'Season Hub': 'u',
+        }
+
+        self.assertTrue(DungeonTaskBase.redeem_items(task))
+        self.assertEqual(task.keys[0][0], 'u')
+        self.assertEqual(task.keys[-1][0], 'u')
+
     def test_only_triggers_at_the_configured_clear_interval(self):
         task = _RedeemItemsTask(pass_count=1)
 

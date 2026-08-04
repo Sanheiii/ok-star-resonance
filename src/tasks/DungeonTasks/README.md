@@ -144,7 +144,7 @@ self.send_key(self.get_custom_key("Auto Battle"))
 - `Difficulty.MASTER1`：大师难度1。
 - `Difficulty.MASTER6`：大师难度6。
 
-基类还提供三个用户配置：
+设置页还提供以下副本通用配置：
 
 - `Purchase Items`：是否购买物品，默认 `False`。
 - `Purchase Every N Clears`：每成功通关多少次购买一次，默认 `8`。
@@ -265,4 +265,3 @@ move_to_positions(
 5. 所有可能失败的步骤都返回 `False` 并写入 `log_error()`，让外层恢复。
 6. 调整各处延时，防止在无法控制角色的时候提前作出下一步操作
 7. 用 `self.info["State"]` 标注当前阶段，便于用户和日志定位卡点。
-

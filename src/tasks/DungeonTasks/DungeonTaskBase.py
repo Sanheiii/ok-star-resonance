@@ -7,6 +7,7 @@ import numpy as np
 from ok import og, Box
 from qfluentwidgets import FluentIcon
 
+from src.dungeon_config import DUNGEON_SETTINGS
 from src.packet_capture.parser import ActorState
 from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
 from src.tasks.SRTask import SRTask
@@ -43,12 +44,14 @@ class DungeonTaskBase(SRTask):
         self.description = self.task_desc
         self.group_name = 'Dungeon'
         self.group_icon = FluentIcon.GAME
-        self.default_config.update({
-            'Purchase Items': False,
-            'Purchase Every N Clears': 8,
-            'Purchase Item Index': 1,
-            'Purchase Quota-limited Items First': False,
-        })
+
+    def get_dungeon_setting(self, key):
+        """Return a shared dungeon setting, with defaults for headless tests."""
+        default = DUNGEON_SETTINGS.default_config[key]
+        get_global_config = getattr(self, 'get_global_config', None)
+        if get_global_config is None:
+            return getattr(self, 'config', {}).get(key, default)
+        return get_global_config(DUNGEON_SETTINGS).get(key, default)
 
     def run(self):
         self._require_packet_capture()
@@ -116,11 +119,13 @@ class DungeonTaskBase(SRTask):
         return True
 
     def redeem_items(self):
-        if not self.config.get('Purchase Items'):
+        if not DungeonTaskBase.get_dungeon_setting(self, 'Purchase Items'):
             return True
 
         pass_count = self.info['Pass Count']
-        purchase_interval = self.config.get('Purchase Every N Clears', 1)
+        purchase_interval = DungeonTaskBase.get_dungeon_setting(
+            self, 'Purchase Every N Clears'
+        )
         if (pass_count == 0
                 or purchase_interval <= 0
                 or pass_count % purchase_interval != 0
@@ -139,16 +144,20 @@ class DungeonTaskBase(SRTask):
             (0.897, 0.887),
         )
 
-        item_index = self.config.get('Purchase Item Index', 1)
+        item_index = DungeonTaskBase.get_dungeon_setting(
+            self, 'Purchase Item Index'
+        )
         if not 1 <= item_index <= len(item_positions):
             self.log_error(f'Purchase item index out of range: {item_index}')
             self._last_redeem_pass_count = pass_count
             return True
 
-        self.send_key('o', after_sleep=2)
+        season_hub_key = DungeonTaskBase.get_custom_key(self, 'Season Hub')
+        self.send_key(season_hub_key, after_sleep=2)
         self.click(0.035, 0.454, after_sleep=1)
         #Detect Purchase First
-        if self.config.get('Purchase Quota-limited Items First'):
+        if DungeonTaskBase.get_dungeon_setting(
+                self, 'Purchase Quota-limited Items First'):
             purchasable, index = self.detect_quota_limited_purchasable_item_index()
             if purchasable:
                 item_index = index
@@ -158,7 +167,7 @@ class DungeonTaskBase(SRTask):
         self.click(item_position[0], item_position[1], after_sleep=1)
         self.click(0.812, 0.676, after_sleep=1)
         self.click(0.633, 0.856, after_sleep=1)
-        self.send_key('o', after_sleep=0)
+        self.send_key(season_hub_key, after_sleep=0)
 
         self._last_redeem_pass_count = pass_count
         return True

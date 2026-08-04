@@ -156,6 +156,12 @@ msgstr "进入次数"
 msgid "Purchase Items"
 msgstr "购买商品"
 
+msgid "Dungeon Settings"
+msgstr "副本设置"
+
+msgid "Season Hub"
+msgstr "赛季中心"
+
 msgid "Purchase Every N Clears"
 msgstr "每通关多少次购买商品"
 

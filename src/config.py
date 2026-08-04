@@ -2,6 +2,7 @@ import os
 
 from ok import ConfigOption
 
+from src.dungeon_config import DUNGEON_SETTINGS
 from src.interaction.SRInteraction import SRInteraction
 from src.key_config import KEY_SETTINGS
 from src.pushdeer_config import PUSHDEER_SETTINGS
@@ -28,7 +29,12 @@ config = {
     'debug': False,  # Optional, default: False
     'use_gui': True,
     'config_folder': 'configs',
-    'global_configs': [key_config_option, KEY_SETTINGS, PUSHDEER_SETTINGS],
+    'global_configs': [
+        key_config_option,
+        KEY_SETTINGS,
+        DUNGEON_SETTINGS,
+        PUSHDEER_SETTINGS,
+    ],
     'gui_icon': 'icons/icon.png',
     'wait_until_before_delay': 0,
     'wait_until_check_delay': 0,
