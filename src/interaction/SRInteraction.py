@@ -1,6 +1,7 @@
 import threading
 import time
 
+import win32api
 import win32con
 
 from ok import PostMessageInteraction
@@ -16,6 +17,14 @@ class SRInteraction(PostMessageInteraction):
     """
 
     _CURSOR_SETTLE_TIME = 0.035
+    _MODIFIER_KEYS = {
+        win32con.VK_LSHIFT: (win32con.VK_SHIFT, 0x2A, False),
+        win32con.VK_RSHIFT: (win32con.VK_SHIFT, 0x36, False),
+        win32con.VK_LCONTROL: (win32con.VK_CONTROL, 0x1D, False),
+        win32con.VK_RCONTROL: (win32con.VK_CONTROL, 0x1D, True),
+        win32con.VK_LMENU: (win32con.VK_MENU, 0x38, False),
+        win32con.VK_RMENU: (win32con.VK_MENU, 0x38, True),
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,6 +38,29 @@ class SRInteraction(PostMessageInteraction):
 
             self._mouse_controller = mouse.Controller()
         return self._mouse_controller
+
+    def send_key_down(self, key, activate=True):
+        if activate:
+            self.try_activate()
+        virtual_key, lparam = self._keyboard_message(key, is_up=False)
+        self.post(win32con.WM_KEYDOWN, virtual_key, lparam)
+
+    def send_key_up(self, key):
+        virtual_key, lparam = self._keyboard_message(key, is_up=True)
+        self.post(win32con.WM_KEYUP, virtual_key, lparam)
+
+    def _keyboard_message(self, key, is_up):
+        virtual_key = self.get_key_by_str(key)
+        message_key, scan_code, extended = self._MODIFIER_KEYS.get(
+            virtual_key,
+            (virtual_key, win32api.MapVirtualKey(virtual_key, 0), False),
+        )
+        lparam = (scan_code << 16) | 1
+        if extended:
+            lparam |= 1 << 24
+        if is_up:
+            lparam |= (1 << 30) | (1 << 31)
+        return message_key, lparam
 
     def move(self, x, y, down_btn=0):
         """Move the system cursor while keeping PostMessage's target updated."""

@@ -55,6 +55,48 @@ class SRInteractionTest(unittest.TestCase):
         self.assertEqual(message, win32con.WM_KEYDOWN)
         self.assertEqual(virtual_key, ord("A"))
 
+    def test_left_shift_uses_generic_virtual_key_and_left_scan_code(self):
+        with patch.object(self.interaction, "try_activate"):
+            self.interaction.send_key_down("lshift")
+
+        message, virtual_key, lparam = self.interaction.post.call_args.args
+        self.assertEqual(message, win32con.WM_KEYDOWN)
+        self.assertEqual(virtual_key, win32con.VK_SHIFT)
+        self.assertEqual((lparam >> 16) & 0xFF, 0x2A)
+        self.assertFalse(lparam & (1 << 24))
+
+    def test_right_ctrl_uses_generic_virtual_key_and_extended_flag(self):
+        self.interaction.send_key_up("rctrl")
+
+        message, virtual_key, lparam = self.interaction.post.call_args.args
+        self.assertEqual(message, win32con.WM_KEYUP)
+        self.assertEqual(virtual_key, win32con.VK_CONTROL)
+        self.assertEqual((lparam >> 16) & 0xFF, 0x1D)
+        self.assertTrue(lparam & (1 << 24))
+        self.assertTrue(lparam & (1 << 30))
+        self.assertTrue(lparam & (1 << 31))
+
+    def test_left_alt_uses_generic_virtual_key_without_extended_flag(self):
+        with patch.object(self.interaction, "try_activate"):
+            self.interaction.send_key_down("lalt")
+
+        message, virtual_key, lparam = self.interaction.post.call_args.args
+        self.assertEqual(message, win32con.WM_KEYDOWN)
+        self.assertEqual(virtual_key, win32con.VK_MENU)
+        self.assertEqual((lparam >> 16) & 0xFF, 0x38)
+        self.assertFalse(lparam & (1 << 24))
+
+    def test_right_alt_uses_generic_virtual_key_and_extended_flag(self):
+        self.interaction.send_key_up("ralt")
+
+        message, virtual_key, lparam = self.interaction.post.call_args.args
+        self.assertEqual(message, win32con.WM_KEYUP)
+        self.assertEqual(virtual_key, win32con.VK_MENU)
+        self.assertEqual((lparam >> 16) & 0xFF, 0x38)
+        self.assertTrue(lparam & (1 << 24))
+        self.assertTrue(lparam & (1 << 30))
+        self.assertTrue(lparam & (1 << 31))
+
 
 if __name__ == "__main__":
     unittest.main()

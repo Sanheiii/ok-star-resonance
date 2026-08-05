@@ -618,7 +618,7 @@ class SRTaskBase(BaseTask):
             and now - last_sprint_at >= self._SPRINT_COOLDOWN
         )
         if should_sprint:
-            self.send_key("shift", 0.5)
+            self.send_key("lshift", 0.5)
             return now
         return last_sprint_at
 
