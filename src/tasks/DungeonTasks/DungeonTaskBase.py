@@ -176,7 +176,11 @@ class DungeonTaskBase(SRTask):
     def detect_quota_limited_purchasable_item_index(self) -> tuple[bool, int]:
         out_of_stock_indexes = {
             self.detect_purchase_index(box)
-            for box in self.ocr(0.118, 0.420, 0.834, 0.465, "已售罄")
+            for box in self.find_feature(
+                'sold_out',
+                box=self.box_of_screen(0.118, 0.420, 0.834, 0.465),
+                limit=0,
+            )
         }
         quota_limited_indexes = [
             self.detect_purchase_index(box)

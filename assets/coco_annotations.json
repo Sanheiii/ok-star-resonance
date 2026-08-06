@@ -293,6 +293,12 @@
             "file_name": "images/0.png",
             "width": 1920,
             "height": 1080
+        },
+        {
+            "id": 49,
+            "file_name": "images/0.png",
+            "width": 1920,
+            "height": 1080
         }
     ],
     "categories": [
@@ -776,6 +782,11 @@
         {
             "id": 111,
             "name": "teammate_frost_mage",
+            "supercategory": ""
+        },
+        {
+            "id": 112,
+            "name": "sold_out",
             "supercategory": ""
         }
     ],
@@ -2300,6 +2311,19 @@
                 73
             ],
             "area": 7957,
+            "iscrowd": 0
+        },
+        {
+            "id": 112,
+            "image_id": 49,
+            "category_id": 112,
+            "bbox": [
+                762,
+                468,
+                18,
+                20
+            ],
+            "area": 360,
             "iscrowd": 0
         }
     ],
