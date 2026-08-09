@@ -731,3 +731,12 @@ msgstr "优先购买限购商品"
 
 msgid "Reject Frost Mage Teammates"
 msgstr "拒绝冰魔导师成为队友"
+
+msgid "Difficulty"
+msgstr "难度"
+
+msgid "Hard"
+msgstr "困难"
+
+msgid "Master 1"
+msgstr "大师1"

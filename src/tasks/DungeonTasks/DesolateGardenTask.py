@@ -1,22 +1,31 @@
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class Dungeon6613Task(DungeonTaskBase):
+class DesolateGardenTask(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (-52.860, -11.590)
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Desolate Garden - Hard'
-        self.task_name_zh = '荒芜之庭 - 困难'
+        self.task_name = 'Desolate Garden'
+        self.task_name_zh = '荒芜之庭'
         self.task_desc = 'DPS classes may take longer during the Boss fight.'
         self.task_desc_zh = '输出职业在Boss战可能消耗更多时间。'
-        self.difficulty = Difficulty.HARD
-        self.has_normal_difficulty = False
         super().__init__(*args, **kwargs)
+        self.default_config.update({'Difficulty': 'Hard'})
+        self.config_type['Difficulty'] = {
+            'type': 'drop_down',
+            'options': ['Hard', 'Master 1'],
+        }
 
     def run(self):
         super().run()
         while True:
+            self.difficulty = {
+                'Hard': Difficulty.HARD,
+                'Master 1': Difficulty.MASTER1,
+                '困难': Difficulty.HARD,
+                '大师1': Difficulty.MASTER1,
+            }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
             if not self.exec():
                 self.return_to_initial_state()
 
@@ -24,7 +33,6 @@ class Dungeon6613Task(DungeonTaskBase):
         if not self.begin():
             return False
         self.investigate(self.INSTRUMENT_POSITION)
-        self.send_key(self.get_custom_key('Auto Battle'))
 
         if not self._follow_route((
                 (-28.258, -12.534),
@@ -33,7 +41,9 @@ class Dungeon6613Task(DungeonTaskBase):
                 (28.550, 18.090),
         ), '前往第一朵花'):
             return False
+        self._start_auto_battle()
         if not self.wait_in_combat():
+            self._stop_auto_battle()
             self.log_error('第一朵花没有进入战斗')
             return False
         if not self._wait_for_combat_end('第一朵花'):
@@ -46,7 +56,9 @@ class Dungeon6613Task(DungeonTaskBase):
                 (143.460, 57.670),
         ), '前往第二朵花'):
             return False
+        self._start_auto_battle()
         if not self.wait_in_combat():
+            self._stop_auto_battle()
             self.log_error('第二朵花没有进入战斗')
             return False
         if not self._wait_for_combat_end('第二朵花'):
@@ -73,11 +85,12 @@ class Dungeon6613Task(DungeonTaskBase):
                 '第二个水晶'):
             return False
 
-        # if not self._activate_crystal(
-        #         (85.820, 72.450),
-        #         (25.440, -0.240),
-        #         '第三个水晶'):
-        #     return False
+        if (self.difficulty is Difficulty.MASTER1
+                and not self._activate_crystal(
+                    (85.820, 72.450),
+                    (25.440, -0.240),
+                    '第三个水晶')):
+            return False
 
         if not self._follow_route(
                 ((81.490, 64.870),), '前往最终传送门'):
@@ -105,11 +118,13 @@ class Dungeon6613Task(DungeonTaskBase):
 
         self.info['State'] = 'Boss战斗中'
 
+        self._start_auto_battle()
         if not self.wait_in_combat():
+            self._stop_auto_battle()
             self.log_error('Boss没有进入战斗')
             return False
-        if not self.wait_out_of_combat(time_out=420):
-            self.log_error('Boss战斗超时')
+        if not self._wait_for_combat_end(
+                'Boss', time_out=420, check_special_reward=False):
             return False
 
         return self.handle_end()
@@ -126,7 +141,9 @@ class Dungeon6613Task(DungeonTaskBase):
         self.send_key('f')
         self.send_key('w', down_time=2)
 
+        self._start_auto_battle()
         if not self.wait_in_combat():
+            self._stop_auto_battle()
             self.log_error(f'{name}没有进入战斗')
             return False
         if not self._wait_for_combat_end(name):
@@ -155,9 +172,20 @@ class Dungeon6613Task(DungeonTaskBase):
         self.sleep(0.5)
         return True
 
-    def _wait_for_combat_end(self, state, time_out=180):
+    def _wait_for_combat_end(
+            self, state, time_out=180, check_special_reward=True):
         self.info['State'] = f'{state}战斗中'
         if self.wait_out_of_combat(time_out=time_out):
+            self._stop_auto_battle()
+            if check_special_reward:
+                self.pickup_special_reward(1207)
             return True
+        self._stop_auto_battle()
         self.log_error(f'{state}战斗超时')
         return False
+
+    def _start_auto_battle(self):
+        self.send_key(self.get_custom_key('Auto Battle'))
+
+    def _stop_auto_battle(self):
+        self.send_key(self.get_custom_key('Auto Battle'))

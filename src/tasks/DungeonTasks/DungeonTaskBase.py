@@ -309,8 +309,9 @@ class DungeonTaskBase(SRTask):
                     enable_sprint=True):
                 return False
 
+            self.sleep(0.5)
             self.info['State'] = '拾取特殊奖励'
-            self.send_key('f')
+            self.send_key('f', after_sleep=0.5)
             self.info['Special Reward Count'] = (
                 self.info.get('Special Reward Count', 0) + 1
             )

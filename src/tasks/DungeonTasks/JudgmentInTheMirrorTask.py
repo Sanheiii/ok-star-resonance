@@ -1,22 +1,30 @@
 import math
 
-from src.packet_capture.parser import ActorState
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class Dungeon6593Task(DungeonTaskBase):
+class JudgmentInTheMirrorTask(DungeonTaskBase):
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Judgment in the Mirror - Hard'
-        self.task_name_zh = '镜中的审判 - 困难'
-        self.task_desc = 'Not recommended for Skyward.'
-        self.task_desc_zh = '不建议使用空枪执行此任务。'
-        self.difficulty = Difficulty.HARD
-        self.has_normal_difficulty = False
+        self.task_name = 'Judgment in the Mirror'
+        self.task_name_zh = '镜中的审判'
+        self.task_desc = ''
+        self.task_desc_zh = ''
         super().__init__(*args, **kwargs)
+        self.default_config.update({'Difficulty': 'Hard'})
+        self.config_type['Difficulty'] = {
+            'type': 'drop_down',
+            'options': ['Hard', 'Master 1'],
+        }
 
     def run(self):
         super().run()
+        self.difficulty = {
+            'Hard': Difficulty.HARD,
+            'Master 1': Difficulty.MASTER1,
+            '困难': Difficulty.HARD,
+            '大师1': Difficulty.MASTER1,
+        }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
         while True:
             if not self.exec():
                 self.return_to_initial_state()
@@ -32,7 +40,7 @@ class Dungeon6593Task(DungeonTaskBase):
         self.sleep(4)
         # 移动到右侧桩怪背后
         self.move_to_position(self.position,(-9.190, -19.024), enable_sprint = True)
-        self.send_key(self.get_custom_key('Auto Battle'))
+        self._start_combat()
         # 按顺序解决三个桩怪
         monsters = (
             (34017, (-9.000, -19.000)),
@@ -48,6 +56,7 @@ class Dungeon6593Task(DungeonTaskBase):
         if not self.wait_out_of_combat(time_out=180):
             self.log_error('广场三个桩清完了，但是剩余小怪超时没有脱战')
             return False
+        self._finish_combat()
         self.sleep(3)
 
         self.info['State'] = '第一次跳台'
@@ -59,7 +68,7 @@ class Dungeon6593Task(DungeonTaskBase):
 
         # 在第一个浮空岛战斗
         self.info['State'] = '第一个小浮空岛战斗中'
-        if not self.wait_out_of_combat(time_out=180):
+        if not self._complete_combat('第一个小浮空岛战斗'):
             self.log_error('第一个小浮空岛战斗超时')
             return False
 
@@ -76,9 +85,34 @@ class Dungeon6593Task(DungeonTaskBase):
 
         # 在第二个浮空岛战斗
         self.info['State'] = '第二个小浮空岛战斗中'
-        if not self.wait_out_of_combat(time_out=180):
+        if not self._complete_combat('第二个小浮空岛战斗'):
             self.log_error('第二个小浮空岛战斗超时')
             return False
+
+        if self.difficulty is Difficulty.MASTER1:
+            self.info['State'] = '第三次跳台'
+            self.send_key('space', after_sleep=0.2)
+            self.send_key('space', after_sleep=2)
+            if not self._jump_to_area4():
+                self.log_info('第三次跳台失败，重新执行所有跳台')
+                while True:
+                    if (self._jump_to_area2()
+                            and self._jump_to_area3()
+                            and self._jump_to_area4()):
+                        break
+            if not self._complete_combat('第三个小浮空岛战斗'):
+                self.log_error('第三个小浮空岛战斗超时')
+                return False
+            self.info['State'] = '前往Boss机关'
+            if not self.move_to_position(
+                    self.position,
+                    (124.370, -5.790),
+                    target_tolerance=0.2,
+                    enable_sprint=False):
+                self.log_error('前往Boss机关失败')
+                return False
+            self.sleep(1)
+            self.send_key('f')
 
         # Boss战
         self.info['State'] = '道中清完了，等待Boss动画'
@@ -94,14 +128,40 @@ class Dungeon6593Task(DungeonTaskBase):
             self.log_error('没有检测到Boss')
             return False
         self.info['State'] = 'Boss战中'
-        self.move_to_position(self.position, boss_position, target_tolerance=2, enable_sprint = True)
-        self.sleep(3)
-        if not self.wait_out_of_combat(time_out=420):
+        if not self.move_to_position(
+                self.position,
+                boss_position,
+                target_tolerance=2,
+                enable_sprint=True):
+            self.log_error('移动到Boss位置失败')
+            return False
+        self.click(0.5, 0.5, after_sleep=0.5)
+        if not self._complete_combat('Boss战', time_out=420):
             self.log_error('Boss战超时')
             return False
 
         # 结算
         self.handle_end()
+
+    def _start_combat(self):
+        self.send_key(self.get_custom_key('Auto Battle'))
+
+    def _finish_combat(self):
+        self.send_key(self.get_custom_key('Auto Battle'))
+        self.pickup_special_reward(1207)
+
+    def _complete_combat(self, state, time_out=180):
+        self.info['State'] = state
+        self._start_combat()
+        if not self.wait_in_combat():
+            self.send_key(self.get_custom_key('Auto Battle'))
+            return False
+        if not self.wait_out_of_combat(time_out=time_out):
+            # Restore the user's non-combat state even on a timeout.
+            self.send_key(self.get_custom_key('Auto Battle'))
+            return False
+        self._finish_combat()
+        return True
 
     def _clear_monsters(self, monsters):
         for monster_id, target_position in monsters:
@@ -210,8 +270,8 @@ class Dungeon6593Task(DungeonTaskBase):
         self.look_at(camera_dir)
         # 开启走路增加精度，然后走到起始点
         self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
-        self.send_key('s', down_time=2, after_sleep=0.1)
-        self.send_key('w', down_time=1, after_sleep=0.1)
+        self.send_key('s', down_time=1, after_sleep=0.1)
+        self.send_key('w', down_time=0.5, after_sleep=0.1)
         if not self.move_to_position(self.position, start_pos, target_tolerance=0.1, max_path_deviation=3, rotate_camera=False):
             return False
         self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
@@ -239,8 +299,8 @@ class Dungeon6593Task(DungeonTaskBase):
         self.look_at(camera_dir)
         # 开启走路增加精度，然后走到起始点
         self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
-        self.send_key('s', down_time=2, after_sleep=0.1)
-        self.send_key('w', down_time=1, after_sleep=0.1)
+        self.send_key('s', down_time=1, after_sleep=0.1)
+        self.send_key('w', down_time=0.5, after_sleep=0.1)
         if not self.move_to_position(self.position, start_pos, target_tolerance=0.1, max_path_deviation=3, rotate_camera=False):
             return False
         self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
@@ -258,6 +318,39 @@ class Dungeon6593Task(DungeonTaskBase):
         self.send_key(self.get_custom_key('Float'), down_time=0.11, after_sleep=0.11)
         self.send_key_up('w', after_sleep=5)
         # 检查是否被传送了
+        return not self._is_teleported()
+
+    def _jump_to_area4(self):
+        start_pos = (91.977, 21.035)
+        if not self.move_to_position(
+                self.position,
+                start_pos,
+                target_tolerance=2,
+                max_path_deviation=3):
+            return False
+        self.look_at(135)
+        self.sleep(1)
+        self.look_at(135)
+        self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
+        self.send_key('s', down_time=1, after_sleep=0.1)
+        self.send_key('w', down_time=0.5, after_sleep=0.1)
+        if not self.move_to_position(
+                self.position,
+                start_pos,
+                target_tolerance=0.1,
+                max_path_deviation=3,
+                rotate_camera=False):
+            return False
+        self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
+        try:
+            self.send_key_down('w', after_sleep=0.12)
+            self.send_key('shift', down_time=0.56, after_sleep=0.25)
+            self.send_key('space', down_time=0.21, after_sleep=0.30)
+            self.send_key('space', down_time=0.18, after_sleep=0.37)
+            self.send_key('q', down_time=0.17, after_sleep=1.92)
+            self.send_key('q')
+        finally:
+            self.send_key_up('w', after_sleep=5)
         return not self._is_teleported()
 
     def _is_teleported(self):
