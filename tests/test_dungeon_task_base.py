@@ -536,6 +536,57 @@ class ReturnToInitialStateTest(unittest.TestCase):
         self.assertEqual(task.sleep_calls, [1])
         self.assertEqual(len(task.warnings), 1)
 
+    def test_uses_configured_exit_dungeon_key(self):
+        class MonthlyPassTask:
+            @staticmethod
+            def handle_monthly_card():
+                return False
+
+        class RecoverDungeonTask:
+            scene_id = 8
+
+            def __init__(self):
+                self.info = {}
+                self.color_checks = 0
+                self.keys = []
+
+            def get_game_language(self):
+                return 'en'
+
+            def get_task_by_class(self, _task_class):
+                return MonthlyPassTask()
+
+            def get_global_config(self, _option):
+                return {'Exit Dungeon': 'x'}
+
+            def next_frame(self):
+                return object()
+
+            def get_box_by_name(self, feature_name):
+                return feature_name
+
+            def calculate_color_percentage(self, _color, _box):
+                self.color_checks += 1
+                return 0.1 if self.color_checks == 1 else 0.8
+
+            def find_one(self, feature_name, **_kwargs):
+                return feature_name == 'dungeon_scene_icon'
+
+            def send_key(self, key):
+                self.keys.append(key)
+
+            def wait_feature(self, *_args, **_kwargs):
+                return False
+
+            def sleep(self, _seconds):
+                pass
+
+        task = RecoverDungeonTask()
+
+        DungeonTaskBase.return_to_initial_state(task)
+
+        self.assertEqual(task.keys, ['x'])
+
 
 class _PickupSpecialRewardTask:
     def __init__(self, entities, move_result=True):
@@ -559,6 +610,16 @@ class _PickupSpecialRewardTask:
 
 
 class PickupSpecialRewardTest(unittest.TestCase):
+    def test_returns_false_without_checking_when_pickup_limit_is_reached(self):
+        task = _PickupSpecialRewardTask({
+            1: {'attr_id': 1207, 'position': (7, 8, 9)},
+        })
+        task.info['Special Reward Count'] = 5
+
+        self.assertFalse(DungeonTaskBase.pickup_special_reward(task, 1207))
+        self.assertFalse(task.moves)
+        self.assertFalse(task.keys)
+
     def test_moves_to_reward_and_presses_f(self):
         task = _PickupSpecialRewardTask({
             1: {'attr_id': 9999, 'position': (4, 5, 6)},

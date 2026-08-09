@@ -10,6 +10,7 @@ DUNGEON_SETTINGS = ConfigOption(
         "Purchase Item Index": 1,
         "Purchase Quota-limited Items First": False,
         "Reject Frost Mage Teammates": False,
+        "Special Reward Pickup Limit": 5,
     },
     icon=FluentIcon.FLAG,
 )

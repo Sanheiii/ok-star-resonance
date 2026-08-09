@@ -225,6 +225,12 @@ msgstr "副本设置"
 msgid "Season Hub"
 msgstr "赛季中心"
 
+msgid "Exit Dungeon"
+msgstr "退出副本"
+
+msgid "Special Reward Pickup Limit"
+msgstr "特殊奖励拾取上限"
+
 msgid "Purchase Every N Clears"
 msgstr "每通关多少次购买商品"
 

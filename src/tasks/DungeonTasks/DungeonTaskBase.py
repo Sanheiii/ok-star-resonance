@@ -291,6 +291,12 @@ class DungeonTaskBase(SRTask):
 
     def pickup_special_reward(self, entity_id):
         """Move to a nearby special reward and interact with it."""
+        pickup_limit = DungeonTaskBase.get_dungeon_setting(
+            self, 'Special Reward Pickup Limit'
+        )
+        if self.info.get('Special Reward Count', 0) >= pickup_limit:
+            return False
+
         try:
             reward_position = next((
                 entity.get('position')
@@ -456,7 +462,9 @@ class DungeonTaskBase(SRTask):
                 needs_confirmation = True
 
             elif self.find_one('dungeon_scene_icon'):
-                self.send_key('p')
+                self.send_key(DungeonTaskBase.get_custom_key(
+                    self, 'Exit Dungeon'
+                ))
                 handled = True
                 needs_confirmation = True
 

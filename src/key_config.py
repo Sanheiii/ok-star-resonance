@@ -7,6 +7,7 @@ KEY_SETTINGS = ConfigOption(
     default={
         "Auto Battle": "h",
         "Season Hub": "o",
+        "Exit Dungeon": "p",
         "Float": "q",
         "Invert Gliding Controls": False,
         "Phantom Dash": "e",
