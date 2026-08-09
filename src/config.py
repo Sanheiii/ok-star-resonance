@@ -3,6 +3,7 @@ import os
 from ok import ConfigOption
 
 from src.dungeon_config import DUNGEON_SETTINGS
+from src.interaction.PynputInteraction import PynputInteraction
 from src.interaction.SRInteraction import SRInteraction
 from src.key_config import KEY_SETTINGS
 from src.pushdeer_config import PUSHDEER_SETTINGS
@@ -48,7 +49,7 @@ config = {
     'windows': {  # required  when supporting windows game
         'exe': ['Star.exe', 'BPSR.exe', 'BPSR_STEAM.exe', 'StarTW.exe', 'StarASIA.exe', 'StarSEA.exe', 'StarSEA_STEAM.exe', 'StarASIA_STEAM.exe'],
         # 'hwnd_class': 'UnrealWindow', #增加重名检查准确度
-        'interaction': ['Pynput', SRInteraction],
+        'interaction': [PynputInteraction, SRInteraction],
         'capture_method': ['WGC', 'BitBlt_RenderFull'],  # Windows版本支持的话, 优先使用WGC, 否则使用BitBlt_Full
         'check_hdr': True, #当用户开启AutoHDR时候提示用户, 但不禁止使用
         'force_no_hdr': False, #True=当用户开启AutoHDR时候禁止使用

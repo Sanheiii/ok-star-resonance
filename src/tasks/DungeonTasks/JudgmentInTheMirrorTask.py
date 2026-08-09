@@ -305,11 +305,14 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             return False
         self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
         # 录制的操作
+        rush_key = self.get_custom_key('Rush')
         self.send_key_down('w', after_sleep=0.19)
-        self.send_key_down('shift', after_sleep=0.63)
-        self.send_key('space', down_time=0.25, after_sleep=0.29)
-        self.send_key('space', down_time=0.23)
-        self.send_key_up('shift', after_sleep=0.19)
+        self.send_key_down(rush_key, after_sleep=0.63)
+        try:
+            self.send_key('space', down_time=0.25, after_sleep=0.29)
+            self.send_key('space', down_time=0.23)
+        finally:
+            self.send_key_up(rush_key, after_sleep=0.19)
         self.send_key(self.get_custom_key('Float'), down_time=0.18, after_sleep=0.19)
         self.send_key(self.get_custom_key('Float'), down_time=0.14, after_sleep=0.83)
         self.send_key('space', down_time=0.17, after_sleep=0.28)
@@ -344,7 +347,11 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.2)
         try:
             self.send_key_down('w', after_sleep=0.12)
-            self.send_key('shift', down_time=0.56, after_sleep=0.25)
+            self.send_key(
+                self.get_custom_key('Rush'),
+                down_time=0.56,
+                after_sleep=0.25,
+            )
             self.send_key('space', down_time=0.21, after_sleep=0.30)
             self.send_key('space', down_time=0.18, after_sleep=0.37)
             self.send_key('q', down_time=0.17, after_sleep=1.92)

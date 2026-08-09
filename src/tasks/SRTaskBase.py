@@ -9,6 +9,7 @@ import numpy as np
 from ok import og, BaseTask
 
 from src.MinimapSectorAngleDetector import MinimapSectorAngleDetector
+from src.interaction.mouse_keys import parse_mouse_key
 from src.key_config import KEY_SETTINGS
 from src.packet_capture.parser import ActorState
 
@@ -51,6 +52,11 @@ class PacketCaptureRequiredError(RuntimeError):
 
 class SRTaskBase(BaseTask):
     """Shared Star Resonance helpers for one-shot and trigger tasks."""
+
+    def validate_key(self, key):
+        if parse_mouse_key(key) is not None:
+            return key
+        return super().validate_key(key)
 
     _SKILL_UI_ANCHOR_BOX = (0.503, 0.898, 0.509, 0.904)
     _SKILL_UI_DARK_BGR = np.array((0, 0, 4), dtype=np.int16)
@@ -679,7 +685,7 @@ class SRTaskBase(BaseTask):
             and now - last_sprint_at >= self._SPRINT_COOLDOWN
         )
         if should_sprint:
-            self.send_key("lshift", 0.5)
+            self.send_key(self.get_custom_key("Rush"), 0.5)
             return now
         return last_sprint_at
 

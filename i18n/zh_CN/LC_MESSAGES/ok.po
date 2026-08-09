@@ -120,6 +120,9 @@ msgstr "飘浮"
 msgid "Phantom Dash"
 msgstr "幻影冲刺"
 
+msgid "Rush"
+msgstr "冲刺"
+
 msgid "Invert Gliding Controls"
 msgstr "滑翔操作反转"
 

@@ -276,10 +276,13 @@ class Dungeon1343Task(DungeonTaskBase):
         self.send_key('w', 2, after_sleep=2)
 
         # 无移动速度加成
+        rush_key = self.get_custom_key('Rush')
         self.send_key_down('w', after_sleep=0.16) # key down 'w'
-        self.send_key_down('shift', after_sleep=0.43) # key down 'shift'
-        self.send_key_down('space', after_sleep=0.19) # key down 'space'
-        self.send_key_up('shift') # key up 'shift'
+        self.send_key_down(rush_key, after_sleep=0.43) # key down rush
+        try:
+            self.send_key_down('space', after_sleep=0.19) # key down 'space'
+        finally:
+            self.send_key_up(rush_key) # key up rush
         self.send_key_up('space', after_sleep=0.57) # key up 'space'
         self.send_key_down('a', after_sleep=0.25) # key down 'a'
         self.send_key('space', down_time=0.18, after_sleep=0.37) # press key 'space'
@@ -301,9 +304,9 @@ class Dungeon1343Task(DungeonTaskBase):
         self.send_key_up('w', after_sleep=1) # key up 'w'
 
         # self.send_key_down('w', after_sleep=0.18) # key down 'w'
-        # self.send_key_down('shift', after_sleep=0.38) # key down 'shift'
+        # self.send_key_down(rush_key, after_sleep=0.38) # key down rush
         # self.send_key('space', down_time=0.26, after_sleep=0.13) # press key 'space'
-        # self.send_key_up('shift', after_sleep=0.77) # key up 'shift'
+        # self.send_key_up(rush_key, after_sleep=0.77) # key up rush
         # self.send_key('space', down_time=0.21, after_sleep=0.33) # press key 'space'
         # self.send_key('space', down_time=0.19, after_sleep=0.27) # press key 'space'
         # self.send_key(self.get_custom_key('Float'), after_sleep=1.86)

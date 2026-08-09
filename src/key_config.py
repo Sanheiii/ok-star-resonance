@@ -11,6 +11,7 @@ KEY_SETTINGS = ConfigOption(
         "Float": "q",
         "Invert Gliding Controls": False,
         "Phantom Dash": "e",
+        "Rush": "lshift",
         "Toggle Walk/Run": "rctrl",
         "Switch Pole": "m",
     },

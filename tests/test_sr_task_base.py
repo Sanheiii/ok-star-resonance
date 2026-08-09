@@ -113,6 +113,13 @@ class _PathTask:
 
 
 class MovementReturnValueTest(unittest.TestCase):
+    def test_mouse_key_alias_passes_hotkey_validation(self):
+        task = object.__new__(SRTaskBase)
+
+        self.assertEqual(task.validate_key("mouse2"), "mouse2")
+        self.assertEqual(task.validate_key("mouse_x1"), "mouse_x1")
+        self.assertEqual(task.validate_key("a"), "a")
+
     def test_path_returns_current_and_later_nodes_after_death(self):
         task = _PathTask([True, False])
         nodes = [(1, 1), (2, 2), (3, 3)]
@@ -365,8 +372,12 @@ class MovementReturnValueTest(unittest.TestCase):
             def send_key_down(self, _key):
                 pass
 
-            def send_key(self, key, _duration):
+            def send_key(self, key, _duration=None):
                 self.sent_keys.append(key)
+
+            def get_custom_key(self, action):
+                assert action == "Rush"
+                return "mouse2"
 
             def _sprint_prompt_visible(self):
                 return True
@@ -389,7 +400,7 @@ class MovementReturnValueTest(unittest.TestCase):
             )
 
         self.assertEqual(result, SRTaskBase._MOVE_RESULT_SUCCESS)
-        self.assertEqual(task.sent_keys, ['shift'])
+        self.assertEqual(task.sent_keys, ["mouse2"])
 
     def test_sprint_is_skipped_at_five_metres(self):
         class SprintTask:
@@ -421,7 +432,7 @@ class MovementReturnValueTest(unittest.TestCase):
         self.assertEqual(last_sprint_at, 100)
         self.assertEqual(task.sent_keys, [])
 
-    def test_sprint_uses_strafe_key_for_clockwise_camera_offset(self):
+    def test_sprint_uses_configured_rush_key_for_clockwise_camera_offset(self):
         class SprintTask:
             _MOVE_KEYS = SRTaskBase._MOVE_KEYS
             _SPRINT_COOLDOWN = SRTaskBase._SPRINT_COOLDOWN
@@ -433,8 +444,11 @@ class MovementReturnValueTest(unittest.TestCase):
             def _sprint_prompt_visible(self):
                 return True
 
-            def send_key(self, key, duration):
+            def send_key(self, key, duration=None):
                 self.sent_keys.append((key, duration))
+
+            def get_custom_key(self, action):
+                return "mouse2"
 
         task = SprintTask()
 
@@ -450,7 +464,10 @@ class MovementReturnValueTest(unittest.TestCase):
         )
 
         self.assertEqual(last_sprint_at, 101)
-        self.assertEqual(task.sent_keys, [("shift", 0.5)])
+        self.assertEqual(
+            task.sent_keys,
+            [("mouse2", None)],
+        )
 
     def test_direct_move_releases_keys_before_returning_on_death(self):
         class DirectTask(SRTaskBase):
