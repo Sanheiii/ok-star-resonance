@@ -159,6 +159,9 @@ msgstr "连点间隔（秒）"
 msgid  "Enable Basic Attack"
 msgstr "启用普通攻击"
 
+msgid "Only When Auto Combat Is Enabled"
+msgstr "仅在开启自动战斗后启用"
+
 msgid  "Enable Skill 1"
 msgstr "启用特殊攻击"
 

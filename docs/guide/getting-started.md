@@ -7,9 +7,10 @@ China 与 Global 版本的区别仅在于检查更新所使用的服务器，与
 - [GitHub Releases](https://github.com/Sanheiii/ok-star-resonance/releases)
 - [夸克网盘](https://pan.quark.cn/s/53ef87577da9?pwd=nVL9)
 
-!!! danger "请从可信渠道下载"
-
-    本项目不授权任何人售卖软件。第三方重新打包的程序可能包含恶意代码。
+<div class="doc-alert doc-alert-danger">
+  <strong>请从可信渠道下载</strong>
+  <p>本项目不授权任何人售卖软件。第三方重新打包的程序可能包含恶意代码。</p>
+</div>
 
 ## 安装与启动
 
@@ -35,4 +36,3 @@ git clone https://github.com/Sanheiii/ok-star-resonance-templates.git ok_templat
 - 游戏内使用自定义按键时，在应用设置中同步配置受支持的按键。
 - 依赖抓包位置数据的任务需要选择正确的网卡，或改用 WinDivert。
 - 本工具不支持后台运行，请勿遮挡或最小化游戏窗口。
-

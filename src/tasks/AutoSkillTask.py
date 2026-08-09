@@ -1,8 +1,10 @@
 ﻿import time
-from src.tasks.SRTriggerTask import SRTriggerTask
+from ok import TriggerTask
+
+from src.tasks.SRTaskBase import SRTaskBase
 
 
-class AutoSkillTask(SRTriggerTask):
+class AutoSkillTask(SRTaskBase, TriggerTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -11,6 +13,7 @@ class AutoSkillTask(SRTriggerTask):
 
         self.default_config.update({
             'Spam Interval (s)': 0.1,
+            'Only When Auto Combat Is Enabled': False,
             'Enable Basic Attack': True,
             'Enable Skill 1': True,
             'Enable Skill 2': True,
@@ -38,6 +41,12 @@ class AutoSkillTask(SRTriggerTask):
         self.key_map.reverse()
 
     def run(self):
+        if (
+                self.config.get('Only When Auto Combat Is Enabled')
+                and not self.is_auto_combat_enabled()
+        ):
+            return
+
         now = time.time()
         interval = self.config.get('Spam Interval (s)')
 
