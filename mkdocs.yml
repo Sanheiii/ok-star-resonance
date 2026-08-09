@@ -1,0 +1,69 @@
+site_name: ok-star-resonance
+site_description: Documentation for the ok-star-resonance desktop automation tool
+site_url: https://sanheiii.github.io/ok-star-resonance/
+repo_url: https://github.com/Sanheiii/ok-star-resonance
+repo_name: Sanheiii/ok-star-resonance
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: zh
+  logo: https://raw.githubusercontent.com/Sanheiii/ok-star-resonance/main/icons/icon.png
+  favicon: https://raw.githubusercontent.com/Sanheiii/ok-star-resonance/main/icons/icon.png
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - content.action.edit
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: 切换至深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: 切换至浅色模式
+
+nav:
+  - 首页: index.md
+  - 使用指南:
+      - 快速开始: guide/getting-started.md
+      - 功能与兼容性: guide/features.md
+      - 疑难解答: guide/troubleshooting.md
+  - 开发:
+      - 从源码运行: development/index.md
+      - 贡献指南: development/contributing.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+
+extra_css:
+  - stylesheets/extra.css
+
+exclude_docs: |
+  plans/
+
+plugins:
+  - search:
+      lang: [zh, en]
+
+strict: true

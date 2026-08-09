@@ -83,3 +83,14 @@ python main.py # 运行 Release 版
 ### 致谢
 
 * 本程序基于[ok-script](https://github.com/ok-oldking/ok-script)开发。
+
+### 文档网站
+
+安装、功能兼容性、疑难解答与开发说明已整理到 [MkDocs 文档](docs/index.md)。
+
+```powershell
+python -m pip install -r requirements-docs.txt
+python -m mkdocs serve
+```
+
+使用 `python -m mkdocs build --strict` 可在 `site/` 生成可部署的静态 HTML。

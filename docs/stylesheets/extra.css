@@ -1,0 +1,24 @@
+.hero {
+  margin: 2rem auto 3rem;
+  max-width: 48rem;
+  text-align: center;
+}
+
+.hero > p:first-child { margin-bottom: 0; }
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.feature-card {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.5rem;
+}
+
+.feature-card > :first-child { margin-top: 0; }
+.feature-card > :last-child { margin-bottom: 0; }
+
