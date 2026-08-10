@@ -1,9 +1,17 @@
+import math
+import time
+
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
 class DesolateGardenTask(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (-52.860, -11.590)
+    BOSS_ATTR_ID = 4711
+    BOSS_TIMEOUT = 420
+    BOSS_END_CHECK_DELAY = 5
+    SPECIAL_TRIGGER_ATTR_ID = 884640
+    SPECIAL_TARGET_ATTR_ID = 884642
 
     def __init__(self, *args, **kwargs):
         self.task_name = 'Desolate Garden'
@@ -107,27 +115,210 @@ class DesolateGardenTask(DungeonTaskBase):
             return False
 
         self.info['State'] = '进入Boss区域'
-        self.send_key('w', down_time=3,after_sleep=3)
+        self.send_key('w', down_time=3, after_sleep=3)
 
-        for i in range(3):
-            self.send_key('esc',after_sleep=2)
+        for _ in range(3):
+            self.send_key('esc', after_sleep=2)
             self.next_frame()
             if self.find_one('dungeon_scene_icon'):
                 break
-        self.send_key(self.get_custom_key('Phantom Dash'))
-
         self.info['State'] = 'Boss战斗中'
+        while True:
+            if not self._trigger_boss_combat():
+                return False
+            if not self._wait_for_boss_combat_end(
+                    time_out=self.BOSS_TIMEOUT):
+                return False
+            self.sleep(self.BOSS_END_CHECK_DELAY)
+            if not self._boss_exists(self.nearby_entities):
+                return self.handle_end()
 
-        self._start_auto_battle()
-        if not self.wait_in_combat():
-            self._stop_auto_battle()
-            self.log_error('Boss没有进入战斗')
-            return False
-        if not self._wait_for_combat_end(
-                'Boss', time_out=420, check_special_reward=False):
-            return False
+            self.info['State'] = 'Boss战斗团灭，重新开怪'
+            self._boss_auto_battle_enabled = False
 
-        return self.handle_end()
+    def _wait_for_boss_combat_end(self, time_out):
+        self.info['State'] = 'Boss战斗中'
+        deadline = time.monotonic() + time_out
+        special_handled = False
+        while True:
+            if time.monotonic() >= deadline:
+                self._set_boss_auto_battle(False)
+                self.log_error('Boss战斗超时')
+                return False
+
+            in_combat = self.in_combat or self._is_any_teammate_in_combat()
+            if not in_combat:
+                return True
+
+            entities = self.nearby_entities
+            if (not special_handled
+                    and self._entities_with_attr(
+                        entities,
+                        self.SPECIAL_TRIGGER_ATTR_ID,
+                    )):
+                special_handled = True
+                # self._handle_boss_special()
+                self.info['State'] = 'Boss战斗中'
+
+            self.next_frame()
+            self.sleep(0.2)
+
+    def _trigger_boss_combat(self):
+        self.send_key(self.get_custom_key('Phantom Dash'))
+        self._set_boss_auto_battle(True)
+        if self.wait_in_combat():
+            return True
+        self._set_boss_auto_battle(False)
+        self.log_error('Boss没有进入战斗')
+        return False
+
+    def _set_boss_auto_battle(self, enabled):
+        current = getattr(self, '_boss_auto_battle_enabled', False)
+        if current == enabled:
+            return
+        self.send_key(self.get_custom_key('Auto Battle'))
+        self._boss_auto_battle_enabled = enabled
+
+    @classmethod
+    def _boss_exists(cls, entities):
+        return any(
+            entity.get('attr_id') == cls.BOSS_ATTR_ID
+            for entity in entities.values()
+        )
+
+    def _handle_boss_special(self):
+        self._set_boss_auto_battle(False)
+        try:
+            self._run_boss_special()
+        finally:
+            if self.in_combat or self._is_any_teammate_in_combat():
+                self._set_boss_auto_battle(True)
+
+    def _run_boss_special(self):
+        visited_trigger_uuids = set()
+        visited_target_uuids = set()
+        while True:
+            if not self._has_special_targets():
+                return
+
+            triggers = self._entities_with_attr(
+                self.nearby_entities,
+                self.SPECIAL_TRIGGER_ATTR_ID,
+            )
+            unvisited_triggers = {
+                entity_uuid: entity
+                for entity_uuid, entity in triggers.items()
+                if entity_uuid not in visited_trigger_uuids
+            }
+            if unvisited_triggers:
+                trigger_uuid, trigger = self._nearest_entity_to(
+                    self.position,
+                    unvisited_triggers,
+                )
+                self.info['State'] = (
+                    f'Boss特殊机制：前往触发点 {trigger_uuid}'
+                )
+                while not self.move_to_position(
+                        self.position,
+                        trigger['position'],
+                        target_tolerance=1,
+                        line_tolerance=1,
+                        enable_sprint=False):
+                    if not self._has_special_targets():
+                        return
+                    self.send_key('w', down_time=1)
+                    current_trigger = self.nearby_entities.get(trigger_uuid)
+                    if (current_trigger is None
+                            or current_trigger.get('attr_id')
+                            != self.SPECIAL_TRIGGER_ATTR_ID):
+                        break
+                    trigger = current_trigger
+                    self.next_frame()
+                visited_trigger_uuids.add(trigger_uuid)
+
+            targets = self._entities_with_attr(
+                self.nearby_entities,
+                self.SPECIAL_TARGET_ATTR_ID,
+            )
+            unvisited_targets = {
+                entity_uuid: entity
+                for entity_uuid, entity in targets.items()
+                if entity_uuid not in visited_target_uuids
+            }
+            if not unvisited_targets:
+                return
+
+            target_uuid, target = self._nearest_entity_to(
+                self.position,
+                unvisited_targets,
+            )
+            self.info['State'] = f'Boss特殊机制：前往目标 {target_uuid}'
+            arrived = False
+            while True:
+                movement_target = self._position_beyond(
+                    self.position,
+                    target['position'],
+                    5,
+                )
+                if self.move_to_position(
+                        self.position,
+                        movement_target,
+                        target_tolerance=1,
+                        line_tolerance=1,
+                        enable_sprint=True):
+                    arrived = True
+                    break
+                if not self._has_special_targets():
+                    return
+                current_target = self.nearby_entities.get(target_uuid)
+                if (current_target is None
+                        or current_target.get('attr_id')
+                        != self.SPECIAL_TARGET_ATTR_ID):
+                    break
+                target = current_target
+                self.next_frame()
+            visited_target_uuids.add(target_uuid)
+            if arrived:
+                self.info['State'] = f'Boss特殊机制：目标 {target_uuid} 等待3秒'
+                self.sleep(2)
+
+    def _has_special_targets(self):
+        return bool(self._entities_with_attr(
+            self.nearby_entities,
+            self.SPECIAL_TARGET_ATTR_ID,
+        ))
+
+    @staticmethod
+    def _entities_with_attr(entities, attr_id):
+        return {
+            entity_uuid: entity
+            for entity_uuid, entity in entities.items()
+            if (entity.get('attr_id') == attr_id
+                and entity.get('position') is not None)
+        }
+
+    @classmethod
+    def _nearest_entity_to(cls, current_position, entities):
+        current_x, current_z = cls._xz(current_position)
+        return min(entities.items(), key=lambda item: math.hypot(
+            cls._xz(item[1]['position'])[0] - current_x,
+            cls._xz(item[1]['position'])[1] - current_z,
+        ))
+
+    @classmethod
+    def _position_beyond(cls, start_position, target_position, distance):
+        start_x, start_z = cls._xz(start_position)
+        target_x, target_z = cls._xz(target_position)
+        delta_x = target_x - start_x
+        delta_z = target_z - start_z
+        length = math.hypot(delta_x, delta_z)
+        if length == 0:
+            return target_x, target_z
+        scale = distance / length
+        return (
+            target_x + delta_x * scale,
+            target_z + delta_z * scale,
+        )
 
     def _activate_crystal(self, crystal_position, exit_position, name):
         if not self._follow_route((crystal_position,), f'前往{name}'):
