@@ -14,7 +14,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         self.default_config.update({'Difficulty': 'Hard'})
         self.config_type['Difficulty'] = {
             'type': 'drop_down',
-            'options': ['Hard', 'Master 1'],
+            'options': ['Hard', 'Master floa1'],
         }
 
     def run(self):
@@ -354,8 +354,8 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             )
             self.send_key('space', down_time=0.21, after_sleep=0.30)
             self.send_key('space', down_time=0.18, after_sleep=0.37)
-            self.send_key('q', down_time=0.17, after_sleep=1.92)
-            self.send_key('q')
+            self.send_key(self.get_custom_key('Float'), down_time=0.17, after_sleep=1.92)
+            self.send_key(self.get_custom_key('Float'))
         finally:
             self.send_key_up('w', after_sleep=5)
         return not self._is_teleported()
