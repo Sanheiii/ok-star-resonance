@@ -14,7 +14,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         self.default_config.update({'Difficulty': 'Hard'})
         self.config_type['Difficulty'] = {
             'type': 'drop_down',
-            'options': ['Hard', 'Master floa1'],
+            'options': ['Hard', 'Master 1'],
         }
 
     def run(self):
@@ -22,6 +22,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         self.difficulty = {
             'Hard': Difficulty.HARD,
             'Master 1': Difficulty.MASTER1,
+            'Master floa1': Difficulty.MASTER1,  # value saved by the old misspelled option
             '困难': Difficulty.HARD,
             '大师1': Difficulty.MASTER1,
         }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
