@@ -157,7 +157,7 @@ class DesolateGardenTask(DungeonTaskBase):
                         self.SPECIAL_TRIGGER_ATTR_ID,
                     )):
                 special_handled = True
-                # self._handle_boss_special()
+                self._handle_boss_special()
                 self.info['State'] = 'Boss战斗中'
 
             self.next_frame()
