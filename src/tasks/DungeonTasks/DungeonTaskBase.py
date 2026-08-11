@@ -43,7 +43,9 @@ class DungeonTaskBase(SRTask):
         self.info['Pass Count'] = 0
         self.info['Pass Rate'] = '0.00%'
         self.info['Special Reward Count'] = 0
+        self.info['Consumable Use Count'] = 0
         self._last_redeem_pass_count = None
+        self._skip_consumable_once = False
 
     def begin(self):
         self._update_pass_rate()
@@ -342,12 +344,12 @@ class DungeonTaskBase(SRTask):
         return True
 
     def handle_end(self):
+        self._use_consumable_before_settlement()
         self.info['State'] = 'Boss战结束，等待结算'
         if not self.wait_click_feature('next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92), time_out=30, raise_if_not_found=False):
             self.log_error('Boss战结束后没等到结算')
+            self._skip_consumable_once = True
             return False
-        self.info['Pass Count'] += 1
-        self._update_pass_rate()
         # 点击离开
         self.wait_click_feature('exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97), time_out=5, raise_if_not_found=False)
         self.wait_feature('loading')
@@ -356,6 +358,32 @@ class DungeonTaskBase(SRTask):
             self.sleep(1)
             self.next_frame()
         self.info['State'] = '本次副本成功'
+        return True
+
+    def record_successful_clear(self):
+        self.info['Pass Count'] += 1
+        self._update_pass_rate()
+        target_clear_count = DungeonTaskBase.get_dungeon_setting(
+            self, 'Target Clear Count (0 for unlimited)'
+        )
+        return (
+            target_clear_count > 0
+            and self.info['Pass Count'] >= target_clear_count
+        )
+
+    def _use_consumable_before_settlement(self):
+        if self._skip_consumable_once:
+            self._skip_consumable_once = False
+            return False
+
+        quantity = DungeonTaskBase.get_dungeon_setting(
+            self, 'Consumable Use Quantity'
+        )
+        if self.info['Consumable Use Count'] >= quantity:
+            return False
+
+        self.send_key(DungeonTaskBase.get_custom_key(self, 'Use Consumable'))
+        self.info['Consumable Use Count'] += 1
         return True
 
     def return_to_initial_state(self):

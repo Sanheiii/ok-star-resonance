@@ -11,6 +11,8 @@ DUNGEON_SETTINGS = ConfigOption(
         "Purchase Quota-limited Items First": False,
         "Reject Frost Mage Teammates": False,
         "Special Reward Pickup Limit": 5,
+        "Consumable Use Quantity": 0,
+        "Target Clear Count (0 for unlimited)": 0,
     },
     icon=FluentIcon.FLAG,
 )

@@ -303,6 +303,99 @@ class PassRateTest(unittest.TestCase):
         self.assertEqual(task.info['Pass Rate'], '0.00%')
 
 
+class _HandleEndTask:
+    def __init__(self, *, quantity=0, target=0, settlement_succeeds=True):
+        self.config = {
+            'Consumable Use Quantity': quantity,
+            'Target Clear Count (0 for unlimited)': target,
+        }
+        self.info = {
+            'Entry Count': 1,
+            'Pass Count': 0,
+            'Consumable Use Count': 0,
+        }
+        self._skip_consumable_once = False
+        self.settlement_succeeds = settlement_succeeds
+        self.keys = []
+        self.disabled = False
+
+    _update_pass_rate = DungeonTaskBase._update_pass_rate
+    _use_consumable_before_settlement = (
+        DungeonTaskBase._use_consumable_before_settlement
+    )
+    record_successful_clear = DungeonTaskBase.record_successful_clear
+
+    def get_global_config(self, option):
+        if option is dungeon_task_base_module.DUNGEON_SETTINGS:
+            return self.config
+        return {'Use Consumable': 'f3'}
+
+    def send_key(self, key):
+        self.keys.append(key)
+
+    def wait_click_feature(self, name, **_kwargs):
+        return self.settlement_succeeds if name == 'next' else True
+
+    def box_of_screen(self, *_args):
+        return None
+
+    def wait_feature(self, _name):
+        return True
+
+    def find_one(self, _name):
+        return False
+
+    def log_error(self, _message):
+        pass
+
+    def disable(self):
+        self.disabled = True
+
+
+class HandleEndSettingsTest(unittest.TestCase):
+    def test_uses_consumable_and_counts_it_when_key_is_pressed(self):
+        task = _HandleEndTask(quantity=1)
+
+        self.assertTrue(DungeonTaskBase.handle_end(task))
+
+        self.assertEqual(task.keys, ['f3'])
+        self.assertEqual(task.info['Consumable Use Count'], 1)
+
+    def test_failure_keeps_count_and_skips_consumable_once(self):
+        task = _HandleEndTask(quantity=2, settlement_succeeds=False)
+
+        self.assertFalse(DungeonTaskBase.handle_end(task))
+        self.assertEqual(task.keys, ['f3'])
+        self.assertEqual(task.info['Consumable Use Count'], 1)
+
+        task.settlement_succeeds = True
+        self.assertTrue(DungeonTaskBase.handle_end(task))
+        self.assertEqual(task.keys, ['f3'])
+        self.assertEqual(task.info['Consumable Use Count'], 1)
+
+        self.assertTrue(DungeonTaskBase.handle_end(task))
+        self.assertEqual(task.keys, ['f3', 'f3'])
+        self.assertEqual(task.info['Consumable Use Count'], 2)
+
+    def test_success_count_reaching_target_requests_loop_exit(self):
+        task = _HandleEndTask(target=2)
+        task.info['Pass Count'] = 1
+
+        self.assertTrue(DungeonTaskBase.handle_end(task))
+        self.assertEqual(task.info['Pass Count'], 1)
+        self.assertTrue(task.record_successful_clear())
+
+        self.assertEqual(task.info['Pass Count'], 2)
+
+    def test_zero_target_keeps_loop_running_after_success(self):
+        task = _HandleEndTask(target=0)
+
+        self.assertTrue(DungeonTaskBase.handle_end(task))
+        self.assertFalse(task.record_successful_clear())
+
+        self.assertEqual(task.info['Pass Count'], 1)
+
+
 class AutoCombatDetectionTest(unittest.TestCase):
     @staticmethod
     def _frame_with_skill_ui():

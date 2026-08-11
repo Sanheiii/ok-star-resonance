@@ -234,8 +234,20 @@ msgstr "赛季中心"
 msgid "Exit Dungeon"
 msgstr "退出副本"
 
+msgid "Use Consumable"
+msgstr "使用消耗品"
+
 msgid "Special Reward Pickup Limit"
 msgstr "特殊奖励拾取上限"
+
+msgid "Consumable Use Quantity"
+msgstr "消耗品使用数量"
+
+msgid "Target Clear Count (0 for unlimited)"
+msgstr "目标通关次数（0为不限制）"
+
+msgid "Consumable Use Count"
+msgstr "消耗品使用计数"
 
 msgid "Purchase Every N Clears"
 msgstr "每通关多少次购买商品"
