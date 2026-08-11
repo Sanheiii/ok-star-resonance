@@ -17,7 +17,10 @@ class Dungeon1343Task(DungeonTaskBase):
     def run(self):
         super().run()
         while True:
-            if not self.exec():
+            if self.exec():
+                if self.record_successful_clear():
+                    break
+            else:
                 self.return_to_initial_state()
 
     def exec(self):

@@ -26,7 +26,10 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             '大师1': Difficulty.MASTER1,
         }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
         while True:
-            if not self.exec():
+            if self.exec():
+                if self.record_successful_clear():
+                    break
+            else:
                 self.return_to_initial_state()
 
     def exec(self):
@@ -153,7 +156,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             return False
 
         # 结算
-        self.handle_end()
+        return self.handle_end()
 
     def _start_combat(self):
         self.send_key(self.get_custom_key('Auto Battle'))

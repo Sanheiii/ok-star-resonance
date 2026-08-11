@@ -29,7 +29,10 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
                 '困难': Difficulty.HARD,
                 '大师1': Difficulty.MASTER1,
             }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
-            if not self.exec():
+            if self.exec():
+                if self.record_successful_clear():
+                    break
+            else:
                 self.return_to_initial_state()
 
     def exec(self):
