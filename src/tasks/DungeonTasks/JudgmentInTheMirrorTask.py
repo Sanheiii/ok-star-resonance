@@ -33,6 +33,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         # 进本与开启仪器
         if not self.begin():
             return False
+        dungeon_scene_id = self.scene_id
         self.investigate((-29.350, -7.840))
 
         # 等人机去找怪打再动
@@ -63,8 +64,10 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         # 二段跳收起武器
         self.send_key('space', after_sleep=0.2)
         self.send_key('space', after_sleep=2)
-        while not self._jump_to_area2():
-            pass
+        if not self._retry_jump_sequence(
+                dungeon_scene_id,
+                self._jump_to_area2):
+            return False
 
         # 在第一个浮空岛战斗
         self.info['State'] = '第一个小浮空岛战斗中'
@@ -76,11 +79,16 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         # 二段跳收起武器
         self.send_key('space', after_sleep=0.2)
         self.send_key('space', after_sleep=2)
-        if not self._jump_to_area3():
+        jump_succeeded = self._jump_to_area3()
+        if self.scene_id != dungeon_scene_id:
+            return False
+        if not jump_succeeded:
             # 如果失败了重试到成功为止
-            while True:
-                if self._jump_to_area2() and self._jump_to_area3():
-                    break
+            if not self._retry_jump_sequence(
+                    dungeon_scene_id,
+                    self._jump_to_area2,
+                    self._jump_to_area3):
+                return False
 
 
         # 在第二个浮空岛战斗
@@ -93,13 +101,17 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             self.info['State'] = '第三次跳台'
             self.send_key('space', after_sleep=0.2)
             self.send_key('space', after_sleep=2)
-            if not self._jump_to_area4():
+            jump_succeeded = self._jump_to_area4()
+            if self.scene_id != dungeon_scene_id:
+                return False
+            if not jump_succeeded:
                 self.log_info('第三次跳台失败，重新执行所有跳台')
-                while True:
-                    if (self._jump_to_area2()
-                            and self._jump_to_area3()
-                            and self._jump_to_area4()):
-                        break
+                if not self._retry_jump_sequence(
+                        dungeon_scene_id,
+                        self._jump_to_area2,
+                        self._jump_to_area3,
+                        self._jump_to_area4):
+                    return False
             if not self._complete_combat('第三个小浮空岛战斗'):
                 self.log_error('第三个小浮空岛战斗超时')
                 return False
@@ -190,6 +202,18 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
                         self.move_to_position(current_position, safe_position, target_tolerance=1, enable_sprint = True)
                 self.sleep(0.2)
         return True
+
+    def _retry_jump_sequence(self, dungeon_scene_id, *jump_steps):
+        while self.scene_id == dungeon_scene_id:
+            for jump_step in jump_steps:
+                jump_succeeded = jump_step()
+                if self.scene_id != dungeon_scene_id:
+                    return False
+                if not jump_succeeded:
+                    break
+            else:
+                return True
+        return False
 
     @staticmethod
     def _dummy_positions(entities):
