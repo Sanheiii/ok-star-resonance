@@ -123,6 +123,8 @@ class DesolateGardenTask(DungeonTaskBase):
             if self.find_one('dungeon_scene_icon'):
                 break
         self.info['State'] = 'Boss战斗中'
+
+        self._boss_auto_battle_enabled = False
         while True:
             if not self._trigger_boss_combat():
                 return False
@@ -164,7 +166,8 @@ class DesolateGardenTask(DungeonTaskBase):
             self.sleep(0.2)
 
     def _trigger_boss_combat(self):
-        self.send_key(self.get_custom_key('Phantom Dash'))
+        self.send_key(self.get_custom_key('Phantom Dash'), after_sleep=1)
+        self.click(0.5, 0.5,after_sleep=0.5)
         self._set_boss_auto_battle(True)
         if self.wait_in_combat():
             return True
