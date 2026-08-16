@@ -1,7 +1,7 @@
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class Dungeon1931Task(DungeonTaskBase):
+class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (9.920, 50.740)
     FIRST_WAVE_MONSTER_UUIDS = frozenset({
@@ -25,18 +25,27 @@ class Dungeon1931Task(DungeonTaskBase):
     })
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Divine Threshold of the Distant Sky - Hard'
-        self.task_name_zh = '远天的神槛 - 困难'
-        self.task_desc = (
-            'Automatically clears Divine Threshold of the Distant Sky - Hard.'
-        )
-        self.task_desc_zh = '自动通关远天的神槛 - 困难。'
+        self.task_name = 'Divine Threshold of the Distant Sky'
+        self.task_name_zh = '远天的神槛'
+        self.task_desc = ''
+        self.task_desc_zh = ''
         self.difficulty = Difficulty.HARD
         super().__init__(*args, **kwargs)
+        self.default_config.update({'Difficulty': 'Hard'})
+        self.config_type['Difficulty'] = {
+            'type': 'drop_down',
+            'options': ['Hard', 'Master 1'],
+        }
 
     def run(self):
         super().run()
         while True:
+            self.difficulty = {
+                'Hard': Difficulty.HARD,
+                'Master 1': Difficulty.MASTER1,
+                '困难': Difficulty.HARD,
+                '大师1': Difficulty.MASTER1,
+            }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
             if self.exec():
                 if self.record_successful_clear():
                     break
@@ -98,10 +107,14 @@ class Dungeon1931Task(DungeonTaskBase):
         if not self._wait_for_combat_end('第三处战斗'):
             return False
 
-        if not self._follow_route(((0.000, 0.000),), '前往Boss机关'):
+        if not self._follow_route(((0.000, 0.000),), '前往第二处机关'):
             return False
 
-        self._interact('激活Boss机关')
+        self._interact('激活第二处机关')
+
+        if (self.difficulty is Difficulty.MASTER1
+                and not self._run_master_route()):
+            return False
 
         self._skip_boss_animation('跳过Boss出场动画')
         if not self._follow_route(((0.000, 0.000),), '前往Boss'):
@@ -112,6 +125,44 @@ class Dungeon1931Task(DungeonTaskBase):
 
         self._skip_boss_animation('跳过Boss结算动画')
         return self.handle_end()
+
+    def _run_master_route(self):
+        if not self._follow_route(
+                ((-42.930, 0.100),), '出大师新小房间'):
+            return False
+        self.look_at(270)
+        self.send_key_down('w', after_sleep=0.5)
+        try:
+            self.send_key('space', after_sleep=1)
+        finally:
+            self.send_key_up('w')
+
+        if not self._follow_route((
+                (-53.320, 0.028),
+                (-40.314, 30.859),
+                (-29.325, 45.154),
+                (-6.202, 50.918),
+        ), '前往大师新增第一处战斗区域', 135):
+            return False
+        if not self._wait_for_combat_end('大师新增第一处战斗'):
+            return False
+
+        if not self._follow_route((
+                (22.688, 46.306),
+                (51.677, 2.378),
+                (50.800, -16.602),
+        ), '前往大师新增第二处战斗区域', 135):
+            return False
+        if not self._wait_for_combat_end('大师新增第二处战斗'):
+            return False
+
+        if not self._follow_route((
+                (47.024, -15.659),
+                (23.662, -7.718),
+        ), '前往第三处机关'):
+            return False
+        self._interact('激活第三处机关')
+        return True
 
     def _follow_route(self, route, state, camera_offset=0):
         self.info['State'] = state

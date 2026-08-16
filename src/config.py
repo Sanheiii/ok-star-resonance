@@ -100,9 +100,9 @@ config = {
         ["src.tasks.DungeonTasks.JudgmentInTheMirrorTask", "JudgmentInTheMirrorTask"],
         ["src.tasks.DungeonTasks.DelusionDragonClawValleyTask", "DelusionDragonClawValleyTask"],
         ["src.tasks.DungeonTasks.DesolateGardenTask", "DesolateGardenTask"],
-        ["src.tasks.DungeonTasks.Dungeon1722Task", "Dungeon1722Task"],
+        ["src.tasks.DungeonTasks.DelusionFlowingMoonWildernessTask", "DelusionFlowingMoonWildernessTask"],
         ["src.tasks.DungeonTasks.Dungeon1343Task", "Dungeon1343Task"],
-        ["src.tasks.DungeonTasks.Dungeon1931Task", "Dungeon1931Task"],
+        ["src.tasks.DungeonTasks.DivineThresholdOfTheDistantSkyTask", "DivineThresholdOfTheDistantSkyTask"],
     ],
     'trigger_tasks':[
         ["src.tasks.FishingTask", "FishingTask"],
