@@ -101,7 +101,7 @@ config = {
         ["src.tasks.DungeonTasks.DelusionDragonClawValleyTask", "DelusionDragonClawValleyTask"],
         ["src.tasks.DungeonTasks.DesolateGardenTask", "DesolateGardenTask"],
         ["src.tasks.DungeonTasks.DelusionFlowingMoonWildernessTask", "DelusionFlowingMoonWildernessTask"],
-        ["src.tasks.DungeonTasks.Dungeon1343Task", "Dungeon1343Task"],
+        ["src.tasks.DungeonTasks.DelusionShadowFortressTask", "DelusionShadowFortressTask"],
         ["src.tasks.DungeonTasks.DivineThresholdOfTheDistantSkyTask", "DivineThresholdOfTheDistantSkyTask"],
     ],
     'trigger_tasks':[

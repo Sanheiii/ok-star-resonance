@@ -74,7 +74,7 @@ class SRTaskBase(BaseTask):
     )
     _AUTO_COMBAT_OUTLINE_MIN_RATIO = 0.04
 
-    _CAMERA_PIXELS_PER_DEGREE = 9.4
+    _CAMERA_PIXELS_PER_DEGREE = 9.6
     _CAMERA_DIRECTION_PROTECTION_SECONDS = 0.3
     _CAMERA_DIRECTION_MAX_CHANGE = 15.0
     # 以镜头朝向为基准，每 45 度对应一个移动方向；斜向移动需要同时按下两个键。

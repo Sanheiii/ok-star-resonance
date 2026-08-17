@@ -1,22 +1,33 @@
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class Dungeon1343Task(DungeonTaskBase):
+class DelusionShadowFortressTask(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (422.870, -6.900)
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Delusion - Shadow Fortress - Hard'
-        self.task_name_zh = '弥妄·黯影堡垒 - 困难'
+        self.task_name = 'Delusion - Shadow Fortress'
+        self.task_name_zh = '弥妄·黯影堡垒'
         self.task_desc = 'Tank classes are not supported.'
         self.task_desc_zh = '不支持守护职业。'
         self.difficulty = Difficulty.HARD
         self.has_normal_difficulty = False
         super().__init__(*args, **kwargs)
+        self.default_config.update({'Difficulty': 'Hard'})
+        self.config_type['Difficulty'] = {
+            'type': 'drop_down',
+            'options': ['Hard', 'Master 1'],
+        }
 
     def run(self):
         super().run()
         while True:
+            self.difficulty = {
+                'Hard': Difficulty.HARD,
+                'Master 1': Difficulty.MASTER1,
+                '困难': Difficulty.HARD,
+                '大师1': Difficulty.MASTER1,
+            }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
             if self.exec():
                 if self.record_successful_clear():
                     break
@@ -35,12 +46,14 @@ class Dungeon1343Task(DungeonTaskBase):
                 (402.965, -7.175),
                 (418.629, -27.210),
                 (420.580, -60.080),
-                (431.590, -52.940)
+                (402.566, -48.793)
         ), '前往第一处战斗'):
             return False
+
+        self.rotate_camera(180)
+        self.send_key(self.get_custom_key('Auto Battle'))
         if not self._wait_for_combat_end('第一处战斗'):
             return False
-
         self.send_key(self.get_custom_key('Auto Battle'))
 
         if not self._clear_corruption(
@@ -52,14 +65,17 @@ class Dungeon1343Task(DungeonTaskBase):
                 (427.234, -83.393),
         ), '前往第一处门槛'):
             return False
-        if not self._jump_over_threshold():
+        if not self._jump_over_threshold(155):
             return False
 
         if not self._follow_route((
                 (431.375, -92.830),
-                (441.263, -87.945),
-                (436.530, -89.730),
-        ), '前往第一处低重力装置'):
+                (441.263, -87.945)
+        ), '前往第一处低重力装置', enable_sprint=False):
+            return False
+        self.sleep(1)
+        if not self.move_to_position(self.position, (436.530, -89.730), line_tolerance=1, target_tolerance=1, enable_sprint=False):
+            self.log_error(f'第一处低重力装置最后一段失败')
             return False
         self.send_key('w', down_time=0.2, after_sleep=1)
         self.info['State'] = '借助低重力装置前往楼上'
@@ -69,14 +85,17 @@ class Dungeon1343Task(DungeonTaskBase):
 
         if not self._follow_route((
                 (419.585, -89.677),
+                (400.170, -99.619),
+                (400.191, -113.531)
         ), '前往第二处战斗'):
             return False
-        if not self._wait_for_combat_end('第二处战斗'):
-            return False
+        if self.difficulty is Difficulty.HARD:
+            self.send_key(self.get_custom_key('Auto Battle'))
+            if not self._wait_for_combat_end('第二处战斗'):
+                return False
+            self.send_key(self.get_custom_key('Auto Battle'))
 
         if not self._clear_corruption((
-                (419.585, -89.677),
-                (402.926, -98.493),
                 (397.057, -114.074),
         ), '第二次清除侵蚀'):
             return False
@@ -92,11 +111,113 @@ class Dungeon1343Task(DungeonTaskBase):
                 (389.717, -150.857),
                 (402.900, -169.730),
                 (413.112, -183.464),
+                (388.123, -175.491)
         ), '前往第三处战斗'):
             return False
+
+        self.send_key(self.get_custom_key('Auto Battle'))
         if not self._wait_for_combat_end('第三处战斗'):
             return False
+        self.send_key(self.get_custom_key('Auto Battle'))
 
+        if self.difficulty is Difficulty.MASTER1:
+            # if not self._follow_route((
+            #         (401.760, -175.142),
+            #         (373.092, -184.270),
+            #         (361.686, -167.716),
+            # ), '前往小房间'):
+            #     return False
+            #
+            # self.send_key(self.get_custom_key('Auto Battle'))
+            # if not self._wait_for_combat_end('小房间战斗'):
+            #     return False
+            # self.send_key(self.get_custom_key('Auto Battle'))
+            #
+            # if not self._follow_route((
+            #         (361.910, -168.646),
+            #         (361.892, -175.437),
+            #         (370.030, -174.763),
+            #         (373.899, -185.267),
+            #         (396.798, -175.104),
+            # ), '离开小房间'):
+            #     return False
+
+            if not self._follow_route((
+                    (414.842, -181.370),
+                    (422.575, -192.033),
+            ), '前往90度通道'):
+                return False
+            if not self._jump_over_threshold(140,True):
+                return False
+            if not self._follow_route((
+                    (428.577, -205.660),
+                    (444.666, -210.596),
+            ), '90度通道第一段', enable_sprint=False):
+                return False
+            if not self._jump_over_threshold(52, True):
+                return False
+            if not self._follow_route((
+                    (470.158, -189.334),
+            ), '90度通道第二段', enable_sprint=True):
+                return False
+            if not self._follow_route((
+                    (466.267, -192.402),
+            ), '90度通道第二段', enable_sprint=False):
+                return False
+            self.send_key('w', down_time=0.3, after_sleep=1)
+
+            self.info['State'] = '借助低重力装置前往大师楼上事件区域'
+            self.send_key('space', after_sleep=2)
+            self.send_key('space', after_sleep=2)
+            self.send_key('w', down_time=2, after_sleep=1)
+
+            if not self._follow_route((
+                    (446.258, -197.039),
+                    (442.884, -212.726),
+                    (450.979, -216.543),
+            ), '前往楼上第一场战斗'):
+                return False
+
+            self.send_key(self.get_custom_key('Auto Battle'))
+            if not self._wait_for_combat_end('楼上第一场战斗'):
+                return False
+            self.send_key(self.get_custom_key('Auto Battle'))
+
+            if not self._clear_corruption((
+                    (439.248, -215.606),
+                    (422.582, -221.157),
+            ), '楼上清除侵蚀'):
+                return False
+
+            if not self.move_to_position(self.position, (409.000, -214.290), enable_sprint=False):
+                self.log_error('前往事件失败')
+                return False
+            self.sleep(0.5)
+            self.send_key('f')
+            self.rotate_camera(45)
+            self.click(0.5, 0.5, after_sleep=0.5)
+            self.send_key(self.get_custom_key('Auto Battle'))
+            if not self._wait_for_combat_end('事件战斗'):
+                return False
+            self.send_key(self.get_custom_key('Auto Battle'))
+
+            if not self._follow_route((
+                    (409.000, -214.290),
+                    (405.261, -206.425),
+                    (418.414, -186.030),
+            ), '前往楼上跳台前门槛'):
+                return False
+            if not self.move_to_position(self.position, (415.066, -181.882), enable_sprint=False, target_tolerance=1):
+                self.log_error('前往楼上跳台前门槛失败')
+                return False
+            if not self._jump_over_threshold(320):
+                return False
+            if not self.move_to_position(self.position, (402.845, -169.834), enable_sprint=False, target_tolerance=1):
+                self.log_error('楼上跳回楼下失败')
+                return False
+
+        self.sleep(2)
+        self.send_key('s', down_time=1)
         if not self._clear_corruption(
                 ((402.900, -169.730),), '第三次清除侵蚀'):
             return False
@@ -107,20 +228,24 @@ class Dungeon1343Task(DungeonTaskBase):
         self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.5)
         if not self._follow_route((
                 (429.543, -138.043),
-        ), '跳楼并前往第四处战斗', enable_sprint = False):
+        ), '跳楼并前往最后一处战斗', enable_sprint = False):
             return False
         self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.5)
 
         if not self._follow_route((
                 (437.742, -156.903),
-                (456.451, -173.201),
-        ), '前往第四处战斗'):
-            return False
-        if not self._wait_for_combat_end('第四处战斗'):
+                (458.448, -177.019),
+                (469.117, -163.564),
+        ), '前往最后一处战斗'):
             return False
 
+        self.send_key(self.get_custom_key('Auto Battle'))
+        if not self._wait_for_combat_end('最后一处战斗'):
+            return False
+        self.send_key(self.get_custom_key('Auto Battle'))
+
         if not self._follow_route((
-                (459.943, -174.894),
+                (462.826, -177.288),
                 (481.500, -148.294),
                 (488.071, -147.281),
                 (488.569, -126.963),
@@ -199,12 +324,15 @@ class Dungeon1343Task(DungeonTaskBase):
         self.send_key('f', after_sleep=1)
         return True
 
-    def _jump_over_threshold(self):
+    def _jump_over_threshold(self, camera_rotation, double_jump = False):
         self.info['State'] = '跳过第一处门槛'
-        self.look_at(155)
+        self.look_at(camera_rotation)
         try:
             self.send_key_down('w', after_sleep=1)
-            self.send_key('space', after_sleep=1)
+            self.send_key('space', after_sleep=0.3)
+            if double_jump:
+                self.send_key('space', after_sleep=0.3)
+            self.sleep(0.7)
         finally:
             self.send_key_up('w')
         return True
