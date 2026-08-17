@@ -529,7 +529,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
             self.log_error(f'前往幻幻花失败')
             return False
         self.send_key('space', after_sleep=0.5)
-        self.send_key('q', after_sleep=1)
+        self.send_key(self.get_custom_key('Float'), after_sleep=1)
 
         deadline = time.monotonic() + self.MASTER_5021_LOOP_TIMEOUT
         while True:
