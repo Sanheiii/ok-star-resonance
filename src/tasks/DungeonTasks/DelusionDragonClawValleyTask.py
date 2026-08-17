@@ -140,7 +140,6 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
 
     def _follow_route(self, route, state, camera_offset=0):
         self.info['State'] = state
-        self._move_mouse_relative(0, 1800)
         remaining = self.move_to_positions(
             route,
             node_tolerance=1,

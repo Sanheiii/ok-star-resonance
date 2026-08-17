@@ -74,7 +74,9 @@ class SRTaskBase(BaseTask):
     )
     _AUTO_COMBAT_OUTLINE_MIN_RATIO = 0.04
 
-    _CAMERA_PIXELS_PER_DEGREE = 9.8
+    _CAMERA_PIXELS_PER_DEGREE = 9.4
+    _CAMERA_DIRECTION_PROTECTION_SECONDS = 0.3
+    _CAMERA_DIRECTION_MAX_CHANGE = 15.0
     # 以镜头朝向为基准，每 45 度对应一个移动方向；斜向移动需要同时按下两个键。
     _MOVE_KEYS = (
         ("w",), ("w", "d"), ("d",), ("s", "d"),
@@ -104,6 +106,8 @@ class SRTaskBase(BaseTask):
         super().__init__(*args, **kwargs)
         self.camera_direction = 0
         self._camera_direction_detected = False
+        self._camera_direction_protected_until = 0.0
+        self._camera_direction_rotation_protected_until = 0.0
         self._movement_session_depth = 0
         self._movement_scene_id = None
         self._held_move_keys = ()
@@ -207,10 +211,40 @@ class SRTaskBase(BaseTask):
 
     def detect_camera_direction(self):
         """Detect camera yaw from the translucent sector in the current minimap."""
+        now = time.monotonic()
+        rotation_protected_until = getattr(
+            self,
+            '_camera_direction_rotation_protected_until',
+            0.0,
+        )
+        if now < rotation_protected_until:
+            return self.camera_direction
+
         result = MinimapSectorAngleDetector.detect(self.frame)
-        self._camera_direction_detected = result is not None
-        if result is not None:
-            self.camera_direction = result[0]
+        if result is None:
+            self._camera_direction_detected = False
+            return self.camera_direction
+
+        detected_direction = float(result[0]) % 360.0
+        protected_until = getattr(
+            self,
+            '_camera_direction_protected_until',
+            0.0,
+        )
+        direction_change = abs(
+            self._angle_delta(detected_direction, self.camera_direction)
+        )
+        if (
+            now < protected_until
+            and direction_change > self._CAMERA_DIRECTION_MAX_CHANGE
+        ):
+            return self.camera_direction
+
+        self.camera_direction = detected_direction
+        self._camera_direction_detected = True
+        self._camera_direction_protected_until = (
+            now + self._CAMERA_DIRECTION_PROTECTION_SECONDS
+        )
         return self.camera_direction
 
     def rotate_camera(self, degrees):
@@ -218,8 +252,15 @@ class SRTaskBase(BaseTask):
         target_direction = (self.camera_direction + degrees) % 360.0
         pixels = round(float(degrees) * self._CAMERA_PIXELS_PER_DEGREE)
         self._move_mouse_relative(pixels, 0)
+        now = time.monotonic()
         self.camera_direction = target_direction
         self._camera_direction_detected = True
+        self._camera_direction_protected_until = (
+            now + self._CAMERA_DIRECTION_PROTECTION_SECONDS
+        )
+        self._camera_direction_rotation_protected_until = (
+            now + self._CAMERA_DIRECTION_PROTECTION_SECONDS
+        )
 
     def look_at(self, target):
         """Turn the camera toward an absolute yaw or a world position.
@@ -279,6 +320,7 @@ class SRTaskBase(BaseTask):
             enable_sprint=False,
             rotate_camera=True,
             camera_offset=0,
+            keep_move_keys=False,
     ):
         """Move to one target, with optional sprinting and camera rotation."""
         target_x, target_z = self._xz(target_position)
@@ -305,6 +347,7 @@ class SRTaskBase(BaseTask):
                         enable_sprint=enable_sprint,
                         rotate_camera=rotate_camera,
                         camera_offset=camera_offset,
+                        keep_move_keys=keep_move_keys,
                     )
                 if move_result == self._MOVE_RESULT_SUCCESS:
                     move_result = self._move_direct(
@@ -316,6 +359,7 @@ class SRTaskBase(BaseTask):
                         enable_sprint=enable_sprint,
                         rotate_camera=rotate_camera,
                         camera_offset=camera_offset,
+                        keep_move_keys=keep_move_keys,
                     )
             finally:
                 self._end_movement_session()
@@ -378,13 +422,11 @@ class SRTaskBase(BaseTask):
                     enable_sprint=enable_sprint,
                     rotate_camera=rotate_camera,
                     camera_offset=camera_offset,
+                    keep_move_keys=index > 0,
                 )
                 if not completed:
                     return positions[index:]
                 previous = target
-                if index < len(positions) - 1:
-                    self._release_move_keys()
-                    self.sleep(1)
             return None
         finally:
             self._end_movement_session()
@@ -436,6 +478,7 @@ class SRTaskBase(BaseTask):
             enable_sprint=False,
             rotate_camera=True,
             camera_offset=0,
+            keep_move_keys=False,
     ) -> int:
         """Move directly to a target and return a ``_MOVE_RESULT_*`` status."""
         target = self._xz(target_position)
@@ -447,8 +490,9 @@ class SRTaskBase(BaseTask):
         last_camera_correction_at = float("-inf")
         camera_deviation_frame_count = 0
 
-        # 每段移动开始前先停止旧输入，并按需面向目标。
-        self._release_move_keys()
+        # 路径节点之间保留移动键，使镜头可以在移动过程中转向下一个节点。
+        if not keep_move_keys:
+            self._release_move_keys()
         self._require_packet_capture()
         self.next_frame()
         if self._movement_scene_changed():
@@ -657,9 +701,14 @@ class SRTaskBase(BaseTask):
         return keys, True
 
     def _hold_move_keys(self, keys):
-        self._release_move_keys()
+        keys = tuple(keys)
+        held_keys = tuple(getattr(self, '_held_move_keys', ()))
+        for key in reversed(held_keys):
+            if key not in keys:
+                self.send_key_up(key)
         for key in keys:
-            self.send_key_down(key)
+            if key not in held_keys:
+                self.send_key_down(key)
         self._held_move_keys = keys
 
     def _try_sprint(

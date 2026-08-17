@@ -89,11 +89,59 @@ class CapturedStatePropertyTest(unittest.TestCase):
             self.assertTrue(task.is_dead)
 
 
+class CameraDirectionProtectionTest(unittest.TestCase):
+    @staticmethod
+    def _task(direction=0, detected=True):
+        task = object.__new__(SRTaskBase)
+        task.frame = object()
+        task.camera_direction = direction
+        task._camera_direction_detected = detected
+        task._camera_direction_protected_until = 0.0
+        task._camera_direction_rotation_protected_until = 0.0
+        return task
+
+    def test_active_rotation_wins_over_stale_minimap_frame(self):
+        task = self._task()
+
+        with patch.object(
+                sr_task_base_module.SRTaskBase,
+                '_move_mouse_relative'), patch.object(
+                    sr_task_base_module.time,
+                    'monotonic',
+                    side_effect=(10.0, 10.1)), patch.object(
+                        sr_task_base_module.MinimapSectorAngleDetector,
+                        'detect',
+                        return_value=(0, 1, {})):
+            SRTaskBase.rotate_camera(task, 90)
+            SRTaskBase.detect_camera_direction(task)
+
+        self.assertEqual(task.camera_direction, 90)
+        self.assertTrue(task._camera_direction_detected)
+
+    def test_large_detection_jump_is_rejected_and_close_detection_refreshes(self):
+        task = self._task(direction=100)
+        task._camera_direction_protected_until = 10.3
+
+        with patch.object(
+                sr_task_base_module.time,
+                'monotonic',
+                side_effect=(10.1, 10.2)), patch.object(
+                    sr_task_base_module.MinimapSectorAngleDetector,
+                    'detect',
+                    side_effect=((130, 1, {}), (110, 1, {}))):
+            SRTaskBase.detect_camera_direction(task)
+            SRTaskBase.detect_camera_direction(task)
+
+        self.assertEqual(task.camera_direction, 110)
+        self.assertEqual(task._camera_direction_protected_until, 10.5)
+
+
 class _PathTask:
     def __init__(self, results):
         self.position = (0, 0)
         self.results = iter(results)
         self.calls = []
+        self.sleeps = []
 
     def _begin_movement_session(self):
         pass
@@ -104,8 +152,8 @@ class _PathTask:
     def _release_move_keys(self):
         pass
 
-    def sleep(self, _seconds):
-        pass
+    def sleep(self, seconds):
+        self.sleeps.append(seconds)
 
     def move_to_position(self, start, target, **_kwargs):
         self.calls.append((start, target, _kwargs))
@@ -132,6 +180,24 @@ class MovementReturnValueTest(unittest.TestCase):
         task = _PathTask([True, True])
 
         self.assertIsNone(SRTaskBase.move_to_positions(task, [(1, 1), (2, 2)]))
+
+        self.assertEqual(
+            [call[2]['keep_move_keys'] for call in task.calls],
+            [False, True],
+        )
+        self.assertEqual(task.sleeps, [])
+
+    def test_holding_move_keys_only_changes_the_different_keys(self):
+        task = object.__new__(SRTaskBase)
+        task._held_move_keys = ('w',)
+        task.events = []
+        task.send_key_down = lambda key: task.events.append(('down', key))
+        task.send_key_up = lambda key: task.events.append(('up', key))
+
+        SRTaskBase._hold_move_keys(task, ('w', 'd'))
+        SRTaskBase._hold_move_keys(task, ('w',))
+
+        self.assertEqual(task.events, [('down', 'd'), ('up', 'd')])
 
     def test_path_forwards_maximum_deviation_to_each_segment(self):
         task = _PathTask([True, True])
