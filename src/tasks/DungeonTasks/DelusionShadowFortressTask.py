@@ -215,7 +215,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
             if not self.move_to_position(self.position, (402.845, -169.834), enable_sprint=False, target_tolerance=1):
                 self.log_error('楼上跳回楼下失败')
                 return False
-
+        self.send_key('w', down_time=1)
         self.sleep(2)
         self.send_key('s', down_time=1)
         if not self._clear_corruption(
@@ -378,14 +378,27 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         start_position = (479.790, -119.706)
         if not self._follow_route((start_position,), '前往第二处跳楼点'):
             return False
-        self.info['State'] = '跳下第二处高台'
+        self.info['State'] = '跳过第二处高台前门槛'
+        self.sleep(1)
         self._look_at_twice(315)
+
+        # self.send_key_down('w', after_sleep=0.19) # key down 'w'
+        # self.send_key('space', down_time=0.20) # press key 'space'
+        # self.send_key_up('w') # key up 'w'
+        # if not self._follow_route((
+        #         (471.082, -111.762),
+        #         (478.655, -117.904),
+        #         (471.082, -111.762),
+        # ), '跳下第二处高台'):
+        #     return False
 
         self.send_key_down('w', after_sleep=0.5) # key down 'w'
         self.send_key('space', down_time=0.21, after_sleep=1.26) # press key 'space'
         self.send_key_up('w', after_sleep=0.11) # key up 'w'
         self.send_key('s', down_time=0.33, after_sleep=0.21) # press key 's'
         self.send_key('w', down_time=1.77) # press key 'w'
+        self.send_key('s', down_time=1)
+        self.send_key('w', down_time=1)
 
         self.send_key(self.get_custom_key('Float'))
         self.sleep(1)
