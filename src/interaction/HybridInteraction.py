@@ -5,12 +5,12 @@ from ok import PostMessageInteraction
 from src.interaction.mouse_keys import parse_mouse_key
 
 
-class SRInteraction(PostMessageInteraction):
+class HybridInteraction(PostMessageInteraction):
     """PostMessage input with real-cursor positioning for mouse actions."""
 
     _MODIFIER_KEYS = {
-        win32con.VK_LSHIFT: (win32con.VK_SHIFT, 0x2A, False),
-        win32con.VK_RSHIFT: (win32con.VK_SHIFT, 0x36, False),
+        win32con.VK_LSHIFT: (win32con.VK_LSHIFT, 0x2A, False),
+        win32con.VK_RSHIFT: (win32con.VK_RSHIFT, 0x36, False),
         win32con.VK_LCONTROL: (win32con.VK_CONTROL, 0x1D, False),
         win32con.VK_RCONTROL: (win32con.VK_CONTROL, 0x1D, True),
         win32con.VK_LMENU: (win32con.VK_MENU, 0x38, False),
