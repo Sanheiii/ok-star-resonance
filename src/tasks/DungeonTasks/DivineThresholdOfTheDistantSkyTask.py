@@ -165,7 +165,7 @@ class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
         return True
 
     def _follow_route(self, route, state, camera_offset=0):
-        self.info['State'] = state
+        self.info_set('State', state)
         remaining = self.move_to_positions(
             route,
             line_tolerance=1,
@@ -182,11 +182,11 @@ class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
     def _wait_for_combat_end(self, state, time_out=180):
         auto_combat_key = self.get_custom_key('Auto Battle')
         self.send_key(auto_combat_key)
-        self.info['State'] = f'等待进入{state}'
+        self.info_set('State', f'等待进入{state}')
         if not self.wait_in_combat():
             self.log_error(f'{state}没有进入战斗')
             return False
-        self.info['State'] = f'{state}中'
+        self.info_set('State', f'{state}中')
         if not self.wait_out_of_combat(time_out=time_out):
             self.log_error(f'{state}超时')
             return False
@@ -215,7 +215,7 @@ class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
                 camera_offset=-45):
             self.send_key(auto_combat_key)
             return False
-        self.info['State'] = f'{state}漏怪，等待返回起点后脱战'
+        self.info_set('State', f'{state}漏怪，等待返回起点后脱战')
         if not self.wait_out_of_combat(time_out=180):
             self.send_key(auto_combat_key)
             self.log_error(f'{state}返回起点后战斗超时')
@@ -227,7 +227,7 @@ class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
             self.send_key(auto_combat_key)
             return False
 
-        self.info['State'] = f'{state}漏怪清理中'
+        self.info_set('State', f'{state}漏怪清理中')
         combat_finished = self.wait_out_of_combat(time_out=180)
         self.send_key(auto_combat_key)
         if not combat_finished:
@@ -237,14 +237,14 @@ class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
         return True
 
     def _interact(self, state):
-        self.info['State'] = state
+        self.info_set('State', state)
         self.sleep(1)
         self.send_key('f', after_sleep=1)
         self.send_key('w', down_time=0.5, after_sleep=1)
         self.send_key('f',after_sleep=5)
 
     def _skip_boss_animation(self, state):
-        self.info['State'] = state
+        self.info_set('State', state)
         for _ in range(3):
             self.send_key('esc', after_sleep=2)
             self.next_frame()

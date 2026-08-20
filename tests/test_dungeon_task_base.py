@@ -7,6 +7,11 @@ from tasks.DungeonTasks import DungeonTaskBase as dungeon_task_base_module
 from tasks.DungeonTasks.DungeonTaskBase import Difficulty, DungeonTaskBase
 
 
+class _InfoSetTaskMixin:
+    def info_set(self, key, value):
+        self.info[key] = value
+
+
 class _WaitOutOfCombatTask:
     def __init__(self, states):
         self._states = iter(states)
@@ -183,7 +188,7 @@ class TeammateCombatTest(unittest.TestCase):
         )
 
 
-class _EnterTask:
+class _EnterTask(_InfoSetTaskMixin):
     has_normal_difficulty = True
     frame = object()
 
@@ -303,7 +308,7 @@ class PassRateTest(unittest.TestCase):
         self.assertEqual(task.info['Pass Rate'], '0.00%')
 
 
-class _HandleEndTask:
+class _HandleEndTask(_InfoSetTaskMixin):
     def __init__(self, *, quantity=0, target=0, settlement_succeeds=True):
         self.config = {
             'Consumable Use Quantity': quantity,
@@ -568,7 +573,7 @@ class RedeemItemsTest(unittest.TestCase):
         self.assertFalse(task.errors)
 
 
-class _RecoverTask:
+class _RecoverTask(_InfoSetTaskMixin):
     scene_id = 8
 
     def __init__(self):
@@ -635,7 +640,7 @@ class ReturnToInitialStateTest(unittest.TestCase):
             def handle_monthly_card():
                 return False
 
-        class RecoverDungeonTask:
+        class RecoverDungeonTask(_InfoSetTaskMixin):
             scene_id = 8
 
             def __init__(self):
@@ -681,7 +686,7 @@ class ReturnToInitialStateTest(unittest.TestCase):
         self.assertEqual(task.keys, ['x'])
 
 
-class _PickupSpecialRewardTask:
+class _PickupSpecialRewardTask(_InfoSetTaskMixin):
     def __init__(self, entities, move_result=True):
         self.nearby_entities = entities
         self.position = (1, 2, 3)

@@ -91,7 +91,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
             self.log_error(f'等待Boss超时: {self.BOSS_ATTR_ID}')
             return False
 
-        self.info['State'] = '跳过Boss出场动画'
+        self.info_set('State', '跳过Boss出场动画')
         for _ in range(3):
             self.send_key('esc', after_sleep=2)
             self.next_frame()
@@ -106,12 +106,12 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
         if not self.wait_in_combat():
             self.log_error('Boss没有进入战斗')
             return False
-        self.info['State'] = 'Boss战斗中'
+        self.info_set('State', 'Boss战斗中')
         if not self.wait_out_of_combat(time_out=420):
             self.log_error('Boss战斗超时')
             return False
 
-        self.info['State'] = '跳过Boss结算动画'
+        self.info_set('State', '跳过Boss结算动画')
         for _ in range(3):
             self.send_key('esc', after_sleep=2)
             self.next_frame()
@@ -176,7 +176,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
                     self.MASTER_INTERACTION_ATTR_ID,
                     f'交互场景物体 {self.MASTER_INTERACTION_ATTR_ID}'):
                 return False
-            self.info['State'] = '等待大师道中变化'
+            self.info_set('State', '等待大师道中变化')
             self.sleep(3)
 
     @staticmethod
@@ -215,10 +215,10 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
         if not self._use_scene_object(
                 gate_attr_id, f'进入绿门 {gate_attr_id}'):
             return False
-        self.info['State'] = f'等待绿门 {gate_attr_id} 变化'
+        self.info_set('State', f'等待绿门 {gate_attr_id} 变化')
         self.sleep(1)
 
-        self.info['State'] = f'前往绿门 {gate_attr_id} 战斗区域'
+        self.info_set('State', f'前往绿门 {gate_attr_id} 战斗区域')
         if not self.move_to_position(
                 self.position,
                 target_position,
@@ -230,7 +230,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
         if not self.wait_in_combat():
             self.log_error(f'绿门 {gate_attr_id} 没有进入战斗')
             return False
-        self.info['State'] = f'绿门 {gate_attr_id} 战斗中'
+        self.info_set('State', f'绿门 {gate_attr_id} 战斗中')
         if not self.wait_out_of_combat(time_out=180):
             self.log_error(f'绿门 {gate_attr_id} 战斗超时')
             return False
@@ -253,7 +253,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
             return False
 
         self._interact_master_npc(self.MASTER_5026_NPC_ATTR_ID)
-        self.info['State'] = '等待银门 5026 事件'
+        self.info_set('State', '等待银门 5026 事件')
 
         target_entities = self._wait_for_entities(
             self.MASTER_5040_ATTR_ID,
@@ -308,7 +308,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
         if not self.wait_in_combat():
             self.log_error('银门 5026 没有进入战斗')
             return False
-        self.info['State'] = '银门 5026 战斗中'
+        self.info_set('State', '银门 5026 战斗中')
         if not self.wait_out_of_combat(time_out=180):
             self.log_error('银门 5026 战斗超时')
             return False
@@ -338,7 +338,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
             self.send_key('`', after_sleep=1)
 
     def _interact_master_npc(self, npc_attr_id):
-        self.info['State'] = f'交互NPC {npc_attr_id}'
+        self.info_set('State', f'交互NPC {npc_attr_id}')
         self.send_key('f', after_sleep=1)
         self.send_key('w', down_time=0.5, after_sleep=1)
         self.send_key('f', after_sleep=1)
@@ -492,11 +492,11 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
                 npc_position, f'前往NPC {self.MASTER_5022_NPC_ATTR_ID}'):
             return False
 
-        self.info['State'] = f'交互NPC {self.MASTER_5022_NPC_ATTR_ID}'
+        self.info_set('State', f'交互NPC {self.MASTER_5022_NPC_ATTR_ID}')
         self.send_key('f', after_sleep=1)
         self.send_key('w', down_time=0.5, after_sleep=1)
         self.send_key('f', after_sleep=1)
-        self.info['State'] = '等待直到云朵事件超时'
+        self.info_set('State', '等待直到云朵事件超时')
         self.sleep(self.MASTER_FALLBACK_WAIT_TIME)
         return True
 
@@ -515,12 +515,12 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
                 npc_position, f'前往NPC {self.MASTER_5021_NPC_ATTR_ID}'):
             return False
 
-        self.info['State'] = f'交互NPC {self.MASTER_5021_NPC_ATTR_ID}'
+        self.info_set('State', f'交互NPC {self.MASTER_5021_NPC_ATTR_ID}')
         self.send_key('f', after_sleep=1)
         self.send_key('w', down_time=0.5, after_sleep=1)
         self.send_key('f', after_sleep=1)
 
-        self.info['State'] = '前往幻幻花'
+        self.info_set('State', '前往幻幻花')
         if not self.move_to_position(
                 self.position,
                 self.MASTER_5021_POSITION,
@@ -603,7 +603,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
         if not self.wait_in_combat():
             self.log_error(f'怪物没有进入战斗: {monster_attr_id}')
             return False
-        self.info['State'] = f'怪物 {monster_attr_id} 战斗中'
+        self.info_set('State', f'怪物 {monster_attr_id} 战斗中')
         if not self.wait_out_of_combat(time_out=180):
             self.log_error(f'怪物战斗超时: {monster_attr_id}')
             return False
@@ -624,7 +624,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
         return True
 
     def _move_to_entity(self, position, state):
-        self.info['State'] = state
+        self.info_set('State', state)
         if self.move_to_position(
                 self.position,
                 position,

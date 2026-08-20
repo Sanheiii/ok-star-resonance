@@ -79,7 +79,7 @@ class Dungeon0000Task(DungeonTaskBase):
         # ===== 填写区域结束 =====
 
     def _follow_route(self, route, state):
-        self.info['state'] = state
+        self.info_set('State', state)
         remaining = self.move_to_positions(
             route,
             line_tolerance=2,

@@ -70,7 +70,7 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
         if not self._follow_route(
                     ((151.631, 129.405), (159.678, 154.856),), '前往第一处交互点'):
             return False
-        self.info['State'] = '交互并等待机关完成'
+        self.info_set('State', '交互并等待机关完成')
         self.sleep(1)
         self.send_key('space', after_sleep=0.5)
         self.send_key('f')
@@ -94,7 +94,7 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
                 (461.532, 314.801),
         ), '前往第二处交互点'):
             return False
-        self.info['State'] = '交互开启后续路线'
+        self.info_set('State', '交互开启后续路线')
         self.sleep(1)
         self.send_key('f', after_sleep=1)
 
@@ -106,7 +106,7 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
         ), '前往Boss区域'):
             return False
 
-        self.info['State'] = '进入Boss区域'
+        self.info_set('State', '进入Boss区域')
         self.look_at(0)
         self.sleep(1)
         self.look_at(0)
@@ -121,7 +121,7 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
             self.log_error(f'没有检测到Boss: {self.BOSS_ATTR_ID}')
             return False
 
-        self.info['State'] = 'Boss战中'
+        self.info_set('State', 'Boss战中')
         self.send_key(self.get_custom_key('Phantom Dash'))
         # if not self.move_to_position(
         #         self.position,
@@ -139,7 +139,7 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
         return self.handle_end()
 
     def _follow_route(self, route, state, camera_offset=0):
-        self.info['State'] = state
+        self.info_set('State', state)
         remaining = self.move_to_positions(
             route,
             node_tolerance=1,
@@ -154,7 +154,7 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
 
     def _wait_for_combat_end(
             self, state, time_out=180, check_special_reward=True):
-        self.info['State'] = f'{state}战斗中'
+        self.info_set('State', f'{state}战斗中')
         if self.wait_out_of_combat(time_out=time_out):
             self._stop_auto_battle()
             if check_special_reward:
@@ -166,7 +166,7 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
 
     def _wait_for_last_route_combat_end(
             self, state, time_out=180, check_special_reward=True):
-        self.info['State'] = f'{state}战斗中'
+        self.info_set('State', f'{state}战斗中')
         deadline = time.monotonic() + time_out
         while True:
             remaining = deadline - time.monotonic()

@@ -78,7 +78,7 @@ class DesolateGardenTask(DungeonTaskBase):
         if not self._follow_route(
                 ((143.460, 57.670),), '前往水晶区域传送门'):
             return False
-        self.info['State'] = '进入水晶区域'
+        self.info_set('State', '进入水晶区域')
         self.send_key('f')
         self.send_key('w', down_time=0.5, after_sleep=0.5)
         self.send_key('f')
@@ -117,7 +117,7 @@ class DesolateGardenTask(DungeonTaskBase):
         ), '前往Boss区域'):
             return False
 
-        self.info['State'] = '进入Boss区域'
+        self.info_set('State', '进入Boss区域')
         self.send_key('w', down_time=3, after_sleep=3)
 
         for _ in range(3):
@@ -125,7 +125,7 @@ class DesolateGardenTask(DungeonTaskBase):
             self.next_frame()
             if self.find_one('dungeon_scene_icon'):
                 break
-        self.info['State'] = 'Boss战斗中'
+        self.info_set('State', 'Boss战斗中')
 
         self._boss_auto_battle_enabled = False
         while True:
@@ -138,11 +138,11 @@ class DesolateGardenTask(DungeonTaskBase):
             if not self._boss_exists(self.nearby_entities):
                 return self.handle_end()
 
-            self.info['State'] = 'Boss战斗团灭，重新开怪'
+            self.info_set('State', 'Boss战斗团灭，重新开怪')
             self._boss_auto_battle_enabled = False
 
     def _wait_for_boss_combat_end(self, time_out):
-        self.info['State'] = 'Boss战斗中'
+        self.info_set('State', 'Boss战斗中')
         deadline = time.monotonic() + time_out
         special_handled = False
         while True:
@@ -163,7 +163,7 @@ class DesolateGardenTask(DungeonTaskBase):
                     )):
                 special_handled = True
                 self._handle_boss_special()
-                self.info['State'] = 'Boss战斗中'
+                self.info_set('State', 'Boss战斗中')
 
             self.next_frame()
             self.sleep(0.2)
@@ -221,9 +221,9 @@ class DesolateGardenTask(DungeonTaskBase):
                     self.position,
                     unvisited_triggers,
                 )
-                self.info['State'] = (
+                self.info_set('State', (
                     f'Boss特殊机制：前往触发点 {trigger_uuid}'
-                )
+                ))
                 while not self.move_to_position(
                         self.position,
                         trigger['position'],
@@ -258,7 +258,7 @@ class DesolateGardenTask(DungeonTaskBase):
                 self.position,
                 unvisited_targets,
             )
-            self.info['State'] = f'Boss特殊机制：前往目标 {target_uuid}'
+            self.info_set('State', f'Boss特殊机制：前往目标 {target_uuid}')
             arrived = False
             while True:
                 movement_target = self._position_beyond(
@@ -285,7 +285,7 @@ class DesolateGardenTask(DungeonTaskBase):
                 self.next_frame()
             visited_target_uuids.add(target_uuid)
             if arrived:
-                self.info['State'] = f'Boss特殊机制：目标 {target_uuid} 等待3秒'
+                self.info_set('State', f'Boss特殊机制：目标 {target_uuid} 等待3秒')
                 self.sleep(2)
 
     def _has_special_targets(self):
@@ -330,7 +330,7 @@ class DesolateGardenTask(DungeonTaskBase):
         if not self._follow_route((crystal_position,), f'前往{name}'):
             return False
 
-        self.info['State'] = f'激活{name}'
+        self.info_set('State', f'激活{name}')
         self.send_key('f', after_sleep=1)
         self.send_key('w', down_time=0.5, after_sleep=1)
         self.send_key('f', after_sleep=1)
@@ -354,7 +354,7 @@ class DesolateGardenTask(DungeonTaskBase):
         return True
 
     def _follow_route(self, route, state):
-        self.info['State'] = state
+        self.info_set('State', state)
         # self._move_mouse_relative(0, 1800)
         remaining = self.move_to_positions(
             route,
@@ -371,7 +371,7 @@ class DesolateGardenTask(DungeonTaskBase):
 
     def _wait_for_combat_end(
             self, state, time_out=180, check_special_reward=True):
-        self.info['State'] = f'{state}战斗中'
+        self.info_set('State', f'{state}战斗中')
         if self.wait_out_of_combat(time_out=time_out):
             self._stop_auto_battle()
             if check_special_reward:

@@ -3,9 +3,16 @@ import unittest
 from src.tasks.DungeonTasks.DelusionFlowingMoonWildernessTask import DelusionFlowingMoonWildernessTask
 
 
+class _InfoSetTaskMixin:
+    def info_set(self, key, value):
+        if not hasattr(self, 'info'):
+            self.info = {}
+        self.info[key] = value
+
+
 class Dungeon1722TaskTest(unittest.TestCase):
     def test_wait_for_entity_position_filters_type_and_uses_ten_seconds(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             ENTITY_WAIT_TIMEOUT = 10
             nearby_entities = {
                 1: {'attr_id': 5023, 'entity_type': 1, 'position': (1, 2, 3)},
@@ -25,7 +32,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         self.assertEqual(task.time_out, 10)
 
     def test_wait_for_entity_position_returns_none_after_timeout(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             ENTITY_WAIT_TIMEOUT = 10
             nearby_entities = {}
 
@@ -39,7 +46,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         )
 
     def test_master_route_interacts_with_5020_before_retrying(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             COMBAT_ROUNDS = DelusionFlowingMoonWildernessTask.COMBAT_ROUNDS
             BOSS_ENTRANCE_ATTR_ID = DelusionFlowingMoonWildernessTask.BOSS_ENTRANCE_ATTR_ID
             MASTER_INTERACTION_ATTR_ID = DelusionFlowingMoonWildernessTask.MASTER_INTERACTION_ATTR_ID
@@ -100,7 +107,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         self.assertEqual(task.events, ['wait', 'sleep', 'find', 'use', 'sleep'])
 
     def test_master_route_clears_a_nearby_combat_round_first(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             COMBAT_ROUNDS = DelusionFlowingMoonWildernessTask.COMBAT_ROUNDS
             BOSS_ENTRANCE_ATTR_ID = DelusionFlowingMoonWildernessTask.BOSS_ENTRANCE_ATTR_ID
             MASTER_INTERACTION_ATTR_ID = DelusionFlowingMoonWildernessTask.MASTER_INTERACTION_ATTR_ID
@@ -165,7 +172,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         self.assertEqual(task.interactions, [])
 
     def test_master_route_continues_after_special_route(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             BOSS_ENTRANCE_ATTR_ID = 5028
             MASTER_INTERACTION_ATTR_ID = 5020
             _find_nearby_entity_position = staticmethod(
@@ -203,7 +210,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         self.assertEqual(task.wait_calls, 1)
 
     def test_master_fallback_enters_npc_waits_and_waits_for_exit(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             MASTER_FALLBACK_ENTRY_ATTR_IDS = (5022, 5021)
             MASTER_5022_NPC_ATTR_ID = 140155
             MASTER_5021_NPC_ATTR_ID = 140154
@@ -269,7 +276,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         ])
 
     def test_master_5021_route_uses_npc_140154_in_separate_branch(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             MASTER_5021_NPC_ATTR_ID = 140154
             MASTER_5021_POSITION = (-13.169, -218.602)
             MASTER_5021_LOOP_TIMEOUT = 90
@@ -356,7 +363,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         )
 
     def test_master_exit_prefers_5028_without_interacting_with_5029(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             BOSS_ENTRANCE_ATTR_ID = 5028
             EXIT_SCENE_OBJECT_ATTR_ID = 5029
             ENTITY_WAIT_TIMEOUT = 10
@@ -408,7 +415,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         self.assertEqual(task.calls, [('wait_until', 10)])
 
     def test_master_green_route_waits_then_fights_at_configured_position(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             MASTER_GREEN_GATES = DelusionFlowingMoonWildernessTask.MASTER_GREEN_GATES
 
             def __init__(self):
@@ -468,7 +475,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         )
 
     def test_master_5026_route_activates_all_5040_targets_before_combat(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             MASTER_5026_NPC_ATTR_ID = 140156
             MASTER_5040_ATTR_ID = 5040
             MASTER_5026_WAIT_TIME = 5
@@ -543,7 +550,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         )
 
     def test_master_5027_route_stops_when_exit_appears(self):
-        class Task:
+        class Task(_InfoSetTaskMixin):
             MASTER_5027_NPC_ATTR_ID = 140157
             BOSS_ENTRANCE_ATTR_ID = 5028
             EXIT_SCENE_OBJECT_ATTR_ID = 5029

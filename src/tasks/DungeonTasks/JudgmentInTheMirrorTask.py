@@ -40,7 +40,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         self.investigate((-29.350, -7.840))
 
         # 等人机去找怪打再动
-        self.info['State'] = '等待人机往前冲'
+        self.info_set('State', '等待人机往前冲')
         self.sleep(4)
         # 移动到右侧桩怪背后
         self.move_to_position(self.position,(-9.190, -19.024), enable_sprint = True)
@@ -51,7 +51,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             (34018, (-9.000, 15.600)),
             (34019, (18.000, 0.000)),
         )
-        self.info['State'] = '大广场战斗中'
+        self.info_set('State', '大广场战斗中')
         if not self._clear_monsters(monsters):
             self.log_error('广场三个桩超时')
             return False
@@ -63,7 +63,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         self._finish_combat()
         self.sleep(3)
 
-        self.info['State'] = '第一次跳台'
+        self.info_set('State', '第一次跳台')
         # 二段跳收起武器
         self.send_key('space', after_sleep=0.2)
         self.send_key('space', after_sleep=2)
@@ -73,12 +73,12 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             return False
 
         # 在第一个浮空岛战斗
-        self.info['State'] = '第一个小浮空岛战斗中'
+        self.info_set('State', '第一个小浮空岛战斗中')
         if not self._complete_combat('第一个小浮空岛战斗'):
             self.log_error('第一个小浮空岛战斗超时')
             return False
 
-        self.info['State'] = '第二次跳台'
+        self.info_set('State', '第二次跳台')
         # 二段跳收起武器
         self.send_key('space', after_sleep=0.2)
         self.send_key('space', after_sleep=2)
@@ -95,13 +95,13 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
 
 
         # 在第二个浮空岛战斗
-        self.info['State'] = '第二个小浮空岛战斗中'
+        self.info_set('State', '第二个小浮空岛战斗中')
         if not self._complete_combat('第二个小浮空岛战斗'):
             self.log_error('第二个小浮空岛战斗超时')
             return False
 
         if self.difficulty is Difficulty.MASTER1:
-            self.info['State'] = '第三次跳台'
+            self.info_set('State', '第三次跳台')
             self.send_key('space', after_sleep=0.2)
             self.send_key('space', after_sleep=2)
             jump_succeeded = self._jump_to_area4()
@@ -118,7 +118,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             if not self._complete_combat('第三个小浮空岛战斗'):
                 self.log_error('第三个小浮空岛战斗超时')
                 return False
-            self.info['State'] = '前往Boss机关'
+            self.info_set('State', '前往Boss机关')
             if not self.move_to_position(
                     self.position,
                     (124.370, -5.790),
@@ -130,7 +130,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             self.send_key('f')
 
         # Boss战
-        self.info['State'] = '道中清完了，等待Boss动画'
+        self.info_set('State', '道中清完了，等待Boss动画')
         self.sleep(7)
         nearby_entities = self.nearby_entities
         boss_position = next((
@@ -142,7 +142,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         if boss_position is None:
             self.log_error('没有检测到Boss')
             return False
-        self.info['State'] = 'Boss战中'
+        self.info_set('State', 'Boss战中')
         if not self.move_to_position(
                 self.position,
                 boss_position,
@@ -166,7 +166,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         self.pickup_special_reward(1207)
 
     def _complete_combat(self, state, time_out=180):
-        self.info['State'] = state
+        self.info_set('State', state)
         self._start_combat()
         if not self.wait_in_combat():
             self.send_key(self.get_custom_key('Auto Battle'))

@@ -200,7 +200,7 @@ class DungeonTaskBase(SRTask):
         )
 
     def investigate(self, pos=None):
-        self.info['State'] = '准备交互开本仪器'
+        self.info_set('State', '准备交互开本仪器')
         self.sleep(2)
         current_position = self.position
         if current_position is None:
@@ -218,15 +218,15 @@ class DungeonTaskBase(SRTask):
             if pos is None:
                 self.log_error('没有找到开本仪器')
                 return False
-        self.info['State'] = f'前往开本仪器: {pos}'
+        self.info_set('State', f'前往开本仪器: {pos}')
         self.move_to_position(current_position, pos, target_tolerance=1.5)
-        self.info['State'] = f'交互开本仪器'
+        self.info_set('State', f'交互开本仪器')
         self.sleep(2)
         self.send_key('f')
-        self.info['State'] = f'点击开本'
+        self.info_set('State', f'点击开本')
         self.sleep(1)
         self.click(0.632,0.857)
-        self.info['State'] = f'等待开本读秒'
+        self.info_set('State', f'等待开本读秒')
         self.sleep(8)
 
     def pickup_special_reward(self, entity_id):
@@ -247,7 +247,7 @@ class DungeonTaskBase(SRTask):
             if reward_position is None:
                 return False
 
-            self.info['State'] = '前往特殊奖励'
+            self.info_set('State', '前往特殊奖励')
             if not self.move_to_position(
                     self.position,
                     reward_position,
@@ -256,7 +256,7 @@ class DungeonTaskBase(SRTask):
                 return False
 
             self.sleep(0.5)
-            self.info['State'] = '拾取特殊奖励'
+            self.info_set('State', '拾取特殊奖励')
             self.send_key('f', after_sleep=0.5)
             self.info['Special Reward Count'] = (
                 self.info.get('Special Reward Count', 0) + 1
@@ -268,9 +268,9 @@ class DungeonTaskBase(SRTask):
 
     def enter(self, difficulty):
         # 交互副本入口
-        self.info['State'] = '等待副本入口按钮'
+        self.info_set('State', '等待副本入口按钮')
         if box:=self.wait_feature('dungeon_entrance', threshold=0.7):
-            self.info['State'] = '点击交互副本入口'
+            self.info_set('State', '点击交互副本入口')
             self.send_key_down('lalt')
             self.sleep(0.1)
             self.click(box)
@@ -281,7 +281,7 @@ class DungeonTaskBase(SRTask):
             self.log_error('没有找到副本入口')
             return False
         # 选择难度
-        self.info['State'] = '等待选择难度'
+        self.info_set('State', '等待选择难度')
         if self.wait_feature('dungeon_icon'):
             if difficulty is Difficulty.NORMAL:
                 if not self.has_normal_difficulty:
@@ -293,7 +293,7 @@ class DungeonTaskBase(SRTask):
             elif difficulty in (Difficulty.MASTER1, Difficulty.MASTER6):
                 self.click(0.092, 0.344 if self.has_normal_difficulty else 0.245)
                 self.sleep(1)
-                self.info['State'] = '选择大师难度'
+                self.info_set('State', '选择大师难度')
                 self.scroll(self.width_of_screen(0.370),self.height_of_screen(0.922),-3000)
                 self.sleep(1)
                 pass
@@ -308,22 +308,22 @@ class DungeonTaskBase(SRTask):
         else:
             return False
         # 选择单双人模式
-        self.info['State'] = '选择单双人模式'
+        self.info_set('State', '选择单双人模式')
         self.click(0.812,0.859)
         self.sleep(1)
         # 点击进入副本
         while True:
-            self.info['State'] = '点击进入副本'
+            self.info_set('State', '点击进入副本')
             self.click(0.933,0.920)
             self.sleep(1)
             if (not DungeonTaskBase.get_dungeon_setting(
                     self, 'Reject Frost Mage Teammates')
                     or not self.find_one('teammate_frost_mage', box=self.box_of_screen(0.236,0.38,0.931,0.469))):
                 break
-            self.info['State'] = '拒绝冰魔导师队友'
+            self.info_set('State', '拒绝冰魔导师队友')
             self.click(0.902,0.922)
             self.sleep(1)
-            self.info['State'] = '等待进入副本按钮'
+            self.info_set('State', '等待进入副本按钮')
             if not self.wait_feature('dungeon_icon'):
                 self.log_error('拒绝冰魔导师队友后没有找到进入副本按钮')
                 return False
@@ -331,21 +331,21 @@ class DungeonTaskBase(SRTask):
         if not self.wait_feature('loading'):
             self.log_error('没有找到加载页面')
             return False
-        self.info['State'] = '等待进本加载'
+        self.info_set('State', '等待进本加载')
         while self.frame is None or self.find_one('loading'):
             self.sleep(1)
             self.next_frame()
-        self.info['State'] = '加载完成'
+        self.info_set('State', '加载完成')
         if not self.wait_feature('dungeon_scene_icon'):
             self.log_error('加载完成后没有找到副本UI')
             return False
         self.info['Entry Count'] += 1
-        self.info['State'] = '已进入副本'
+        self.info_set('State', '已进入副本')
         return True
 
     def handle_end(self):
         self._use_consumable_before_settlement()
-        self.info['State'] = 'Boss战结束，等待结算'
+        self.info_set('State', 'Boss战结束，等待结算')
         if not self.wait_click_feature('next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92), time_out=30, raise_if_not_found=False):
             self.log_error('Boss战结束后没等到结算')
             self._skip_consumable_once = True
@@ -353,11 +353,11 @@ class DungeonTaskBase(SRTask):
         # 点击离开
         self.wait_click_feature('exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97), time_out=5, raise_if_not_found=False)
         self.wait_feature('loading')
-        self.info['State'] = '等待出本加载'
+        self.info_set('State', '等待出本加载')
         while self.find_one('loading'):
             self.sleep(1)
             self.next_frame()
-        self.info['State'] = '本次副本成功'
+        self.info_set('State', '本次副本成功')
         return True
 
     def record_successful_clear(self):
@@ -387,7 +387,7 @@ class DungeonTaskBase(SRTask):
         return True
 
     def return_to_initial_state(self):
-        self.info['State'] = '副本流程出现错误，尝试退回状态'
+        self.info_set('State', '副本流程出现错误，尝试退回状态')
         # 在主城不截图
         if self.scene_id != 8:
             self.screenshot('dungeon/recovery_error')

@@ -78,7 +78,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
             self.log_error(f'第一处低重力装置最后一段失败')
             return False
         self.send_key('w', down_time=0.2, after_sleep=1)
-        self.info['State'] = '借助低重力装置前往楼上'
+        self.info_set('State', '借助低重力装置前往楼上')
         self.send_key('space', after_sleep=2)
         self.send_key('space', after_sleep=2)
         self.send_key('w', down_time=2, after_sleep=1)
@@ -166,7 +166,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
                 return False
             self.send_key('w', down_time=0.3, after_sleep=1)
 
-            self.info['State'] = '借助低重力装置前往大师楼上事件区域'
+            self.info_set('State', '借助低重力装置前往大师楼上事件区域')
             self.send_key('space', after_sleep=2)
             self.send_key('space', after_sleep=2)
             self.send_key('w', down_time=2, after_sleep=1)
@@ -257,7 +257,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         if not self._jump_to_boss_platform():
             return False
 
-        self.info['State'] = '跳过Boss出场动画'
+        self.info_set('State', '跳过Boss出场动画')
         for _ in range(3):
             self.send_key('esc', after_sleep=2)
             self.next_frame()
@@ -274,7 +274,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
             self.log_error('Boss没有进入战斗')
             return False
 
-        self.info['State'] = 'Boss战斗中'
+        self.info_set('State', 'Boss战斗中')
 
         self.sleep(35)
         self.move_to_position(self.position, (565.530, -135.679))
@@ -282,7 +282,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         if not self._wait_for_combat_end('Boss战', time_out=420):
             return False
 
-        self.info['State'] = '跳过Boss结算动画'
+        self.info_set('State', '跳过Boss结算动画')
         for _ in range(3):
             self.send_key('esc', after_sleep=2)
             self.next_frame()
@@ -292,7 +292,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         return self.handle_end()
 
     def _follow_route(self, route, state, enable_sprint = True):
-        self.info['State'] = state
+        self.info_set('State', state)
         remaining = self.move_to_positions(
             route,
             node_tolerance=1,
@@ -306,11 +306,11 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         return True
 
     def _wait_for_combat_end(self, state, time_out=180):
-        self.info['State'] = f'等待进入{state}'
+        self.info_set('State', f'等待进入{state}')
         if not self.wait_in_combat():
             self.log_error(f'{state}没有进入战斗')
             return False
-        self.info['State'] = f'{state}中'
+        self.info_set('State', f'{state}中')
         if not self.wait_out_of_combat(time_out=time_out):
             self.log_error(f'{state}超时')
             return False
@@ -319,13 +319,13 @@ class DelusionShadowFortressTask(DungeonTaskBase):
     def _clear_corruption(self, route, state):
         if not self._follow_route(route, f'前往{state}'):
             return False
-        self.info['State'] = state
+        self.info_set('State', state)
         self.sleep(0.5)
         self.send_key('f', after_sleep=1)
         return True
 
     def _jump_over_threshold(self, camera_rotation, double_jump = False):
-        self.info['State'] = '跳过第一处门槛'
+        self.info_set('State', '跳过第一处门槛')
         self.look_at(camera_rotation)
         try:
             self.send_key_down('w', after_sleep=1)
@@ -338,7 +338,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         return True
 
     def _wait_until_below_height(self, height):
-        self.info['State'] = f'等待下落至Y坐标低于{height}'
+        self.info_set('State', f'等待下落至Y坐标低于{height}')
 
         def is_below_height():
             position = self.position
@@ -350,7 +350,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         return False
 
     def _jump_floating_platform(self):
-        self.info['State'] = '跳道中浮空平台'
+        self.info_set('State', '跳道中浮空平台')
         self.send_key('space', after_sleep=0.2)
         self.send_key('space', after_sleep=2)
 
@@ -361,7 +361,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         self.send_key('w', 2, after_sleep=2)
         self.rotate_camera(7.6)
 
-        self.info['State'] = '跳过浮空平台'
+        self.info_set('State', '跳过浮空平台')
         try:
             self.send_key_down('w', after_sleep=0.5)
             self.send_key('space', down_time=0.17, after_sleep=0.28)
@@ -378,7 +378,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         start_position = (479.790, -119.706)
         if not self._follow_route((start_position,), '前往第二处跳楼点'):
             return False
-        self.info['State'] = '跳过第二处高台前门槛'
+        self.info_set('State', '跳过第二处高台前门槛')
         self.sleep(1)
         self._look_at_twice(315)
 
@@ -412,7 +412,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         return True
 
     def _jump_to_boss_platform(self):
-        self.info['State'] = '跳平台前往Boss房'
+        self.info_set('State', '跳平台前往Boss房')
 
         # 跳楼重置位置
         self.move_to_position(self.position, (480.286, -114.664))
