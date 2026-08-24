@@ -1,4 +1,4 @@
-﻿#
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
@@ -156,70 +156,70 @@ msgstr "连点技能"
 msgid "Auto-cast skills sequentially."
 msgstr "按顺序连点技能"
 
-msgid  "Spam Interval (s)"
+msgid "Spam Interval (s)"
 msgstr "连点间隔（秒）"
 
-msgid  "Enable Basic Attack"
+msgid "Enable Basic Attack"
 msgstr "启用普通攻击"
 
 msgid "Only When Auto Combat Is Enabled"
 msgstr "仅在开启自动战斗后启用"
 
-msgid  "Enable Skill 1"
+msgid "Enable Skill 1"
 msgstr "启用特殊攻击"
 
-msgid  "Enable Skill 2"
+msgid "Enable Skill 2"
 msgstr "启用技能2"
 
-msgid  "Enable Skill 3"
+msgid "Enable Skill 3"
 msgstr "启用技能3"
 
-msgid  "Enable Skill 4"
+msgid "Enable Skill 4"
 msgstr "启用技能4"
 
-msgid  "Enable Skill 5"
+msgid "Enable Skill 5"
 msgstr "启用技能5"
 
-msgid  "Enable Ult"
+msgid "Enable Ult"
 msgstr "启用终极技能"
 
-msgid  "Enable Imagine Z"
+msgid "Enable Imagine Z"
 msgstr "启用战斗幻想Z"
 
-msgid  "Enable Imagine X"
+msgid "Enable Imagine X"
 msgstr "启用战斗幻想X"
 
-msgid  "Auto Revive"
+msgid "Auto Revive"
 msgstr "复活"
 
-msgid  "Automatically interacts with the revive prompt."
+msgid "Automatically interacts with the revive prompt."
 msgstr "自动点击复活提示"
 
-msgid  "Allow Respawn to Base"
+msgid "Allow Respawn to Base"
 msgstr "允许复活点复活"
 
-msgid  "Use Revive Bean"
+msgid "Use Revive Bean"
 msgstr "使用复活糖豆"
 
-msgid  "Party Auto-Acceptor"
+msgid "Party Auto-Acceptor"
 msgstr "自动组队"
 
-msgid  "Automates the acceptance party requests and invitations."
+msgid "Automates the acceptance party requests and invitations."
 msgstr "自动接受组队邀请和入队申请"
 
-msgid  "Auto-Confirm Mission Entry"
+msgid "Auto-Confirm Mission Entry"
 msgstr "自动确认进入"
 
-msgid  "Automatically clicks the confirmation button when a mission or dungeon entry prompt appears."
+msgid "Automatically clicks the confirmation button when a mission or dungeon entry prompt appears."
 msgstr "弹出确认进入副本时自动点击确认按钮"
 
-msgid  "Auto Guild Hunt"
+msgid "Auto Guild Hunt"
 msgstr "协会狩猎"
 
-msgid  "Auto-accept invites and assist in Guild Hunts."
+msgid "Auto-accept invites and assist in Guild Hunts."
 msgstr "自动接受其他玩家的邀请并帮助他协会狩猎 "
 
-msgid  "Entry Count"
+msgid "Entry Count"
 msgstr "进入次数"
 
 msgid "Purchase Items"
@@ -255,22 +255,22 @@ msgstr "每通关多少次购买商品"
 msgid "Purchase Item Index"
 msgstr "购买第几个商品"
 
-msgid  "I'm Tank"
+msgid "I'm Tank"
 msgstr "我是T"
 
-msgid  "Combat Wait Time"
+msgid "Combat Wait Time"
 msgstr "开战延时"
 
-msgid  "MIDI Player"
+msgid "MIDI Player"
 msgstr "MIDI 播放器"
 
-msgid  "Plays MIDI files using in-game instruments."
+msgid "Plays MIDI files using in-game instruments."
 msgstr "使用游戏内乐器演奏 MIDI 文件"
 
-msgid  "MIDI File"
+msgid "MIDI File"
 msgstr "MIDI 文件"
 
-msgid  "No MIDI files found."
+msgid "No MIDI files found."
 msgstr "没有 MIDI 文件"
 
 msgid "MIDI Folder"
@@ -720,8 +720,32 @@ msgstr "实体详情"
 msgid "Copy XZ"
 msgstr "复制 XZ"
 
-msgid "UUID: {uuid}\nUID: {uid}\nType: {type} ({type_id})\nAttr ID: {attr_id}\nSequence: {sequence}\nXZ: {x}, {z}\nY: {y}\nEntity facing: {facing}\nRelative direction: {direction}\nDistance: {distance}\nFlags: {flags}\nUpdated at: {updated_at}"
-msgstr "UUID：{uuid}\nUID：{uid}\n类型：{type} ({type_id})\nAttr ID：{attr_id}\n序号：{sequence}\nXZ：{x}, {z}\nY：{y}\n实体朝向：{facing}\n相对方向：{direction}\n距离：{distance}\n标记：{flags}\n更新时间：{updated_at}"
+msgid ""
+"UUID: {uuid}\n"
+"UID: {uid}\n"
+"Type: {type} ({type_id})\n"
+"Attr ID: {attr_id}\n"
+"Sequence: {sequence}\n"
+"XZ: {x}, {z}\n"
+"Y: {y}\n"
+"Entity facing: {facing}\n"
+"Relative direction: {direction}\n"
+"Distance: {distance}\n"
+"Flags: {flags}\n"
+"Updated at: {updated_at}"
+msgstr ""
+"UUID：{uuid}\n"
+"UID：{uid}\n"
+"类型：{type} ({type_id})\n"
+"Attr ID：{attr_id}\n"
+"序号：{sequence}\n"
+"XZ：{x}, {z}\n"
+"Y：{y}\n"
+"实体朝向：{facing}\n"
+"相对方向：{direction}\n"
+"距离：{distance}\n"
+"标记：{flags}\n"
+"更新时间：{updated_at}"
 
 msgid "State"
 msgstr "状态"
@@ -764,3 +788,60 @@ msgstr "困难"
 
 msgid "Master 1"
 msgstr "大师1"
+
+msgid "Dissonance S4 Combat Assist"
+msgstr "狂音S4战斗辅助"
+
+msgid "Automatically plays whack-a-mole with the Dissonance Critical Acclaim build. Requires the packet capture tool to be enabled."
+msgstr "自动进行狂音临界喝彩流的打地鼠。需要开启抓包工具。"
+
+msgid "Capture Status"
+msgstr "抓包状态"
+
+msgid "Waiting for packet capture"
+msgstr "等待启动抓包"
+
+msgid "Monitoring"
+msgstr "监控中"
+
+msgid "Harmonic Anthem"
+msgstr "聚合乐章"
+
+msgid "Flame Rhapsody"
+msgstr "烈焰狂想"
+
+msgid "Heroic Anthem"
+msgstr "鸣奏·英勇乐章"
+
+msgid "Center Stage"
+msgstr "万众瞩目"
+
+msgid "Ascension: Infinite Rhapsody"
+msgstr "升格·无限狂想"
+
+msgid "Amplified Beat Free"
+msgstr "增幅节拍免费状态"
+
+msgid "Flame Rhapsody Free"
+msgstr "烈焰狂想免费状态"
+
+msgid "Harmonic Anthem Charges"
+msgstr "聚合乐章充能次数"
+
+msgid "Performance Energy"
+msgstr "演奏能量"
+
+msgid "Performance Passion"
+msgstr "演奏热情"
+
+msgid "Cooldown Acceleration"
+msgstr "冷却加速"
+
+msgid "Ready"
+msgstr "就绪"
+
+msgid "Yes"
+msgstr "是"
+
+msgid "No"
+msgstr "否"

@@ -63,10 +63,70 @@ message AttrCollection {
   repeated Attr attrs = 2 [json_name = "attrs"];
 }
 
+message TempAttr {
+  optional int32 id = 1 [json_name = "id"];
+  optional int32 value = 2 [json_name = "value"];
+}
+
+message TempAttrCollection {
+  repeated TempAttr attrs = 1 [json_name = "attrs"];
+}
+
+message BuffInfo {
+  optional int32 buffUuid = 1 [json_name = "buffUuid"];
+  optional int32 baseId = 2 [json_name = "baseId"];
+  optional int32 level = 3 [json_name = "level"];
+  optional int64 hostUuid = 4 [json_name = "hostUuid"];
+  optional int64 createTime = 6 [json_name = "createTime"];
+  optional int64 fireUuid = 7 [json_name = "fireUuid"];
+  optional int32 layer = 8 [json_name = "layer"];
+  optional int32 count = 10 [json_name = "count"];
+  optional int32 duration = 11 [json_name = "duration"];
+}
+
+message BuffInfoSync {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  repeated BuffInfo buffInfos = 2 [json_name = "buffInfos"];
+}
+
+message BuffChange {
+  optional int32 layer = 1 [json_name = "layer"];
+  optional int32 duration = 2 [json_name = "duration"];
+  optional int64 createTime = 3 [json_name = "createTime"];
+}
+
+message BuffEffectLogicInfo {
+  optional int32 effectType = 1 [json_name = "effectType"];
+  optional bytes rawData = 2 [json_name = "rawData"];
+}
+
+message BuffEffect {
+  optional int32 type = 1 [json_name = "type"];
+  optional int32 buffUuid = 2 [json_name = "buffUuid"];
+  optional int64 hostUuid = 3 [json_name = "hostUuid"];
+  repeated BuffEffectLogicInfo logicEffect = 5 [json_name = "logicEffect"];
+}
+
+message BuffEffectSync {
+  optional int64 uuid = 1 [json_name = "uuid"];
+  repeated BuffEffect buffEffects = 2 [json_name = "buffEffects"];
+}
+
+message SkillCd {
+  optional int32 skillLevelId = 1 [json_name = "skillLevelId"];
+  optional int64 beginTime = 2 [json_name = "beginTime"];
+  optional int32 duration = 3 [json_name = "duration"];
+  optional int32 skillCdType = 4 [json_name = "skillCdType"];
+  optional int32 validCdTime = 5 [json_name = "validCdTime"];
+}
+
 message Entity {
   optional int64 uuid = 1 [json_name = "uuid"];
   optional int32 entType = 2 [json_name = "entType"];
   optional AttrCollection attrs = 3 [json_name = "attrs"];
+  optional TempAttrCollection tempAttrs = 4 [json_name = "tempAttrs"];
+  optional BuffInfoSync buffInfos = 7 [json_name = "buffInfos"];
+  optional BuffEffectSync buffEffect = 8 [json_name = "buffEffect"];
 }
 
 enum EDisappearType {
@@ -98,11 +158,14 @@ message EnterSceneInfo {
 message AoiSyncDelta {
   optional int64 uuid = 1 [json_name = "uuid"];
   optional AttrCollection attrs = 2 [json_name = "attrs"];
+  optional TempAttrCollection tempAttrs = 3 [json_name = "tempAttrs"];
+  optional bytes buffEffect = 10 [json_name = "buffEffect"];
 }
 
 message AoiSyncToMeDelta {
   optional AoiSyncDelta baseDelta = 1 [json_name = "baseDelta"];
   repeated int64 syncHateIds = 2 [json_name = "syncHateIds"];
+  repeated SkillCd syncSkillCDs = 3 [json_name = "syncSkillCDs"];
   optional int64 uuid = 5 [json_name = "uuid"];
 }
 

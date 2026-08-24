@@ -141,6 +141,42 @@ class SRTaskBase(BaseTask):
         return og.packet_capture_data.get_world()[3]
 
     @property
+    def skill_cooldowns(self):
+        return og.packet_capture_data.get_skill_cooldowns()
+
+    @property
+    def player_attributes(self):
+        return og.packet_capture_data.get_player_attributes()
+
+    def get_player_attribute(self, attr_id, default=0):
+        return og.packet_capture_data.get_player_attribute(attr_id, default)
+
+    @property
+    def fight_resources(self):
+        return og.packet_capture_data.get_fight_resources()
+
+    @property
+    def fight_resource_layout(self):
+        return og.packet_capture_data.get_fight_resource_layout()
+
+    def set_fight_resource_layout(self, layout):
+        tool = self.packet_capture_tool
+        if tool is None:
+            return False
+        setter = getattr(tool, "set_fight_resource_layout", None)
+        return bool(setter and setter(layout))
+
+    @property
+    def temp_attributes(self):
+        return og.packet_capture_data.get_temp_attributes()
+
+    def get_skill_enhancement(self, enhancement_id):
+        return og.packet_capture_data.get_skill_enhancement(enhancement_id)
+
+    def get_entity_buffs(self, entity_uuid=None):
+        return og.packet_capture_data.get_entity_buffs(entity_uuid)
+
+    @property
     def in_combat(self):
         """Return 0 out of combat, 1 in combat, or ``None`` before first sync."""
         return og.packet_capture_data.get_combat_state() or og.packet_capture_data.get_actor_state() in [ActorState.DEAD, ActorState.RESURRECTION, ActorState.SKILL]

@@ -39,6 +39,28 @@ ATTR_COMBAT_STATE = 104
 ATTR_ACTOR_STATE = 11
 ATTR_CURRENT_HP = 0x2C2E
 ATTR_MAX_HP = 0x2C38
+ATTR_PROFESSION_ID = 0xDC
+ATTR_FIGHT_RESOURCE_IDS = 0xC351
+ATTR_FIGHT_RESOURCES = 0xC352
+ATTR_SKILL_CD = 0x2DE6
+ATTR_SKILL_CD_PCT = 0x2DF0
+ATTR_CD_ACCELERATE_PCT = 0x2EB8
+# Integer attributes identified by resonance-logs-cn. Special structured
+# payloads such as position and fight-resource arrays are intentionally absent.
+KNOWN_PLAYER_INTEGER_ATTR_IDS = {
+    0x01, 0x0A, 0x0B, 0x1E, 0x32, 0x33, 0x35, 0x46, 0x47, 0x5B,
+    0x64, 0x65, 0x67, 0x68, 0x6A, 0x6C, 0x6F, 0x71, 0x72, 0x74,
+    0x76, 0x78, 0x79, 0xB6, ATTR_PROFESSION_ID, 0xE2, 0xF9, 0x105, 0x106,
+    0x107, 0x108, 0x226, 0x228, 0x22A, 0x22D, 0x2710, 0x272E,
+    0x274C, 0x2B66, 0x2B7A, 0x2B84, 0x2B8E, 0x2C2E, 0x2C38,
+    0x2C39, 0x2C3C, 0x2C3D, 0x2C42, 0x2C43, 0x2C46, 0x2CB0,
+    0x2DC8, 0x2DD2, ATTR_SKILL_CD, ATTR_SKILL_CD_PCT,
+    ATTR_CD_ACCELERATE_PCT, 0x3372, 0x3373, 0x3374, 0x64696D,
+    0x646D6C, 0xEA92, 0x543CD3C6,
+}
+BUFF_EVENT_REMOVE = 2
+BUFF_EFFECT_ADD = 18
+BUFF_EFFECT_CHANGE = 19
 
 
 class ActorState(IntEnum):
@@ -110,6 +132,40 @@ def _decode_varint(data):
     return None
 
 
+def _decode_varints(data):
+    """Decode the packed-varint arrays used by fight-resource attributes."""
+    # rawData contains a tiny protobuf message whose field 1 is a packed
+    # repeated int64: 0x0a, byte length, then the packed values.
+    if not data or data[0] != 0x0A:
+        return None
+    length = _decode_varint(data[1:])
+    if length is None:
+        return None
+    length_size = 1
+    while 1 + length_size <= len(data) and data[length_size] & 0x80:
+        length_size += 1
+    start = 1 + length_size
+    if start + length > len(data):
+        return None
+    data = data[start:start + length]
+    values = []
+    offset = 0
+    while offset < len(data):
+        value = 0
+        for shift in range(0, 70, 7):
+            byte = data[offset]
+            offset += 1
+            value |= (byte & 0x7F) << shift
+            if byte < 0x80:
+                values.append(value)
+                break
+            if offset >= len(data):
+                return None
+        else:
+            return None
+    return values
+
+
 @dataclass
 class _TcpStream:
     next_sequence: int | None = None
@@ -175,6 +231,12 @@ class GamePacketParser:
         self.combat_state_revision = 0
         self.actor_state = None
         self.actor_state_revision = 0
+        self.skill_cooldowns = {}
+        self.player_attributes = {}
+        self.fight_resource_ids = []
+        self.fight_resources = {}
+        self.temp_attributes = {}
+        self.monitor_revision = 0
         self._proto = _load_proto_module()
         self._warned_proto = False
 
@@ -409,9 +471,9 @@ class GamePacketParser:
             removed = False
             for entity in message.disappear:
                 if entity.HasField("uuid") and entity.uuid:
-                    removed |= (
-                        self.nearby_entities.pop(int(entity.uuid), None) is not None
-                    )
+                    entity_uuid = int(entity.uuid)
+                    removed |= self.nearby_entities.pop(entity_uuid, None) is not None
+                    self.temp_attributes.pop(entity_uuid, None)
             if removed:
                 self.metadata_revision += 1
             return False
@@ -438,9 +500,10 @@ class GamePacketParser:
             delta_info = message.deltaInfo
             if delta_info.HasField("uuid") and delta_info.uuid:
                 self.local_player_uuid = int(delta_info.uuid)
+            self._record_skill_cooldowns(delta_info.syncSkillCDs)
             if not delta_info.HasField("baseDelta"):
                 return False
-            self._record_entity_delta(delta_info.baseDelta)
+            self._record_entity_delta(delta_info.baseDelta, self.local_player_uuid)
             return self._decode_delta(delta_info.baseDelta, force_local=True)
         changed = False
         for delta in message.deltaInfos:
@@ -456,6 +519,12 @@ class GamePacketParser:
         info = message.enterSceneInfo
         has_scene_attrs = info.HasField("sceneAttrs")
         self.nearby_entities.clear()
+        self.skill_cooldowns.clear()
+        self.player_attributes.clear()
+        self.fight_resource_ids.clear()
+        self.fight_resources.clear()
+        self.temp_attributes.clear()
+        self.monitor_revision += 1
         self.scene_guid = info.sceneGuid if info.HasField("sceneGuid") else None
         self.connect_guid = info.connectGuid if info.HasField("connectGuid") else None
 
@@ -476,6 +545,7 @@ class GamePacketParser:
                 self.local_player_uuid = int(player.uuid)
                 self.player_id = self.local_player_uuid >> ENTITY_UID_SHIFT
             if player.HasField("attrs"):
+                self._record_player_attributes(player.attrs)
                 self._decode_combat_state_attr(player.attrs)
                 self._decode_actor_state_attr(player.attrs)
                 changed |= self._decode_transform_attrs(
@@ -616,6 +686,15 @@ class GamePacketParser:
             current_hp,
             max_hp,
         )
+        if entity.HasField("tempAttrs"):
+            self._record_temp_attrs(entity_uuid, entity.tempAttrs)
+        if entity.HasField("attrs") and entity_uuid == self.local_player_uuid:
+            self._record_player_attributes(entity.attrs)
+            self._record_fight_resources(entity.attrs)
+        if entity.HasField("buffInfos"):
+            self._replace_buffs(entity_uuid, entity.buffInfos)
+        if entity.HasField("buffEffect"):
+            self._apply_buff_effects(entity_uuid, entity.buffEffect)
 
     def _apply_position(self, position, include_direction=False):
         if position is None:
@@ -636,10 +715,26 @@ class GamePacketParser:
         self.server_position = values
         return True
 
-    def _record_entity_delta(self, delta):
-        if not delta.HasField("uuid") or not delta.HasField("attrs"):
+    def _record_entity_delta(self, delta, fallback_uuid=None):
+        if not delta.HasField("uuid") and not fallback_uuid:
             return
-        entity_uuid = int(delta.uuid)
+        entity_uuid = (
+            int(delta.uuid) if delta.HasField("uuid") else int(fallback_uuid)
+        )
+        if delta.HasField("tempAttrs"):
+            self._record_temp_attrs(entity_uuid, delta.tempAttrs)
+        if delta.HasField("buffEffect") and delta.buffEffect:
+            effects = self._proto.BuffEffectSync()
+            try:
+                effects.ParseFromString(delta.buffEffect)
+                self._apply_buff_effects(entity_uuid, effects)
+            except Exception as exc:
+                logger.debug(f"failed to decode buff effects: {exc}")
+        if not delta.HasField("attrs"):
+            return
+        if entity_uuid == self.local_player_uuid:
+            self._record_player_attributes(delta.attrs)
+            self._record_fight_resources(delta.attrs)
         previous = self.nearby_entities.get(entity_uuid, {})
         position = previous.get("position")
         facing = previous.get("facing")
@@ -741,12 +836,229 @@ class GamePacketParser:
             "in_combat": bool(combat_state),
             "current_hp": current_hp,
             "max_hp": max_hp,
+            "buffs": previous.get("buffs", {}),
+            "temp_attributes": previous.get("temp_attributes", {}),
             "is_dead": actor_state == ActorState.DEAD,
             "is_summoned": bool(entity_uuid & (1 << ENTITY_SUMMON_BIT)),
             "is_client_created": bool(entity_uuid & (1 << ENTITY_CLIENT_BIT)),
             "updated_at": time.time(),
         }
         self.metadata_revision += 1
+
+    def _record_player_attributes(self, collection):
+        changed = False
+        for attr in collection.attrs:
+            if not attr.HasField("id") or attr.id not in KNOWN_PLAYER_INTEGER_ATTR_IDS:
+                continue
+            raw_data = attr.rawData if attr.HasField("rawData") else b""
+            value = _decode_varint(raw_data)
+            if value is None:
+                continue
+            # Integer attributes are encoded using protobuf int64 semantics.
+            if value >= 1 << 63:
+                value -= 1 << 64
+            attr_id = int(attr.id)
+            value = int(value)
+            if self.player_attributes.get(attr_id) != value:
+                self.player_attributes[attr_id] = value
+                changed = True
+        if changed:
+            self.monitor_revision += 1
+
+    def _record_skill_cooldowns(self, cooldowns):
+        changed = False
+        received_at = time.time()
+        for cooldown in cooldowns:
+            if not cooldown.HasField("skillLevelId"):
+                continue
+            skill_level_id = int(cooldown.skillLevelId)
+            value = {
+                "skill_level_id": skill_level_id,
+                "skill_id": skill_level_id // 100,
+                "begin_time": (
+                    int(cooldown.beginTime) if cooldown.HasField("beginTime") else 0
+                ),
+                "duration": (
+                    int(cooldown.duration) if cooldown.HasField("duration") else 0
+                ),
+                "skill_cd_type": (
+                    int(cooldown.skillCdType)
+                    if cooldown.HasField("skillCdType") else 0
+                ),
+                "valid_cd_time": (
+                    int(cooldown.validCdTime)
+                    if cooldown.HasField("validCdTime") else 0
+                ),
+                "received_at": received_at,
+            }
+            self.skill_cooldowns[skill_level_id] = value
+            changed = True
+        if changed:
+            self.monitor_revision += 1
+
+    def _record_fight_resources(self, collection):
+        layout = None
+        values = None
+        for attr in collection.attrs:
+            if not attr.HasField("id"):
+                continue
+            raw = attr.rawData if attr.HasField("rawData") else b""
+            if attr.id == ATTR_FIGHT_RESOURCE_IDS:
+                layout = _decode_varints(raw)
+            elif attr.id == ATTR_FIGHT_RESOURCES:
+                values = _decode_varints(raw)
+        changed = False
+        if layout is not None:
+            decimal_layout = [int(value) for value in layout]
+            logger.info(
+                "fight resource layout stub: source=server, "
+                f"decimal={decimal_layout}, "
+                f"hexadecimal={[f'0x{value:X}' for value in decimal_layout]}"
+            )
+        if layout is not None and layout != self.fight_resource_ids:
+            # Wire order is significant: resource values are positional.
+            self.fight_resource_ids = [int(value) for value in layout]
+            self.fight_resources = {
+                key: value for key, value in self.fight_resources.items()
+                if key in self.fight_resource_ids
+            }
+            changed = True
+        if values is not None and self.fight_resource_ids:
+            updated = dict(zip(self.fight_resource_ids, map(int, values)))
+            if any(
+                self.fight_resources.get(key) != value
+                for key, value in updated.items()
+            ):
+                self.fight_resources.update(updated)
+                changed = True
+        if changed:
+            self.monitor_revision += 1
+
+    def set_fight_resource_layout(self, layout):
+        """Install a caller-supplied fallback layout when none was captured."""
+        if self.fight_resource_ids:
+            return False
+        normalized = [int(resource_id) for resource_id in layout]
+        if not normalized:
+            return False
+        self.fight_resource_ids = normalized
+        self.fight_resources = {
+            key: value for key, value in self.fight_resources.items()
+            if key in self.fight_resource_ids
+        }
+        self.monitor_revision += 1
+        return True
+
+    def set_fight_resource_layout(self, layout):
+        """Install a caller-supplied fallback layout when none was captured."""
+        if self.fight_resource_ids:
+            return False
+        normalized = [int(resource_id) for resource_id in layout]
+        if not normalized:
+            return False
+        self.fight_resource_ids = normalized
+        self.fight_resources = {
+            key: value for key, value in self.fight_resources.items()
+            if key in self.fight_resource_ids
+        }
+        self.monitor_revision += 1
+        return True
+
+    def _record_temp_attrs(self, entity_uuid, collection):
+        entity_uuid = int(entity_uuid)
+        current = dict(self.temp_attributes.get(entity_uuid, {}))
+        changed = False
+        for attr in collection.attrs:
+            if not attr.HasField("id"):
+                continue
+            value = int(attr.value) if attr.HasField("value") else 0
+            if current.get(int(attr.id)) != value:
+                current[int(attr.id)] = value
+                changed = True
+        if not changed:
+            return
+        self.temp_attributes[entity_uuid] = current
+        if entity_uuid in self.nearby_entities:
+            self.nearby_entities[entity_uuid]["temp_attributes"] = dict(current)
+            self.metadata_revision += 1
+        self.monitor_revision += 1
+
+    @staticmethod
+    def _buff_value(info):
+        return {
+            "instance_id": int(info.buffUuid),
+            "base_id": int(info.baseId) if info.HasField("baseId") else 0,
+            "level": int(info.level) if info.HasField("level") else 0,
+            "host_uuid": int(info.hostUuid) if info.HasField("hostUuid") else None,
+            "source_uuid": int(info.fireUuid) if info.HasField("fireUuid") else None,
+            "layer": int(info.layer) if info.HasField("layer") else 0,
+            "count": int(info.count) if info.HasField("count") else 0,
+            "duration": int(info.duration) if info.HasField("duration") else 0,
+            "create_time": int(info.createTime) if info.HasField("createTime") else 0,
+        }
+
+    def _replace_buffs(self, fallback_uuid, sync):
+        target_uuid = int(sync.uuid) if sync.HasField("uuid") else int(fallback_uuid)
+        buffs = {
+            int(info.buffUuid): self._buff_value(info)
+            for info in sync.buffInfos if info.HasField("buffUuid")
+        }
+        self._set_entity_buffs(target_uuid, buffs)
+
+    def _apply_buff_effects(self, fallback_uuid, sync):
+        sync_uuid = int(sync.uuid) if sync.HasField("uuid") else int(fallback_uuid)
+        for effect in sync.buffEffects:
+            if not effect.HasField("buffUuid"):
+                continue
+            target_uuid = int(effect.hostUuid) if effect.HasField("hostUuid") else sync_uuid
+            buffs = dict(self.nearby_entities.get(target_uuid, {}).get("buffs", {}))
+            instance_id = int(effect.buffUuid)
+            for logic in effect.logicEffect:
+                if not logic.HasField("rawData"):
+                    continue
+                effect_type = int(logic.effectType) if logic.HasField("effectType") else 0
+                if effect_type == BUFF_EFFECT_ADD:
+                    info = self._proto.BuffInfo()
+                    info.ParseFromString(logic.rawData)
+                    if info.HasField("buffUuid"):
+                        buffs[int(info.buffUuid)] = self._buff_value(info)
+                elif effect_type == BUFF_EFFECT_CHANGE and instance_id in buffs:
+                    change = self._proto.BuffChange()
+                    change.ParseFromString(logic.rawData)
+                    value = dict(buffs[instance_id])
+                    for field_name in ("layer", "duration", "createTime"):
+                        if change.HasField(field_name):
+                            key = {"createTime": "create_time"}.get(
+                                field_name, field_name
+                            )
+                            value[key] = int(getattr(change, field_name))
+                    buffs[instance_id] = value
+            if effect.HasField("type") and effect.type == BUFF_EVENT_REMOVE:
+                buffs.pop(instance_id, None)
+            self._set_entity_buffs(target_uuid, buffs)
+
+    def _set_entity_buffs(self, entity_uuid, buffs):
+        entity_uuid = int(entity_uuid)
+        if entity_uuid not in self.nearby_entities:
+            self._store_entity(entity_uuid, None, None)
+        if self.nearby_entities[entity_uuid].get("buffs") == buffs:
+            return
+        self.nearby_entities[entity_uuid]["buffs"] = buffs
+        self.nearby_entities[entity_uuid]["updated_at"] = time.time()
+        self.metadata_revision += 1
+        self.monitor_revision += 1
+
+    def monitor_state(self):
+        local_temp = self.temp_attributes.get(self.local_player_uuid, {})
+        return {
+            "player_attributes": dict(self.player_attributes),
+            "skill_cooldowns": {
+                key: dict(value) for key, value in self.skill_cooldowns.items()
+            },
+            "fight_resource_ids": list(self.fight_resource_ids),
+            "fight_resources": dict(self.fight_resources),
+            "temp_attributes": dict(local_temp),
+        }
 
     def world_state(self):
         return self.scene_id, self.player_id, self.local_player_uuid, {

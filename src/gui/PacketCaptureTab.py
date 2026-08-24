@@ -113,6 +113,7 @@ class PacketCaptureTab(CustomTab):
         self._local_position_revision = -1
         self._combat_state_revision = -1
         self._actor_state_revision = -1
+        self._monitor_revision = -1
         self._sequence_scene_id = None
         self._has_sequence_scene = False
         self._entity_sequences = {}
@@ -222,6 +223,16 @@ class PacketCaptureTab(CustomTab):
     @property
     def is_capturing(self):
         return bool(self._capture_thread and self._capture_thread.is_alive() and not self._stop_requested)
+
+    def set_fight_resource_layout(self, layout):
+        """Set a Task fallback layout without replacing a captured layout."""
+        changed = self._parser.set_fight_resource_layout(layout)
+        if changed:
+            og.packet_capture_data.update_monitor_state(
+                self._parser.monitor_state()
+            )
+            self._monitor_revision = self._parser.monitor_revision
+        return changed
 
     def _uses_npcap(self):
         return self.capture_method_combo.currentText() == CAPTURE_METHOD_NPCAP
@@ -400,6 +411,9 @@ class PacketCaptureTab(CustomTab):
             if self._parser.actor_state is not None:
                 og.packet_capture_data.update_actor_state(self._parser.actor_state)
             self._actor_state_revision = self._parser.actor_state_revision
+        if self._monitor_revision != self._parser.monitor_revision:
+            og.packet_capture_data.update_monitor_state(self._parser.monitor_state())
+            self._monitor_revision = self._parser.monitor_revision
 
     def _stop_capture(self):
         self._stop_requested = True

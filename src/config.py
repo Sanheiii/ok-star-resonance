@@ -112,6 +112,7 @@ config = {
         ["src.tasks.AutoSkillTask", "AutoSkillTask"],
         ["src.tasks.AutoPartyTask", "AutoPartyTask"],
         ["src.tasks.MissionEntryTask", "MissionEntryTask"],
-        ["src.tasks.AutoReviveTask", "AutoReviveTask"]
+        ["src.tasks.AutoReviveTask", "AutoReviveTask"],
+        ["src.tasks.DissonanceS4CombatAssistTask", "DissonanceS4CombatAssistTask"],
     ]
 }

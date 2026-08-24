@@ -4,11 +4,16 @@ from src.packet_capture.parser import (
     ActorState,
     ATTR_ACTOR_STATE,
     ATTR_COMBAT_STATE,
+    ATTR_CD_ACCELERATE_PCT,
     ATTR_CURRENT_HP,
     ATTR_ENTITY_ID,
     ATTR_FACING,
     ATTR_MAX_HP,
     ATTR_POSITION,
+    ATTR_SKILL_CD,
+    ATTR_SKILL_CD_PCT,
+    ATTR_FIGHT_RESOURCE_IDS,
+    ATTR_FIGHT_RESOURCES,
     MSG_SYNC_CONTAINER_DATA,
     MSG_SYNC_NEAR_ENTITIES,
     MSG_SYNC_TO_ME_DELTA_INFO,
@@ -20,6 +25,7 @@ from src.packet_capture.parser import (
     WORLD_CALL_SERVICE_ID,
     GamePacketParser,
 )
+from src.packet_capture.state import PacketCaptureData
 
 try:
     import zstandard
@@ -28,6 +34,159 @@ except ImportError:
 
 
 class GamePacketParserTest(unittest.TestCase):
+    @staticmethod
+    def _packed_varints(*values):
+        packed = bytearray()
+        for value in values:
+            while value >= 0x80:
+                packed.append((value & 0x7F) | 0x80)
+                value >>= 7
+            packed.append(value)
+        length = len(packed)
+        result = bytearray([0x0A])
+        while length >= 0x80:
+            result.append((length & 0x7F) | 0x80)
+            length >>= 7
+        result.append(length)
+        result.extend(packed)
+        return bytes(result)
+
+    def test_sync_to_me_tracks_skill_cooldown_resources_and_temp_attributes(self):
+        parser = GamePacketParser()
+        player_uuid = 123 << 16
+        message = parser._proto.WorldNtf.SyncToMeDeltaInfo()
+        message.deltaInfo.uuid = player_uuid
+        cooldown = message.deltaInfo.syncSkillCDs.add()
+        cooldown.skillLevelId = 123401
+        cooldown.beginTime = 1000
+        cooldown.duration = 12000
+        cooldown.skillCdType = 1
+        cooldown.validCdTime = 3000
+        attrs = message.deltaInfo.baseDelta.attrs
+        layout = attrs.attrs.add()
+        layout.id = ATTR_FIGHT_RESOURCE_IDS
+        layout.rawData = self._packed_varints(23001, 23007)
+        values = attrs.attrs.add()
+        values.id = ATTR_FIGHT_RESOURCES
+        values.rawData = self._packed_varints(40, 100)
+        for attr_id, value in (
+            (ATTR_SKILL_CD, 250),
+            (ATTR_SKILL_CD_PCT, 1200),
+            (ATTR_CD_ACCELERATE_PCT, 3456),
+            (0x7FFFFFFF, 99),
+        ):
+            panel_attr = attrs.attrs.add()
+            panel_attr.id = attr_id
+            panel_attr.rawData = self._packed_varints(value)[2:]
+        temp = message.deltaInfo.baseDelta.tempAttrs.attrs.add()
+        temp.id = 45678
+        temp.value = 2
+
+        parser._decode_notify(MSG_SYNC_TO_ME_DELTA_INFO, message.SerializeToString())
+
+        state = parser.monitor_state()
+        self.assertEqual(state["skill_cooldowns"][123401]["skill_id"], 1234)
+        self.assertEqual(state["skill_cooldowns"][123401]["valid_cd_time"], 3000)
+        self.assertEqual(state["fight_resource_ids"], [23001, 23007])
+        self.assertEqual(state["fight_resources"], {23001: 40, 23007: 100})
+        self.assertEqual(
+            state["player_attributes"],
+            {
+                ATTR_SKILL_CD: 250,
+                ATTR_SKILL_CD_PCT: 1200,
+                ATTR_CD_ACCELERATE_PCT: 3456,
+            },
+        )
+        self.assertEqual(state["temp_attributes"][45678], 2)
+
+    def test_resource_values_require_layout_and_preserve_wire_order(self):
+        parser = GamePacketParser()
+        parser.local_player_uuid = 77
+        values_only = parser._proto.AttrCollection()
+        values = values_only.attrs.add()
+        values.id = ATTR_FIGHT_RESOURCES
+        values.rawData = self._packed_varints(5, 6)
+        parser._record_fight_resources(values_only)
+        self.assertEqual(parser.fight_resources, {})
+
+        collection = parser._proto.AttrCollection()
+        layout = collection.attrs.add()
+        layout.id = ATTR_FIGHT_RESOURCE_IDS
+        layout.rawData = self._packed_varints(20, 10)
+        values = collection.attrs.add()
+        values.id = ATTR_FIGHT_RESOURCES
+        values.rawData = self._packed_varints(5, 6)
+        parser._record_fight_resources(collection)
+        self.assertEqual(parser.fight_resource_ids, [20, 10])
+        self.assertEqual(parser.fight_resources, {20: 5, 10: 6})
+
+    def test_task_fallback_layout_only_applies_when_layout_is_missing(self):
+        parser = GamePacketParser()
+
+        self.assertTrue(parser.set_fight_resource_layout([20, 10]))
+        self.assertEqual(parser.fight_resource_ids, [20, 10])
+        self.assertFalse(parser.set_fight_resource_layout([30, 40]))
+        self.assertEqual(parser.fight_resource_ids, [20, 10])
+
+        collection = parser._proto.AttrCollection()
+        layout = collection.attrs.add()
+        layout.id = ATTR_FIGHT_RESOURCE_IDS
+        layout.rawData = self._packed_varints(30, 40)
+        parser._record_fight_resources(collection)
+        self.assertEqual(parser.fight_resource_ids, [30, 40])
+
+    def test_entity_buff_snapshot_and_delta_are_tracked(self):
+        parser = GamePacketParser()
+        entity_uuid = (789 << 16) | (16 << 6)
+        appeared = parser._proto.Entity(uuid=entity_uuid)
+        info = appeared.buffInfos.buffInfos.add()
+        info.buffUuid = 91
+        info.baseId = 55313
+        info.layer = 2
+        info.duration = 8000
+        parser._record_appeared_entity(appeared)
+        self.assertEqual(parser.nearby_entities[entity_uuid]["buffs"][91]["layer"], 2)
+
+        change = parser._proto.BuffChange(layer=1, duration=4000)
+        effects = parser._proto.BuffEffectSync(uuid=entity_uuid)
+        effect = effects.buffEffects.add()
+        effect.buffUuid = 91
+        effect.hostUuid = entity_uuid
+        logic = effect.logicEffect.add()
+        logic.effectType = 19
+        logic.rawData = change.SerializeToString()
+        delta = parser._proto.AoiSyncDelta(uuid=entity_uuid)
+        delta.buffEffect = effects.SerializeToString()
+        parser._record_entity_delta(delta)
+        buff = parser.nearby_entities[entity_uuid]["buffs"][91]
+        self.assertEqual((buff["layer"], buff["duration"]), (1, 4000))
+
+        remove = parser._proto.BuffEffectSync(uuid=entity_uuid)
+        effect = remove.buffEffects.add()
+        effect.type = 2
+        effect.buffUuid = 91
+        delta.buffEffect = remove.SerializeToString()
+        parser._record_entity_delta(delta)
+        self.assertEqual(parser.nearby_entities[entity_uuid]["buffs"], {})
+
+    def test_packet_state_returns_caller_supplied_enhancement_value(self):
+        state = PacketCaptureData()
+        state.update_monitor_state(
+            {
+                "player_attributes": {ATTR_CD_ACCELERATE_PCT: 3456},
+                "temp_attributes": {45678: 2},
+            }
+        )
+
+        enhancement = state.get_skill_enhancement(45678)
+
+        self.assertEqual(enhancement, 2)
+        self.assertEqual(state.get_skill_enhancement(99999), 0)
+        self.assertEqual(state.get_player_attribute(ATTR_CD_ACCELERATE_PCT), 3456)
+        self.assertEqual(
+            state.get_player_attributes(), {ATTR_CD_ACCELERATE_PCT: 3456}
+        )
+
     def test_join_team_marks_nearby_player_as_teammate(self):
         parser = GamePacketParser()
         teammate_id = 456
