@@ -235,6 +235,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
             self.log_error(f'绿门 {gate_attr_id} 战斗超时')
             return False
         self.send_key(self.get_custom_key('Auto Battle'))
+        self.pickup_special_reward(1207)
         return True
 
     def _run_master_5026_route(self):
@@ -313,6 +314,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
             self.log_error('银门 5026 战斗超时')
             return False
         self.send_key(self.get_custom_key('Auto Battle'))
+        self.pickup_special_reward(1207)
         return True
 
     def _run_master_5027_route(self):
@@ -608,6 +610,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
             self.log_error(f'怪物战斗超时: {monster_attr_id}')
             return False
         self.send_key(self.get_custom_key('Auto Battle'))
+        self.pickup_special_reward(1207)
 
         return self._use_master_exit()
 

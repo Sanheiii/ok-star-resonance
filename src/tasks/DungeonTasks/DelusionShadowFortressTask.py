@@ -314,6 +314,7 @@ class DelusionShadowFortressTask(DungeonTaskBase):
         if not self.wait_out_of_combat(time_out=time_out):
             self.log_error(f'{state}超时')
             return False
+        self.pickup_special_reward(1207)
         return True
 
     def _clear_corruption(self, route, state):
