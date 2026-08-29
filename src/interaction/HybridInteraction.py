@@ -3,6 +3,7 @@ import win32con
 
 from ok import PostMessageInteraction
 from src.interaction.mouse_keys import parse_mouse_key
+from src.interaction.numpad_keys import parse_numpad_key
 
 
 class HybridInteraction(PostMessageInteraction):
@@ -55,7 +56,9 @@ class HybridInteraction(PostMessageInteraction):
         super().send_key(key, down_time)
 
     def _keyboard_message(self, key, is_up):
-        virtual_key = self.get_key_by_str(key)
+        virtual_key = parse_numpad_key(key)
+        if virtual_key is None:
+            virtual_key = self.get_key_by_str(key)
         message_key, scan_code, extended = self._MODIFIER_KEYS.get(
             virtual_key,
             (virtual_key, win32api.MapVirtualKey(virtual_key, 0), False),

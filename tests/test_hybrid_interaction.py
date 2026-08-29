@@ -5,6 +5,7 @@ import win32api
 import win32con
 
 from src.interaction.HybridInteraction import HybridInteraction
+from src.interaction.PynputInteraction import PynputInteraction
 from src.config import config
 
 
@@ -30,7 +31,7 @@ class HybridInteractionTest(unittest.TestCase):
     @patch("ok.device.interaction_methods.post_message.win32gui.ClientToScreen")
     @patch("ok.device.interaction_methods.post_message.win32gui.ScreenToClient")
     @patch("ok.device.interaction_methods.post_message.win32gui.IsWindow")
-    @patch("src.interaction.HybridInteraction.time.sleep")
+    @patch("ok.device.interaction_methods.post_message.time.sleep")
     def test_click_moves_with_pynput_and_posts_button_messages(
         self, sleep, is_window, screen_to_client, client_to_screen
     ):
@@ -54,6 +55,18 @@ class HybridInteractionTest(unittest.TestCase):
         message, virtual_key, _ = self.interaction.post.call_args.args
         self.assertEqual(message, win32con.WM_KEYDOWN)
         self.assertEqual(virtual_key, ord("A"))
+
+    def test_numpad_digit_uses_numpad_virtual_key(self):
+        with patch.object(self.interaction, "try_activate"):
+            self.interaction.send_key_down("num7")
+
+        message, virtual_key, lparam = self.interaction.post.call_args.args
+        self.assertEqual(message, win32con.WM_KEYDOWN)
+        self.assertEqual(virtual_key, win32con.VK_NUMPAD7)
+        self.assertEqual(
+            (lparam >> 16) & 0xFF,
+            win32api.MapVirtualKey(win32con.VK_NUMPAD7, 0),
+        )
 
     def test_left_shift_uses_left_virtual_key_and_left_scan_code(self):
         with patch.object(self.interaction, "try_activate"):
@@ -107,6 +120,15 @@ class HybridInteractionTest(unittest.TestCase):
         self.assertTrue(lparam & (1 << 24))
         self.assertTrue(lparam & (1 << 30))
         self.assertTrue(lparam & (1 << 31))
+
+class PynputInteractionTest(unittest.TestCase):
+    def test_numpad_digits_are_parsed_as_windows_numpad_keys(self):
+        interaction = object.__new__(PynputInteraction)
+
+        for digit in range(10):
+            with self.subTest(digit=digit):
+                parsed = interaction._parse_key(f"NUM{digit}")
+                self.assertEqual(parsed.vk, win32con.VK_NUMPAD0 + digit)
 
 
 if __name__ == "__main__":
