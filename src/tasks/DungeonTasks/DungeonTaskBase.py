@@ -45,7 +45,6 @@ class DungeonTaskBase(SRTask):
         self.info['Special Reward Count'] = 0
         self.info['Consumable Use Count'] = 0
         self._last_redeem_pass_count = None
-        self._skip_consumable_once = False
 
     def begin(self):
         self._update_pass_rate()
@@ -228,6 +227,7 @@ class DungeonTaskBase(SRTask):
         self.click(0.632,0.857)
         self.info_set('State', f'等待开本读秒')
         self.sleep(8)
+        self._use_consumable()
 
     def pickup_special_reward(self, entity_id):
         """Move to a nearby special reward and interact with it."""
@@ -344,11 +344,9 @@ class DungeonTaskBase(SRTask):
         return True
 
     def handle_end(self):
-        self._use_consumable_before_settlement()
         self.info_set('State', 'Boss战结束，等待结算')
         if not self.wait_click_feature('next', box=self.box_of_screen(0.46, 0.86, 0.53, 0.92), time_out=30, raise_if_not_found=False):
             self.log_error('Boss战结束后没等到结算')
-            self._skip_consumable_once = True
             return False
         # 点击离开
         self.wait_click_feature('exit', box=self.box_of_screen(0.88, 0.91, 0.94, 0.97), time_out=5, raise_if_not_found=False)
@@ -371,11 +369,7 @@ class DungeonTaskBase(SRTask):
             and self.info['Pass Count'] >= target_clear_count
         )
 
-    def _use_consumable_before_settlement(self):
-        if self._skip_consumable_once:
-            self._skip_consumable_once = False
-            return False
-
+    def _use_consumable(self):
         quantity = DungeonTaskBase.get_dungeon_setting(
             self, 'Consumable Use Quantity'
         )

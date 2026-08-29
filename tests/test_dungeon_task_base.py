@@ -308,6 +308,51 @@ class PassRateTest(unittest.TestCase):
         self.assertEqual(task.info['Pass Rate'], '0.00%')
 
 
+class _InvestigateTask(_InfoSetTaskMixin):
+    def __init__(self, quantity=1):
+        self.position = (0, 0, 0)
+        self.info = {'Consumable Use Count': 0}
+        self.config = {'Consumable Use Quantity': quantity}
+        self.events = []
+
+    _use_consumable = DungeonTaskBase._use_consumable
+
+    def get_global_config(self, option):
+        if option is dungeon_task_base_module.DUNGEON_SETTINGS:
+            return self.config
+        return {'Use Consumable': 'f3'}
+
+    def move_to_position(self, *_args, **_kwargs):
+        self.events.append('move')
+
+    def sleep(self, seconds):
+        self.events.append(('sleep', seconds))
+
+    def send_key(self, key):
+        self.events.append(('key', key))
+
+    def click(self, *_args):
+        self.events.append('click')
+
+
+class InvestigateConsumableTest(unittest.TestCase):
+    def test_uses_consumable_after_instrument_wait_finishes(self):
+        task = _InvestigateTask()
+
+        DungeonTaskBase.investigate(task, pos=(1, 2, 3))
+
+        self.assertEqual(task.events[-2:], [('sleep', 8), ('key', 'f3')])
+        self.assertEqual(task.info['Consumable Use Count'], 1)
+
+    def test_respects_consumable_quantity_limit(self):
+        task = _InvestigateTask(quantity=0)
+
+        DungeonTaskBase.investigate(task, pos=(1, 2, 3))
+
+        self.assertNotIn(('key', 'f3'), task.events)
+        self.assertEqual(task.info['Consumable Use Count'], 0)
+
+
 class _HandleEndTask(_InfoSetTaskMixin):
     def __init__(self, *, quantity=0, target=0, settlement_succeeds=True):
         self.config = {
@@ -319,15 +364,11 @@ class _HandleEndTask(_InfoSetTaskMixin):
             'Pass Count': 0,
             'Consumable Use Count': 0,
         }
-        self._skip_consumable_once = False
         self.settlement_succeeds = settlement_succeeds
         self.keys = []
         self.disabled = False
 
     _update_pass_rate = DungeonTaskBase._update_pass_rate
-    _use_consumable_before_settlement = (
-        DungeonTaskBase._use_consumable_before_settlement
-    )
     record_successful_clear = DungeonTaskBase.record_successful_clear
 
     def get_global_config(self, option):
@@ -358,29 +399,20 @@ class _HandleEndTask(_InfoSetTaskMixin):
 
 
 class HandleEndSettingsTest(unittest.TestCase):
-    def test_uses_consumable_and_counts_it_when_key_is_pressed(self):
+    def test_does_not_use_consumable_before_settlement(self):
         task = _HandleEndTask(quantity=1)
 
         self.assertTrue(DungeonTaskBase.handle_end(task))
 
-        self.assertEqual(task.keys, ['f3'])
-        self.assertEqual(task.info['Consumable Use Count'], 1)
+        self.assertEqual(task.keys, [])
+        self.assertEqual(task.info['Consumable Use Count'], 0)
 
-    def test_failure_keeps_count_and_skips_consumable_once(self):
+    def test_settlement_failure_does_not_change_consumable_count(self):
         task = _HandleEndTask(quantity=2, settlement_succeeds=False)
 
         self.assertFalse(DungeonTaskBase.handle_end(task))
-        self.assertEqual(task.keys, ['f3'])
-        self.assertEqual(task.info['Consumable Use Count'], 1)
-
-        task.settlement_succeeds = True
-        self.assertTrue(DungeonTaskBase.handle_end(task))
-        self.assertEqual(task.keys, ['f3'])
-        self.assertEqual(task.info['Consumable Use Count'], 1)
-
-        self.assertTrue(DungeonTaskBase.handle_end(task))
-        self.assertEqual(task.keys, ['f3', 'f3'])
-        self.assertEqual(task.info['Consumable Use Count'], 2)
+        self.assertEqual(task.keys, [])
+        self.assertEqual(task.info['Consumable Use Count'], 0)
 
     def test_success_count_reaching_target_requests_loop_exit(self):
         task = _HandleEndTask(target=2)
