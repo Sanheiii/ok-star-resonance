@@ -451,6 +451,18 @@ class MidiPlayerTask(BaseTask):
                 if not self.running:
                     break
 
+                # 暂停期间冻结 MIDI 时间轴，避免恢复后瞬间补播积压事件
+                if self.paused:
+                    for key in playing_notes.values():
+                        self.send_key_up(key)
+                    playing_notes.clear()
+                    paused_at = time.time()
+                    while self.running and self.paused:
+                        time.sleep(0.05)
+                    start_time += time.time() - paused_at
+                    if not self.running:
+                        break
+
                 # 处理延音踏板 (Control Change 64)
                 if msg.type == 'control_change' and msg.control == 64:
                     # MIDI 标准：value >= 64 为踩下，< 64 为松开
@@ -477,9 +489,26 @@ class MidiPlayerTask(BaseTask):
                 # 基于全局的绝对时间进行延迟等待
                 # 把切换按键耗费的时间算进去，多退少补
                 target_time = start_time + msg_time
-                now = time.time()
-                if target_time > now:
-                    time.sleep(target_time - now)
+                while self.running:
+                    if self.paused:
+                        for key in playing_notes.values():
+                            self.send_key_up(key)
+                        playing_notes.clear()
+                        paused_at = time.time()
+                        while self.running and self.paused:
+                            time.sleep(0.05)
+                        paused_duration = time.time() - paused_at
+                        start_time += paused_duration
+                        target_time += paused_duration
+                        continue
+
+                    remaining = target_time - time.time()
+                    if remaining <= 0:
+                        break
+                    time.sleep(min(remaining, 0.05))
+
+                if not self.running:
+                    break
 
                 # 实际演奏
                 if is_note_on:
