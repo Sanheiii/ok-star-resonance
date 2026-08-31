@@ -299,6 +299,12 @@
             "file_name": "images/0.png",
             "width": 1920,
             "height": 1080
+        },
+        {
+            "id": 50,
+            "file_name": "images/3.png",
+            "width": 1920,
+            "height": 1080
         }
     ],
     "categories": [
@@ -787,6 +793,11 @@
         {
             "id": 112,
             "name": "sold_out",
+            "supercategory": ""
+        },
+        {
+            "id": 113,
+            "name": "leave",
             "supercategory": ""
         }
     ],
@@ -2324,6 +2335,19 @@
                 20
             ],
             "area": 360,
+            "iscrowd": 0
+        },
+        {
+            "id": 113,
+            "image_id": 50,
+            "category_id": 113,
+            "bbox": [
+                814,
+                936,
+                292,
+                62
+            ],
+            "area": 18104,
             "iscrowd": 0
         }
     ],

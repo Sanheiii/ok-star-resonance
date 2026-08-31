@@ -15,6 +15,10 @@ class MissionEntryTask(SRTriggerTask):
             self.click(box)
         if box:=self._find_accept():
             self.click(box)
+        if box:=self._find_leave():
+            self.click(box)
+        if box:=self._find_next():
+            self.click(box)
         return
 
     def _find_msg(self):
@@ -27,6 +31,18 @@ class MissionEntryTask(SRTriggerTask):
             return self.find_one("msg_confirm_mission_en", box=self.box_of_screen(0.38, 0.77, 0.62, 0.85))
         else:
             return None
+
+    def _find_next(self):
+        language = self.get_game_language()
+        if language == 'zhs':
+            return self.find_one("next", box=self.box_of_screen(0.413, 0.854, 0.584, 0.935))
+        return None
+
+    def _find_leave(self):
+        language = self.get_game_language()
+        if language == 'zhs':
+            return self.find_one("leave")
+        return None
 
     def _find_confirm(self):
         language = self.get_game_language()
