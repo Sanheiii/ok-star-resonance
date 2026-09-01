@@ -795,6 +795,15 @@ msgstr "狂音S4战斗辅助"
 msgid "Automatically plays whack-a-mole with the Dissonance Critical Acclaim build. Requires the packet capture tool to be enabled."
 msgstr "自动进行狂音临界喝彩流的打地鼠。需要开启抓包工具。"
 
+msgid "Basic Attack"
+msgstr "普通攻击"
+
+msgid "Amplified Beat"
+msgstr "增幅节拍"
+
+msgid "Ultimate Skill"
+msgstr "终极技能"
+
 msgid "Capture Status"
 msgstr "抓包状态"
 

@@ -358,13 +358,15 @@ class DissonanceS4CombatAssistTaskTest(unittest.TestCase):
     def test_pressing_skill_two_starts_one_second_restriction(self):
         task = object.__new__(DissonanceS4CombatAssistTask)
         task._skill_two_restricted_until = 0.0
-        task.send_key = lambda key: None
+        task.config = {"Harmonic Anthem": "q"}
+        task.send_key = unittest.mock.Mock()
 
         with patch(
             "src.tasks.DissonanceS4CombatAssistTask.time.monotonic",
             return_value=10.0,
         ):
             task._perform_action("2")
+        task.send_key.assert_called_once_with("q")
         self.assertEqual(task._skill_two_restricted_until, 11.0)
         with patch(
             "src.tasks.DissonanceS4CombatAssistTask.time.monotonic",
@@ -415,6 +417,37 @@ class DissonanceS4CombatAssistTaskTest(unittest.TestCase):
                 center_stage_due=True,
             ),
             None,
+        )
+
+    def test_actions_use_configured_skill_keys(self):
+        task = object.__new__(DissonanceS4CombatAssistTask)
+        task._skill_two_restricted_until = 0.0
+        task.config = {
+            label: f"custom-{action}"
+            for action, (label, _default) in task.ACTION_KEY_SETTINGS.items()
+        }
+        task.send_key = unittest.mock.Mock()
+
+        for action in task.ACTION_KEY_SETTINGS:
+            task._perform_action(action)
+
+        self.assertEqual(
+            [call.args[0] for call in task.send_key.call_args_list],
+            [f"custom-{action}" for action in task.ACTION_KEY_SETTINGS],
+        )
+
+    def test_action_key_defaults_match_game_bindings(self):
+        self.assertEqual(
+            DissonanceS4CombatAssistTask.ACTION_KEY_SETTINGS,
+            {
+                "click": ("Basic Attack", "mouse1"),
+                "1": ("Amplified Beat", "1"),
+                "2": ("Harmonic Anthem", "2"),
+                "3": ("Flame Rhapsody", "3"),
+                "4": ("Heroic Anthem", "4"),
+                "5": ("Center Stage", "5"),
+                "r": ("Ultimate Skill", "r"),
+            },
         )
 
 if __name__ == "__main__":

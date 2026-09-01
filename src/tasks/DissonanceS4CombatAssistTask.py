@@ -9,6 +9,16 @@ from src.tasks.SRTriggerTask import SRTriggerTask
 class DissonanceS4CombatAssistTask(SRTriggerTask):
     """Assist the Beat Performer S4 dissonance combat rotation."""
 
+    ACTION_KEY_SETTINGS = {
+        "click": ("Basic Attack", "mouse1"),
+        "1": ("Amplified Beat", "1"),
+        "2": ("Harmonic Anthem", "2"),
+        "3": ("Flame Rhapsody", "3"),
+        "4": ("Heroic Anthem", "4"),
+        "5": ("Center Stage", "5"),
+        "r": ("Ultimate Skill", "r"),
+    }
+
     SKILLS = {
         2308: "Harmonic Anthem",
         2309: "Flame Rhapsody",
@@ -43,6 +53,10 @@ class DissonanceS4CombatAssistTask(SRTriggerTask):
             "Automatically plays whack-a-mole with the Dissonance Critical "
             "Acclaim build. Requires the packet capture tool to be enabled."
         )
+        self.default_config.update({
+            label: default
+            for label, default in self.ACTION_KEY_SETTINGS.values()
+        })
         self._skill_two_restricted_until = 0.0
         self._center_stage_was_cooling = None
         self._center_stage_last_success_at = None
@@ -212,10 +226,10 @@ class DissonanceS4CombatAssistTask(SRTriggerTask):
         )
 
     def _perform_action(self, action):
-        if action == "click":
-            self.click(0.5, 0.5)
-        elif action is not None:
-            self.send_key(action)
+        if action is not None:
+            label, default = self.ACTION_KEY_SETTINGS[action]
+            key = self.config.get(label)
+            self.send_key(key)
             if action == "2":
                 self._skill_two_restricted_until = (
                     time.monotonic() + self.SKILL_TWO_RESTRICTION_SECONDS
