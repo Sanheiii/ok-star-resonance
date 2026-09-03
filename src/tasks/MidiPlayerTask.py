@@ -6,6 +6,7 @@ import numpy as np
 import win32con
 import win32file
 
+from PySide6.QtCore import QSignalBlocker
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from numpy import ndarray
@@ -13,6 +14,7 @@ from ok.task.exceptions import TaskDisabledException
 from qfluentwidgets import MessageBoxBase, SubtitleLabel, CheckBox, SmoothScrollArea, FluentIcon
 
 from ok import BaseTask, og
+from ok.gui.common.design_system import control_width
 from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
 from ok.util.collection import find_index_in_list
 from src.gui.MidiVisualizerDialog import MidiVisualizerDialog
@@ -221,42 +223,49 @@ class MidiPlayerTask(BaseTask):
 
     def reload_options(self):
         self.refresh_midi_list()
-        v_box_layout = og.app.main_window.onetime_tab.vBoxLayout
-        for i in range(v_box_layout.count()):
-            widget = v_box_layout.itemAt(i).widget()
-            if widget and hasattr(widget, 'task') and widget.task is self:
-                for config_widget in widget.config_widgets:
-                    if isinstance(config_widget, LabelAndDropDown):
-                        config_widget.config = self.config
-                        key = config_widget.key
-                        options = self.config_type.get(key, {}).get('options', [])
-                        # 清理旧的选项数据
-                        config_widget.tr_dict.clear()
-                        config_widget.tr_options.clear()
-                        config_widget.combo_box.clear()
-                        # 更新 tr_dict，tr_options
-                        for option in options:
-                            tr = og.app.tr(option)
-                            config_widget.tr_options.append(tr)
-                            config_widget.tr_dict[tr] = option
+        main_window = og.app.main_window
+        tabs = [getattr(main_window, 'onetime_tab', None)]
+        tabs.extend(getattr(main_window, 'grouped_task_tabs', []))
 
-                        current_val = self.config.get(key)
-                        # 更新 combo_box 的项目
-                        config_widget.combo_box.addItems(config_widget.tr_options)
-                        # 重新计算控件宽度
-                        fm = QFontMetrics(config_widget.combo_box.font())
-                        max_width = 0
-                        for option in config_widget.tr_options:
-                            max_width = max(max_width, fm.horizontalAdvance(option))
-                        config_widget.combo_box.setFixedWidth(max_width + 50)
-                        # 如果当前配置文件记录的选项被删除了，重置为第一个选项
-                        index = find_index_in_list(options, current_val, -1)
-                        if index == -1 and options:
-                            index = 0
-                            self.config[key] = options[0]
-                        config_widget.combo_box.setCurrentIndex(index)
-                        widget.update_config()
-                break
+        for tab in filter(None, tabs):
+            for widget in getattr(tab, 'card_widgets', []):
+                if getattr(widget, 'task', None) is not self:
+                    continue
+
+                config_widget = getattr(widget, 'config_widget_by_key', {}).get('MIDI File')
+                if isinstance(config_widget, LabelAndDropDown):
+                    self._reload_midi_dropdown(config_widget)
+                    widget.update_config()
+                return
+
+    def _reload_midi_dropdown(self, config_widget):
+        """更新 MIDI 下拉框，不让 clear/addItems 的中间信号覆盖当前配置。"""
+        options = self.config_type['MIDI File']['options']
+        current_val = self.config.get('MIDI File')
+        index = find_index_in_list(options, current_val, -1)
+        if index == -1 and options:
+            index = 0
+            self.config['MIDI File'] = options[0]
+
+        config_widget.config = self.config
+        config_widget.tr_dict.clear()
+        config_widget.tr_options.clear()
+        for option in options:
+            translated = og.app.tr(option)
+            config_widget.tr_options.append(translated)
+            config_widget.tr_dict[translated] = option
+
+        blocker = QSignalBlocker(config_widget.combo_box)
+        try:
+            config_widget.combo_box.clear()
+            config_widget.combo_box.addItems(config_widget.tr_options)
+            config_widget.combo_box.setCurrentIndex(index)
+        finally:
+            del blocker
+
+        fm = QFontMetrics(config_widget.combo_box.font())
+        max_width = max((fm.horizontalAdvance(option) for option in config_widget.tr_options), default=0)
+        config_widget.combo_box.setFixedWidth(control_width(max_width + 50))
 
     def tap_key(self, key):
         """模拟短按按键"""
