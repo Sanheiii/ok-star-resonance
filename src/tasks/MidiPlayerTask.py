@@ -1,4 +1,4 @@
-﻿import os
+import os
 import threading
 import time
 import mido
@@ -18,6 +18,8 @@ from ok.gui.common.design_system import control_width
 from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
 from ok.util.collection import find_index_in_list
 from src.gui.MidiVisualizerDialog import MidiVisualizerDialog
+from src.tasks.midi_key_state import MidiKeyState
+from src.tasks.midi_schedule import plan_midi_events
 
 FILE_LIST_DIRECTORY = 0x0001
 
@@ -269,10 +271,12 @@ class MidiPlayerTask(BaseTask):
 
     def tap_key(self, key):
         """模拟短按按键"""
-        self.send_key_down(key)
-        time.sleep(0.01)
-        self.send_key_up(key)
-        time.sleep(0.01)
+        try:
+            self.send_key_down(key)
+            self.sleep(0.02)
+        finally:
+            self.send_key_up(key)
+        self.sleep(0.02)
 
     # Playable range constants (A0=21 to C8=108)
     OVERALL_MIN_PITCH = 21  # A0
@@ -307,6 +311,16 @@ class MidiPlayerTask(BaseTask):
 
     def switch_state(self, target_page, target_octave):
         """切换到目标页面和目标八度"""
+        if (self.current_page, self.current_octave) == (target_page, target_octave):
+            return
+        self.log_debug(
+            f"MIDI range switch: ({self.current_page}, {self.current_octave})"
+            f" -> ({target_page}, {target_octave})"
+        )
+        # 翻页前先取消八度偏移，避免跨页时经过边界外的音域。
+        if self.current_page != target_page and self.current_octave != 0:
+            self.tap_key('lshift' if self.current_octave == 1 else 'lctrl')
+            self.current_octave = 0
         # 切换页面 (使用 < 和 >)
         while self.current_page < target_page:
             self.tap_key('.')
@@ -318,15 +332,15 @@ class MidiPlayerTask(BaseTask):
         # 切换八度 (使用 Shift 和 Ctrl)
         if self.current_octave != target_octave:
             if target_octave == 1:
-                self.tap_key('shift')
+                self.tap_key('lshift')
             elif target_octave == -1:
-                self.tap_key('ctrl')
+                self.tap_key('lctrl')
             elif target_octave == 0:
                 # 目标是正常音域，根据当前状态取消修饰键
                 if self.current_octave == 1:
-                    self.tap_key('shift')
+                    self.tap_key('lshift')
                 elif self.current_octave == -1:
-                    self.tap_key('ctrl')
+                    self.tap_key('lctrl')
             self.current_octave = target_octave
 
     def get_best_state(self, events, start_idx, note):
@@ -360,6 +374,7 @@ class MidiPlayerTask(BaseTask):
         return best_state
 
     def run(self):
+        key_state = MidiKeyState(self.send_key_down, self.send_key_up, self.sleep)
         midi_file_name = self.config.get('MIDI File')
         file_path = os.path.join('./midi/', midi_file_name)
 
@@ -424,11 +439,11 @@ class MidiPlayerTask(BaseTask):
             # 3. 重新排序事件
             raw_events.sort(key=lambda x: x['time'])
             events = [(e['time'], e['msg']) for e in raw_events]
+            planned_events = plan_midi_events(events, self.is_in_range)
 
             # 初始化游戏内部钢琴状态
             self.current_page = 1  # 默认在中间页面: 1 (对应 C3~B5)
             self.current_octave = 0  # 默认无修饰键: 0 (正常), 1 (Shift), -1 (Ctrl)
-            playing_notes = {}  # 记录当前按下的键，方便正确释放
             is_pedal_on = False  # 记录当前踏板状态
 
             # 合奏模式需要等待节拍器
@@ -456,15 +471,13 @@ class MidiPlayerTask(BaseTask):
 
             start_time = time.time()
 
-            for i, (msg_time, msg) in enumerate(events):
+            for msg_time, msg, target_state in planned_events:
                 if not self.running:
                     break
 
                 # 暂停期间冻结 MIDI 时间轴，避免恢复后瞬间补播积压事件
                 if self.paused:
-                    for key in playing_notes.values():
-                        self.send_key_up(key)
-                    playing_notes.clear()
+                    key_state.release_all()
                     paused_at = time.time()
                     while self.running and self.paused:
                         time.sleep(0.05)
@@ -485,24 +498,19 @@ class MidiPlayerTask(BaseTask):
 
                 is_note_on = msg.type == 'note_on' and msg.velocity > 0
 
-                # 如果是弹下新音符，检查并切换音域
+                # 同一时刻的音符已按可共用音域分组，按计划切换。
                 if is_note_on:
-                    if not self.is_in_range(msg.note, self.current_page, self.current_octave):
-                        # 触发前瞻预测
-                        best_state = self.get_best_state(events, i, msg.note)
-                        if best_state:
-                            self.switch_state(best_state[0], best_state[1])
-                        else:
-                            self.log_error(og.app.tr("Cannot play pitch: {}").format(msg.note))
+                    if target_state is not None:
+                        self.switch_state(*target_state)
+                    else:
+                        self.log_error(og.app.tr("Cannot play pitch: {}").format(msg.note))
 
                 # 基于全局的绝对时间进行延迟等待
                 # 把切换按键耗费的时间算进去，多退少补
                 target_time = start_time + msg_time
                 while self.running:
                     if self.paused:
-                        for key in playing_notes.values():
-                            self.send_key_up(key)
-                        playing_notes.clear()
+                        key_state.release_all()
                         paused_at = time.time()
                         while self.running and self.paused:
                             time.sleep(0.05)
@@ -521,17 +529,14 @@ class MidiPlayerTask(BaseTask):
 
                 # 实际演奏
                 if is_note_on:
-                    key = self.get_key(msg.note, self.current_page, self.current_octave)
-                    if key:
-                        self.send_key_down(key)
-                        playing_notes[msg.note] = key
+                    key = (self.get_key(msg.note, self.current_page, self.current_octave)
+                           if target_state is not None else None)
+                    key_state.note_on(msg.channel, msg.note, key)
                 elif msg.type in ('note_off', 'note_on'): # note_off 或 velocity == 0
-                    key = playing_notes.get(msg.note)
-                    if key:
-                        self.send_key_up(key)
-                        del playing_notes[msg.note]
+                    key_state.note_off(msg.channel, msg.note)
 
             # 演奏结束后清理，清理修饰键状态，松开空格
+            key_state.release_all()
             if is_pedal_on:
                 self.tap_key('space')
             self.switch_state(1, 0)
@@ -543,3 +548,5 @@ class MidiPlayerTask(BaseTask):
                 self.tap_key('space')
             self.switch_state(1, 0)
             self.log_error(og.app.tr("Playback error: {}").format(e), notify=True)
+        finally:
+            key_state.release_all()
