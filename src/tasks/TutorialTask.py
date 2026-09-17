@@ -1,7 +1,8 @@
 import time
 import heapq
 import numpy as np
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QRectF, QTimer
+from PySide6.QtGui import QColor, QPen
 from numpy._typing import NDArray
 from itertools import groupby
 from ok import BaseTask, og
@@ -18,6 +19,8 @@ class TutorialTask(BaseTask):
         self.group_name = 'Band'
         self.default_config.update({})
         self.executed = False
+        self._pressed_keys = set()
+        self._key_overlay = None
 
         # 按键在屏幕横向位置的范围
         self.notes = {
@@ -53,6 +56,49 @@ class TutorialTask(BaseTask):
                         break
 
     def run(self):
+        self._pressed_keys.clear()
+        self._key_overlay = self.get_overlay_view()
+        try:
+            self._run_chart()
+        finally:
+            try:
+                for key in tuple(self._pressed_keys):
+                    try:
+                        self.send_key_up(key)
+                    except Exception as e:
+                        self.log_error(f"Failed to release tutorial key {key}: {e}")
+            finally:
+                self._pressed_keys.clear()
+                if self._key_overlay is not None:
+                    self._key_overlay.clear_draw('tutorial_pressed_keys')
+                self._key_overlay = None
+
+    def _draw_pressed_keys(self):
+        if self._key_overlay is None:
+            return
+        if not self._pressed_keys:
+            self._key_overlay.clear_draw('tutorial_pressed_keys')
+            return
+
+        # 使用实际已发送的按键状态；向 Qt 绘制线程传递不可变的坐标快照。
+        rectangles = []
+        for key in sorted(self._pressed_keys):
+            x_start, x_end = self.notes[key]
+            is_black_key = key in '1234567890iop[]'
+            y_start, y_end = (0.680, 0.797) if is_black_key else (0.805, 0.874)
+            rectangles.append((0.237 + x_start * 0.717, y_start,
+                               (x_end - x_start) * 0.717, y_end - y_start))
+        rectangles = tuple(rectangles)
+
+        def paint(painter, view):
+            painter.setPen(QPen(QColor(0, 255, 120), 2))
+            for x, y, width, height in rectangles:
+                painter.drawRect(QRectF(x * view.width(), y * view.height(),
+                                       width * view.width(), height * view.height()))
+
+        self._key_overlay.draw('tutorial_pressed_keys', paint)
+
+    def _run_chart(self):
         self.info['status'] = 'Waiting'
         offset = self.config['Offset (ms)']
         while(True):
@@ -160,8 +206,12 @@ class TutorialTask(BaseTask):
                 exec_time, ev_type, key = heapq.heappop(event_queue)
                 if ev_type == 'down':
                     self.send_key_down(key)
+                    self._pressed_keys.add(key)
+                    self._draw_pressed_keys()
                 elif ev_type == 'up':
                     self.send_key_up(key)
+                    self._pressed_keys.discard(key)
+                    self._draw_pressed_keys()
 
             if not self.find_one('keyboard'):
                 self.info['status'] = 'Done'
