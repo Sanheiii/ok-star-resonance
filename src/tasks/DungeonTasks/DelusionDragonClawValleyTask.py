@@ -17,7 +17,7 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
         self.default_config.update({'Difficulty': 'Hard'})
         self.config_type['Difficulty'] = {
             'type': 'drop_down',
-            'options': ['Hard', 'Master 1'],
+            'options': ['Hard', 'Master 1', 'Master 6'],
         }
 
     def run(self):
@@ -26,8 +26,10 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
             self.difficulty = {
                 'Hard': Difficulty.HARD,
                 'Master 1': Difficulty.MASTER1,
+                'Master 6': Difficulty.MASTER6,
                 '困难': Difficulty.HARD,
                 '大师1': Difficulty.MASTER1,
+                '大师6': Difficulty.MASTER6,
             }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
             if self.exec():
                 if self.record_successful_clear():

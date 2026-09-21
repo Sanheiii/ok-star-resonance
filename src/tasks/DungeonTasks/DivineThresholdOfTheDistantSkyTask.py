@@ -34,7 +34,7 @@ class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
         self.default_config.update({'Difficulty': 'Hard'})
         self.config_type['Difficulty'] = {
             'type': 'drop_down',
-            'options': ['Hard', 'Master 1'],
+            'options': ['Hard', 'Master 1', 'Master 6'],
         }
 
     def run(self):
@@ -43,8 +43,10 @@ class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
             self.difficulty = {
                 'Hard': Difficulty.HARD,
                 'Master 1': Difficulty.MASTER1,
+                'Master 6': Difficulty.MASTER6,
                 '困难': Difficulty.HARD,
                 '大师1': Difficulty.MASTER1,
+                '大师6': Difficulty.MASTER6,
             }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
             if self.exec():
                 if self.record_successful_clear():
@@ -112,7 +114,7 @@ class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
 
         self._interact('激活第二处机关')
 
-        if (self.difficulty is Difficulty.MASTER1
+        if (self.difficulty in (Difficulty.MASTER1, Difficulty.MASTER6)
                 and not self._run_master_route()):
             return False
 

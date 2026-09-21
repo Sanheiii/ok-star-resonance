@@ -14,7 +14,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         self.default_config.update({'Difficulty': 'Hard'})
         self.config_type['Difficulty'] = {
             'type': 'drop_down',
-            'options': ['Hard', 'Master 1'],
+            'options': ['Hard', 'Master 1', 'Master 6'],
         }
 
     def run(self):
@@ -22,8 +22,10 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
         self.difficulty = {
             'Hard': Difficulty.HARD,
             'Master 1': Difficulty.MASTER1,
+            'Master 6': Difficulty.MASTER6,
             '困难': Difficulty.HARD,
             '大师1': Difficulty.MASTER1,
+            '大师6': Difficulty.MASTER6,
         }.get(self.config.get('Difficulty', 'Hard'), Difficulty.HARD)
         while True:
             if self.exec():
@@ -100,7 +102,7 @@ class JudgmentInTheMirrorTask(DungeonTaskBase):
             self.log_error('第二个小浮空岛战斗超时')
             return False
 
-        if self.difficulty is Difficulty.MASTER1:
+        if self.difficulty in (Difficulty.MASTER1, Difficulty.MASTER6):
             self.info_set('State', '第三次跳台')
             self.send_key('space', after_sleep=0.2)
             self.send_key('space', after_sleep=2)
