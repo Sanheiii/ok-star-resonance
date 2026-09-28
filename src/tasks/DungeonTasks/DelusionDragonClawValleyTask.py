@@ -99,6 +99,7 @@ class DelusionDragonClawValleyTask(DungeonTaskBase):
         self.info_set('State', '交互开启后续路线')
         self.sleep(1)
         self.send_key('f', after_sleep=1)
+        self.send_key('w', after_sleep=3)
 
         if not self._follow_route((
                 (493.592, 332.410),

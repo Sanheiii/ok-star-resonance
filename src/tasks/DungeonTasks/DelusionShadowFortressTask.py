@@ -41,9 +41,14 @@ class DelusionShadowFortressTask(DungeonTaskBase):
             return False
         self.investigate(self.INSTRUMENT_POSITION)
 
+        (420.123, 3.792),
         if not self._follow_route((
                 (422.472, -1.512),
                 (420.635, 2.635),
+        ), '前往第一处战斗'):
+            return False
+        self.send_key('a', 0.5)
+        if not self._follow_route((
                 (414.624, 3.651),
                 (402.965, -7.175),
                 (418.629, -27.210),
@@ -234,17 +239,27 @@ class DelusionShadowFortressTask(DungeonTaskBase):
             return False
         self.send_key(self.get_custom_key('Toggle Walk/Run'), after_sleep=0.5)
 
-        if not self._follow_route((
+        final_combat_route = (
                 (437.742, -156.903),
                 (458.448, -177.019),
                 (469.117, -163.564),
-        ), '前往最后一处战斗'):
-            return False
+        )
+        if not self._follow_route(final_combat_route, '前往最后一处战斗'):
+            if not self._recover_near_position((433.065, -143.546)):
+                return False
+            if not self._follow_route(final_combat_route, '前往最后一处战斗'):
+                return False
 
-        self.send_key(self.get_custom_key('Auto Battle'))
-        if not self._wait_for_combat_end('最后一处战斗'):
-            return False
-        self.send_key(self.get_custom_key('Auto Battle'))
+        if any(
+                entity.get('entity_type') == 1
+                and not entity.get('is_dead', False)
+                for entity in self.nearby_entities.values()):
+            self.send_key(self.get_custom_key('Auto Battle'))
+            if not self._wait_for_combat_end('最后一处战斗'):
+                return False
+            self.send_key(self.get_custom_key('Auto Battle'))
+        else:
+            self.log_info('附近没有存活怪物，跳过最后一处战斗')
 
         if not self._follow_route((
                 (462.826, -177.288),
@@ -252,7 +267,10 @@ class DelusionShadowFortressTask(DungeonTaskBase):
                 (488.071, -147.281),
                 (488.569, -126.963),
         ), '前往Boss房'):
-            return False
+            if not self._recover_near_position((483.817, -139.043)):
+                return False
+            if not self._follow_route(((488.569, -126.963),), '前往Boss房'):
+                return False
         if not self._jump_from_building():
             return False
         self.sleep(2)
@@ -292,6 +310,21 @@ class DelusionShadowFortressTask(DungeonTaskBase):
                 break
 
         return self.handle_end()
+
+    def _recover_near_position(self, target):
+        position = self.position
+        if position is None:
+            return False
+        x, z = self._xz(position)
+        if (x - target[0]) ** 2 + (z - target[1]) ** 2 > 1:
+            return False
+        self.log_info('位于已知死点，按住D一秒后重试移动')
+        try:
+            self.sleep(2)
+            self.send_key('d', down_time=1)
+        finally:
+            self.send_key_up('d')
+        return True
 
     def _follow_route(self, route, state, enable_sprint = True):
         self.info_set('State', state)

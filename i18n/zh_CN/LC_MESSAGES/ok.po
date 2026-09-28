@@ -789,6 +789,9 @@ msgstr "困难"
 msgid "Master 1"
 msgstr "大师1"
 
+msgid "Master 6"
+msgstr "大师6"
+
 msgid "Dissonance S4 Combat Assist"
 msgstr "狂音S4战斗辅助"
 
