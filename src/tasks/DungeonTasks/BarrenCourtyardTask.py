@@ -4,7 +4,7 @@ import time
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class DesolateGardenTask(DungeonTaskBase):
+class BarrenCourtyardTask(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (-52.860, -11.590)
     BOSS_ATTR_ID = 4711
@@ -14,7 +14,7 @@ class DesolateGardenTask(DungeonTaskBase):
     SPECIAL_TARGET_ATTR_ID = 884642
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Desolate Garden'
+        self.task_name = 'Barren Courtyard'
         self.task_name_zh = '荒芜之庭'
         self.task_desc = 'DPS classes may take longer during the Boss fight.'
         self.task_desc_zh = '输出职业在Boss战可能消耗更多时间。'

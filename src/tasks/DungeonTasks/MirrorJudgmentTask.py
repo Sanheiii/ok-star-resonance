@@ -3,10 +3,10 @@ import math
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class JudgmentInTheMirrorTask(DungeonTaskBase):
+class MirrorJudgmentTask(DungeonTaskBase):
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Judgment in the Mirror'
+        self.task_name = 'Mirror Judgment'
         self.task_name_zh = '镜中的审判'
         self.task_desc = ''
         self.task_desc_zh = ''

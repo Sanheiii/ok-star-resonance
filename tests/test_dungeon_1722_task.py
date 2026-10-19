@@ -1,6 +1,6 @@
 import unittest
 
-from src.tasks.DungeonTasks.DelusionFlowingMoonWildernessTask import DelusionFlowingMoonWildernessTask
+from src.tasks.DungeonTasks.IllusionShroudMoonveilWildsTask import IllusionShroudMoonveilWildsTask
 
 
 class _InfoSetTaskMixin:
@@ -26,7 +26,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         task = Task()
 
         self.assertEqual(
-            DelusionFlowingMoonWildernessTask._wait_for_entity_position(task, 5023, 3),
+            IllusionShroudMoonveilWildsTask._wait_for_entity_position(task, 5023, 3),
             (4, 5, 6),
         )
         self.assertEqual(task.time_out, 10)
@@ -42,20 +42,20 @@ class Dungeon1722TaskTest(unittest.TestCase):
                 return False
 
         self.assertIsNone(
-            DelusionFlowingMoonWildernessTask._wait_for_entity_position(Task(), 1955, 1)
+            IllusionShroudMoonveilWildsTask._wait_for_entity_position(Task(), 1955, 1)
         )
 
     def test_master_route_interacts_with_5020_before_retrying(self):
         class Task(_InfoSetTaskMixin):
-            COMBAT_ROUNDS = DelusionFlowingMoonWildernessTask.COMBAT_ROUNDS
-            BOSS_ENTRANCE_ATTR_ID = DelusionFlowingMoonWildernessTask.BOSS_ENTRANCE_ATTR_ID
-            MASTER_INTERACTION_ATTR_ID = DelusionFlowingMoonWildernessTask.MASTER_INTERACTION_ATTR_ID
-            ENTITY_WAIT_TIMEOUT = DelusionFlowingMoonWildernessTask.ENTITY_WAIT_TIMEOUT
+            COMBAT_ROUNDS = IllusionShroudMoonveilWildsTask.COMBAT_ROUNDS
+            BOSS_ENTRANCE_ATTR_ID = IllusionShroudMoonveilWildsTask.BOSS_ENTRANCE_ATTR_ID
+            MASTER_INTERACTION_ATTR_ID = IllusionShroudMoonveilWildsTask.MASTER_INTERACTION_ATTR_ID
+            ENTITY_WAIT_TIMEOUT = IllusionShroudMoonveilWildsTask.ENTITY_WAIT_TIMEOUT
             _find_nearby_entity_position = staticmethod(
-                DelusionFlowingMoonWildernessTask._find_nearby_entity_position
+                IllusionShroudMoonveilWildsTask._find_nearby_entity_position
             )
-            _find_combat_round = DelusionFlowingMoonWildernessTask._find_combat_round
-            _wait_for_entity_position = DelusionFlowingMoonWildernessTask._wait_for_entity_position
+            _find_combat_round = IllusionShroudMoonveilWildsTask._find_combat_round
+            _wait_for_entity_position = IllusionShroudMoonveilWildsTask._wait_for_entity_position
 
             def __init__(self):
                 self.entities = {}
@@ -101,22 +101,22 @@ class Dungeon1722TaskTest(unittest.TestCase):
 
         task = Task()
 
-        self.assertTrue(DelusionFlowingMoonWildernessTask._run_master_route(task))
+        self.assertTrue(IllusionShroudMoonveilWildsTask._run_master_route(task))
         self.assertEqual(task.interactions, [5020])
         self.assertEqual(task.sleeps, [1, 3])
         self.assertEqual(task.events, ['wait', 'sleep', 'find', 'use', 'sleep'])
 
     def test_master_route_clears_a_nearby_combat_round_first(self):
         class Task(_InfoSetTaskMixin):
-            COMBAT_ROUNDS = DelusionFlowingMoonWildernessTask.COMBAT_ROUNDS
-            BOSS_ENTRANCE_ATTR_ID = DelusionFlowingMoonWildernessTask.BOSS_ENTRANCE_ATTR_ID
-            MASTER_INTERACTION_ATTR_ID = DelusionFlowingMoonWildernessTask.MASTER_INTERACTION_ATTR_ID
-            ENTITY_WAIT_TIMEOUT = DelusionFlowingMoonWildernessTask.ENTITY_WAIT_TIMEOUT
+            COMBAT_ROUNDS = IllusionShroudMoonveilWildsTask.COMBAT_ROUNDS
+            BOSS_ENTRANCE_ATTR_ID = IllusionShroudMoonveilWildsTask.BOSS_ENTRANCE_ATTR_ID
+            MASTER_INTERACTION_ATTR_ID = IllusionShroudMoonveilWildsTask.MASTER_INTERACTION_ATTR_ID
+            ENTITY_WAIT_TIMEOUT = IllusionShroudMoonveilWildsTask.ENTITY_WAIT_TIMEOUT
             _find_nearby_entity_position = staticmethod(
-                DelusionFlowingMoonWildernessTask._find_nearby_entity_position
+                IllusionShroudMoonveilWildsTask._find_nearby_entity_position
             )
-            _find_combat_round = DelusionFlowingMoonWildernessTask._find_combat_round
-            _wait_for_entity_position = DelusionFlowingMoonWildernessTask._wait_for_entity_position
+            _find_combat_round = IllusionShroudMoonveilWildsTask._find_combat_round
+            _wait_for_entity_position = IllusionShroudMoonveilWildsTask._wait_for_entity_position
 
             def __init__(self):
                 self.entities = {
@@ -167,7 +167,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
 
         task = Task()
 
-        self.assertTrue(DelusionFlowingMoonWildernessTask._run_master_route(task))
+        self.assertTrue(IllusionShroudMoonveilWildsTask._run_master_route(task))
         self.assertEqual(task.cleared_rounds, [(5024, 1956)])
         self.assertEqual(task.interactions, [])
 
@@ -176,7 +176,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
             BOSS_ENTRANCE_ATTR_ID = 5028
             MASTER_INTERACTION_ATTR_ID = 5020
             _find_nearby_entity_position = staticmethod(
-                DelusionFlowingMoonWildernessTask._find_nearby_entity_position
+                IllusionShroudMoonveilWildsTask._find_nearby_entity_position
             )
 
             def __init__(self):
@@ -205,7 +205,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
 
         task = Task()
 
-        self.assertTrue(DelusionFlowingMoonWildernessTask._run_master_route(task))
+        self.assertTrue(IllusionShroudMoonveilWildsTask._run_master_route(task))
         self.assertEqual(task.special_calls, 1)
         self.assertEqual(task.wait_calls, 1)
 
@@ -218,10 +218,10 @@ class Dungeon1722TaskTest(unittest.TestCase):
             BOSS_ENTRANCE_ATTR_ID = 5028
             EXIT_SCENE_OBJECT_ATTR_ID = 5029
             _run_master_5022_route = (
-                DelusionFlowingMoonWildernessTask._run_master_5022_route
+                IllusionShroudMoonveilWildsTask._run_master_5022_route
             )
             _run_master_5021_route = (
-                DelusionFlowingMoonWildernessTask._run_master_5021_route
+                IllusionShroudMoonveilWildsTask._run_master_5021_route
             )
 
             def __init__(self):
@@ -261,7 +261,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         task = Task()
 
         self.assertTrue(
-            DelusionFlowingMoonWildernessTask._run_master_special_route(task)
+            IllusionShroudMoonveilWildsTask._run_master_special_route(task)
         )
         self.assertEqual(task.calls, [
             ('wait_any', (5022, 5021), 3),
@@ -283,7 +283,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
             BOSS_ENTRANCE_ATTR_ID = 5028
             EXIT_SCENE_OBJECT_ATTR_ID = 5029
             _find_master_event_exit = (
-                DelusionFlowingMoonWildernessTask._find_master_event_exit
+                IllusionShroudMoonveilWildsTask._find_master_event_exit
             )
 
             def __init__(self):
@@ -336,7 +336,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
 
         task = Task()
 
-        self.assertTrue(DelusionFlowingMoonWildernessTask._run_master_5021_route(task))
+        self.assertTrue(IllusionShroudMoonveilWildsTask._run_master_5021_route(task))
         self.assertEqual(task.calls[:2], [
             ('use_scene_object', 5021, '进入花朵金娜'),
             ('wait_entity', 140154, 2),
@@ -358,7 +358,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         }
 
         self.assertEqual(
-            DelusionFlowingMoonWildernessTask._find_master_target_gate(entities),
+            IllusionShroudMoonveilWildsTask._find_master_target_gate(entities),
             5039,
         )
 
@@ -368,10 +368,10 @@ class Dungeon1722TaskTest(unittest.TestCase):
             EXIT_SCENE_OBJECT_ATTR_ID = 5029
             ENTITY_WAIT_TIMEOUT = 10
             _find_master_event_exit = (
-                DelusionFlowingMoonWildernessTask._find_master_event_exit
+                IllusionShroudMoonveilWildsTask._find_master_event_exit
             )
             _wait_for_master_event_exit = (
-                DelusionFlowingMoonWildernessTask._wait_for_master_event_exit
+                IllusionShroudMoonveilWildsTask._wait_for_master_event_exit
             )
 
             def __init__(self):
@@ -410,13 +410,13 @@ class Dungeon1722TaskTest(unittest.TestCase):
 
         task = Task()
 
-        self.assertTrue(DelusionFlowingMoonWildernessTask._use_master_exit(task))
+        self.assertTrue(IllusionShroudMoonveilWildsTask._use_master_exit(task))
         self.assertTrue(task._master_boss_entrance_found)
         self.assertEqual(task.calls, [('wait_until', 10)])
 
     def test_master_green_route_waits_then_fights_at_configured_position(self):
         class Task(_InfoSetTaskMixin):
-            MASTER_GREEN_GATES = DelusionFlowingMoonWildernessTask.MASTER_GREEN_GATES
+            MASTER_GREEN_GATES = IllusionShroudMoonveilWildsTask.MASTER_GREEN_GATES
 
             def __init__(self):
                 self.calls = []
@@ -452,7 +452,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
         task = Task()
 
         self.assertTrue(
-            DelusionFlowingMoonWildernessTask._run_master_green_route(
+            IllusionShroudMoonveilWildsTask._run_master_green_route(
                 task,
                 5039,
                 (-256.953, -382.241),
@@ -481,9 +481,9 @@ class Dungeon1722TaskTest(unittest.TestCase):
             MASTER_5026_WAIT_TIME = 5
             ENTITY_WAIT_TIMEOUT = 10
             _interact_master_npc = (
-                DelusionFlowingMoonWildernessTask._interact_master_npc
+                IllusionShroudMoonveilWildsTask._interact_master_npc
             )
-            _wait_for_entities = DelusionFlowingMoonWildernessTask._wait_for_entities
+            _wait_for_entities = IllusionShroudMoonveilWildsTask._wait_for_entities
 
             def __init__(self):
                 self.entities = {
@@ -535,7 +535,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
 
         task = Task()
 
-        self.assertTrue(DelusionFlowingMoonWildernessTask._run_master_5026_route(task))
+        self.assertTrue(IllusionShroudMoonveilWildsTask._run_master_5026_route(task))
         self.assertEqual(
             [call[1] for call in task.calls if call[0] == 'move'],
             [(1, 2, 3), (1, 0, 1), (10, 0, 10)],
@@ -555,10 +555,10 @@ class Dungeon1722TaskTest(unittest.TestCase):
             BOSS_ENTRANCE_ATTR_ID = 5028
             EXIT_SCENE_OBJECT_ATTR_ID = 5029
             _interact_master_npc = (
-                DelusionFlowingMoonWildernessTask._interact_master_npc
+                IllusionShroudMoonveilWildsTask._interact_master_npc
             )
             _find_master_event_exit = (
-                DelusionFlowingMoonWildernessTask._find_master_event_exit
+                IllusionShroudMoonveilWildsTask._find_master_event_exit
             )
 
             def __init__(self):
@@ -596,7 +596,7 @@ class Dungeon1722TaskTest(unittest.TestCase):
 
         task = Task()
 
-        self.assertTrue(DelusionFlowingMoonWildernessTask._run_master_5027_route(task))
+        self.assertTrue(IllusionShroudMoonveilWildsTask._run_master_5027_route(task))
         self.assertEqual(
             [call[1] for call in task.calls if call[0] == 'send_key'],
             ['f', 'w', 'f', '`'],

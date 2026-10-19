@@ -4,7 +4,7 @@ import time
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
+class IllusionShroudMoonveilWildsTask(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (-50.000, -400.000)
     COMBAT_ROUNDS = (
@@ -39,7 +39,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
     ENTITY_WAIT_TIMEOUT = 10
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Delusion - Flowing Moon Wilderness'
+        self.task_name = 'Illusion-Shroud - Moonveil Wilds'
         self.task_name_zh = '弥妄·流月之野'
         self.task_desc = ''
         self.task_desc_zh = ''
@@ -134,7 +134,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
     def _run_master_route(self):
         while True:
             # The boss entrance means all optional combat rounds are complete.
-            if DelusionFlowingMoonWildernessTask._find_nearby_entity_position(
+            if IllusionShroudMoonveilWildsTask._find_nearby_entity_position(
                     self.nearby_entities,
                     self.BOSS_ENTRANCE_ATTR_ID,
                     entity_type=3) is not None:
@@ -161,7 +161,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
                 continue
 
             target_gate = (
-                DelusionFlowingMoonWildernessTask._find_master_target_gate(
+                IllusionShroudMoonveilWildsTask._find_master_target_gate(
                     self.nearby_entities,
                 )
             )
@@ -184,15 +184,15 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
     @staticmethod
     def _find_master_target_gate(entities):
         for attr_id in (
-                DelusionFlowingMoonWildernessTask.MASTER_SILVER_GATE_ATTR_IDS):
-            if DelusionFlowingMoonWildernessTask._find_nearby_entity_position(
+                IllusionShroudMoonveilWildsTask.MASTER_SILVER_GATE_ATTR_IDS):
+            if IllusionShroudMoonveilWildsTask._find_nearby_entity_position(
                     entities,
                     attr_id,
                     entity_type=3) is not None:
                 return attr_id
         for attr_id, _position in (
-                DelusionFlowingMoonWildernessTask.MASTER_GREEN_GATES):
-            if DelusionFlowingMoonWildernessTask._find_nearby_entity_position(
+                IllusionShroudMoonveilWildsTask.MASTER_GREEN_GATES):
+            if IllusionShroudMoonveilWildsTask._find_nearby_entity_position(
                     entities,
                     attr_id,
                     entity_type=3) is not None:
@@ -266,7 +266,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
             self.log_error(f'等待目标超时: {self.MASTER_5040_ATTR_ID}')
             return False
         target_entities = (
-            DelusionFlowingMoonWildernessTask._sort_entities_by_distance(
+            IllusionShroudMoonveilWildsTask._sort_entities_by_distance(
                 self.position,
                 target_entities,
             )
@@ -373,15 +373,15 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
         next_position = current_position
         while remaining_entities:
             current_x, current_z = (
-                DelusionFlowingMoonWildernessTask._position_xz(next_position)
+                IllusionShroudMoonveilWildsTask._position_xz(next_position)
             )
             entity_uuid, entity = min(
                 remaining_entities.items(),
                 key=lambda item: math.hypot(
-                    DelusionFlowingMoonWildernessTask._position_xz(
+                    IllusionShroudMoonveilWildsTask._position_xz(
                         item[1]['position']
                     )[0] - current_x,
-                    DelusionFlowingMoonWildernessTask._position_xz(
+                    IllusionShroudMoonveilWildsTask._position_xz(
                         item[1]['position']
                     )[1] - current_z,
                 ),
@@ -398,7 +398,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
         return position[0], position[1]
 
     def _find_master_event_exit(self):
-        boss_position = DelusionFlowingMoonWildernessTask._find_nearby_entity_position(
+        boss_position = IllusionShroudMoonveilWildsTask._find_nearby_entity_position(
             self.nearby_entities,
             self.BOSS_ENTRANCE_ATTR_ID,
             entity_type=3,
@@ -407,7 +407,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
             self._master_boss_entrance_found = True
             return self.BOSS_ENTRANCE_ATTR_ID, boss_position
 
-        exit_position = DelusionFlowingMoonWildernessTask._find_nearby_entity_position(
+        exit_position = IllusionShroudMoonveilWildsTask._find_nearby_entity_position(
             self.nearby_entities,
             self.EXIT_SCENE_OBJECT_ATTR_ID,
             entity_type=3,
@@ -441,7 +441,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
         if self._find_master_event_exit() is not None:
             if getattr(self, '_master_boss_entrance_found', False):
                 return True
-            position = DelusionFlowingMoonWildernessTask._find_nearby_entity_position(
+            position = IllusionShroudMoonveilWildsTask._find_nearby_entity_position(
                 self.nearby_entities,
                 self.EXIT_SCENE_OBJECT_ATTR_ID,
                 entity_type=3,
@@ -550,7 +550,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
 
     def _find_combat_round(self):
         for scene_object_attr_id, monster_attr_id in self.COMBAT_ROUNDS:
-            if DelusionFlowingMoonWildernessTask._find_nearby_entity_position(
+            if IllusionShroudMoonveilWildsTask._find_nearby_entity_position(
                     self.nearby_entities,
                     scene_object_attr_id,
                     entity_type=3) is not None:
@@ -644,7 +644,7 @@ class DelusionFlowingMoonWildernessTask(DungeonTaskBase):
 
         def find_entity():
             result['position'] = (
-                DelusionFlowingMoonWildernessTask._find_nearby_entity_position(
+                IllusionShroudMoonveilWildsTask._find_nearby_entity_position(
                     self.nearby_entities,
                     attr_id,
                     entity_type,

@@ -1,12 +1,12 @@
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class DelusionShadowFortressTask(DungeonTaskBase):
+class IllusionShroudDarkMistFortressTask(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (422.870, -6.900)
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Delusion - Shadow Fortress'
+        self.task_name = 'Illusion-Shroud - Dark Mist Fortress'
         self.task_name_zh = '弥妄·黯影堡垒'
         self.task_desc = 'Tank classes are not supported.'
         self.task_desc_zh = '不支持守护职业。'

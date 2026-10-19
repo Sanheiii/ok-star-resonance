@@ -1,7 +1,7 @@
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
+class CavernZeroTask(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (9.920, 50.740)
     FIRST_WAVE_MONSTER_UUIDS = frozenset({
@@ -25,7 +25,7 @@ class DivineThresholdOfTheDistantSkyTask(DungeonTaskBase):
     })
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Divine Threshold of the Distant Sky'
+        self.task_name = 'Cavern Zero'
         self.task_name_zh = '远天的神槛'
         self.task_desc = ''
         self.task_desc_zh = ''

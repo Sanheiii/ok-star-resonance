@@ -3,13 +3,13 @@ import time
 from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase, Difficulty
 
 
-class DelusionDragonClawValleyTask(DungeonTaskBase):
+class IllusionShroudDragonClawValleyTask(DungeonTaskBase):
 
     INSTRUMENT_POSITION = (34.800, 36.100)
     BOSS_ATTR_ID = 1399
 
     def __init__(self, *args, **kwargs):
-        self.task_name = 'Delusion - Dragon Claw Valley'
+        self.task_name = 'Illusion-Shroud - Dragon Claw Valley'
         self.task_name_zh = '弥妄·巨龙爪痕'
         self.task_desc = 'Not recommended for DPS or Lifebind.'
         self.task_desc_zh = '不建议使用输出或愈合执行此任务。'
