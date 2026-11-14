@@ -4,6 +4,7 @@ import win32con
 from ok import PostMessageInteraction
 from src.interaction.mouse_keys import parse_mouse_key
 from src.interaction.numpad_keys import parse_numpad_key
+from src.interaction.physical_keys import us_scan_code, virtual_key_for_scan
 
 
 class HybridInteraction(PostMessageInteraction):
@@ -54,6 +55,25 @@ class HybridInteraction(PostMessageInteraction):
             self.click(*self._screen_center(), down_time=down_time, key=mouse_key)
             return
         super().send_key(key, down_time)
+
+    def send_physical_key_down(self, key, activate=True):
+        if activate:
+            self.try_activate()
+        virtual_key, lparam = self._physical_key_message(key, is_up=False)
+        self.post(win32con.WM_KEYDOWN, virtual_key, lparam)
+
+    def send_physical_key_up(self, key):
+        virtual_key, lparam = self._physical_key_message(key, is_up=True)
+        self.post(win32con.WM_KEYUP, virtual_key, lparam)
+
+    def _physical_key_message(self, key, is_up):
+        """Message parameters for ``key`` at its US keyboard position in the game window's layout."""
+        scan_code = us_scan_code(key)
+        virtual_key = virtual_key_for_scan(scan_code, self.hwnd)
+        lparam = (scan_code << 16) | 1
+        if is_up:
+            lparam |= (1 << 30) | (1 << 31)
+        return virtual_key, lparam
 
     def _keyboard_message(self, key, is_up):
         virtual_key = parse_numpad_key(key)

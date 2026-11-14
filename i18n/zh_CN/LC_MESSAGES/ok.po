@@ -522,6 +522,9 @@ msgstr "已完成"
 msgid "Offset (ms)"
 msgstr "偏移（毫秒）"
 
+msgid "Release Delay (ms)"
+msgstr "松键延迟（毫秒）"
+
 msgid "Packet Capture"
 msgstr "抓包工具"
 

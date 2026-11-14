@@ -16,6 +16,7 @@ from ok.ui.qt.kit.dialogs import Dialog
 from ok.ui.qt.kit.theme import theme
 from ok.ui.qt.tasks.config_editors import DropDownEditor
 from src.gui.MidiVisualizerDialog import MidiVisualizerDialog
+from src.tasks.band_keys import BandKeyMixin
 from src.tasks.midi_key_state import MidiKeyState
 from src.tasks.midi_schedule import plan_midi_events
 
@@ -70,7 +71,7 @@ class TrackSelectionDialog(Dialog):
     def get_selected_tracks(self):
         return [i for i, cb in self.checkboxes if cb.isChecked()]
 
-class MidiPlayerTask(BaseTask):
+class MidiPlayerTask(BandKeyMixin, BaseTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -261,11 +262,17 @@ class MidiPlayerTask(BaseTask):
 
     def tap_key(self, key):
         """模拟短按按键"""
+        if key in (',', '.'):
+            key_down = self.send_band_key_down
+            key_up = self.send_band_key_up
+        else:
+            key_down = self.send_key_down
+            key_up = self.send_key_up
         try:
-            self.send_key_down(key)
+            key_down(key)
             self.sleep(0.02)
         finally:
-            self.send_key_up(key)
+            key_up(key)
         self.sleep(0.02)
 
     # Playable range constants (A0=21 to C8=108)
@@ -364,7 +371,7 @@ class MidiPlayerTask(BaseTask):
         return best_state
 
     def run(self):
-        key_state = MidiKeyState(self.send_key_down, self.send_key_up, self.sleep)
+        key_state = MidiKeyState(self.send_band_key_down, self.send_band_key_up, self.sleep)
         midi_file_name = self.config.get('MIDI File')
         file_path = os.path.join('./midi/', midi_file_name)
 

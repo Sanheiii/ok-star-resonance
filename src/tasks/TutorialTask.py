@@ -1,21 +1,22 @@
 import time
 import heapq
 import numpy as np
-from PySide6.QtCore import QRectF
-from PySide6.QtGui import QColor, QPen
 from numpy._typing import NDArray
 from itertools import groupby
 from ok import BaseTask, og
 
+from src.tasks.band_keys import BandKeyMixin
 
-class TutorialTask(BaseTask):
+
+class TutorialTask(BandKeyMixin, BaseTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "Tutorial Chart Performance"
         self.description = "Use in stable light; avoid moving objects/VFX at at the top."
-        self.default_config.update({'Offset (ms)': -1})
+        self.default_config.update({'Offset (ms)': -1, 'Release Delay (ms)': 60})
         self.config_type['Offset (ms)'] = {'min': -300, 'max': 1000}
+        self.config_type['Release Delay (ms)'] = {'min': 0}
         self.group_name = 'Band'
         self.default_config.update({})
         self.executed = False
@@ -48,7 +49,7 @@ class TutorialTask(BaseTask):
             try:
                 for key in tuple(self._pressed_keys):
                     try:
-                        self.send_key_up(key)
+                        self.send_band_key_up(key)
                     except Exception as e:
                         self.log_error(f"Failed to release tutorial key {key}: {e}")
             finally:
@@ -64,27 +65,30 @@ class TutorialTask(BaseTask):
             self._key_overlay.clear_draw('tutorial_pressed_keys')
             return
 
-        # 使用实际已发送的按键状态；向 Qt 绘制线程传递不可变的坐标快照。
+        # 使用实际已发送的按键状态，向覆盖层传递不可变的画面坐标快照。
+        frame_width, frame_height = self.width, self.height
         rectangles = []
         for key in sorted(self._pressed_keys):
             x_start, x_end = self.notes[key]
             is_black_key = key in '1234567890iop[]'
             y_start, y_end = (0.680, 0.797) if is_black_key else (0.805, 0.874)
-            rectangles.append((0.237 + x_start * 0.717, y_start,
-                               (x_end - x_start) * 0.717, y_end - y_start))
+            rectangles.append(((0.237 + x_start * 0.717) * frame_width,
+                               y_start * frame_height,
+                               (x_end - x_start) * 0.717 * frame_width,
+                               (y_end - y_start) * frame_height))
         rectangles = tuple(rectangles)
 
-        def paint(painter, view):
-            painter.setPen(QPen(QColor(0, 255, 120), 2))
+        def paint(canvas, _view):
             for x, y, width, height in rectangles:
-                painter.drawRect(QRectF(x * view.width(), y * view.height(),
-                                       width * view.width(), height * view.height()))
+                canvas.rectangle(x, y, width, height, color=(0, 255, 120), line_width=2)
 
         self._key_overlay.draw('tutorial_pressed_keys', paint)
 
     def _run_chart(self):
         self.info['status'] = 'Waiting'
         offset = self.config['Offset (ms)']
+        # 长按音符提前松键会判 Miss，只延迟音符结束时的松键。
+        release_delay = self.config.get('Release Delay (ms)', 60)
         while(True):
             self.next_frame()
             if self.find_one('timestamp_zero'):
@@ -142,7 +146,7 @@ class TutorialTask(BaseTask):
                     heapq.heappush(event_queue, (current_time + 3.35 + offset/1000, 'down', key))
                     current_key_state[key] = True
                 elif not is_condition_met and current_key_state[key]:
-                    heapq.heappush(event_queue, (current_time + 3.15 + offset/1000, 'up', key))
+                    heapq.heappush(event_queue, (current_time + 3.15 + (offset + release_delay)/1000, 'up', key))
                     current_key_state[key] = False
 
                 # 处理连在一起没有间隙的 Note
@@ -189,11 +193,11 @@ class TutorialTask(BaseTask):
             while event_queue and event_queue[0][0] <= time.time():
                 exec_time, ev_type, key = heapq.heappop(event_queue)
                 if ev_type == 'down':
-                    self.send_key_down(key)
+                    self.send_band_key_down(key)
                     self._pressed_keys.add(key)
                     self._draw_pressed_keys()
                 elif ev_type == 'up':
-                    self.send_key_up(key)
+                    self.send_band_key_up(key)
                     self._pressed_keys.discard(key)
                     self._draw_pressed_keys()
 

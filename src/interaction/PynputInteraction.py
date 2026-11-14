@@ -2,6 +2,7 @@ from ok.device.interaction_methods.pynput import PynputInteraction as OkPynputIn
 
 from src.interaction.mouse_keys import parse_mouse_key
 from src.interaction.numpad_keys import parse_numpad_key
+from src.interaction.physical_keys import foreground_window, us_scan_code, virtual_key_for_scan
 
 
 class PynputInteraction(OkPynputInteraction):
@@ -35,6 +36,28 @@ class PynputInteraction(OkPynputInteraction):
             self.mouse_up(key=mouse_key)
             return
         super().send_key_up(key)
+
+    def send_physical_key_down(self, key):
+        self._send_physical_key(key, is_press=True)
+
+    def send_physical_key_up(self, key):
+        self._send_physical_key(key, is_press=False)
+
+    def _send_physical_key(self, key, is_press):
+        """Press ``key`` by its US keyboard position, independent of the keyboard layout."""
+        from pynput import keyboard
+
+        if is_press and not self.clickable():
+            return
+        scan_code = us_scan_code(key)
+        # SendInput goes to the foreground window, so its layout decides the virtual key.
+        virtual_key = virtual_key_for_scan(scan_code, foreground_window())
+        key_code = keyboard.KeyCode.from_vk(virtual_key, _scan=scan_code)
+        controller = keyboard.Controller()
+        if is_press:
+            controller.press(key_code)
+        else:
+            controller.release(key_code)
 
     @staticmethod
     def get_mouse_button(key):
