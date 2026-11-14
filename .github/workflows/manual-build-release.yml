@@ -8,9 +8,9 @@ on:
         required: true
         type: string
       use_release:
-        description: 'Base release API URL used by pyappify-action'
+        description: 'Optional release API URL with a PyAppify v1.2.7 launcher to reuse'
         required: false
-        default: 'https://api.github.com/repos/Sanheiii/ok-star-resonance/releases/tags/v0.1.14'
+        default: ''
         type: string
 
 permissions: write-all
@@ -106,7 +106,8 @@ jobs:
         env:
           CI: 'false'
         with:
-          version: 'v1.0.42'
+          version: 'v1.2.7'
+          app_version: ${{ steps.meta.outputs.tag }}
           use_release: ${{ inputs.use_release }}
 
       - name: Upload Artifact

@@ -88,10 +88,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # Pin the PyAppify launcher/source version as recommended by its docs.
-          version: 'v1.1.7'
-          # Reuse the launcher binary built for v1.3.2. Update or remove this
-          # URL whenever pyappify.yml, icons, or the PyAppify version changes.
-          use_release: 'https://api.github.com/repos/Sanheiii/ok-star-resonance/releases/tags/v1.3.2'
+          version: 'v1.2.7'
+          app_version: ${{ env.BUILD_TAG }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

@@ -1,5 +1,5 @@
 ok-script[default,qt]==3.0.4
-pyappify[standalone]
+pyappify[standalone]==1.0.20
 pyside6-fluent-widgets==1.11.2
 onnxocr-ppocrv5[openvino]==0.0.23
 onnxruntime-directml==1.24.4
