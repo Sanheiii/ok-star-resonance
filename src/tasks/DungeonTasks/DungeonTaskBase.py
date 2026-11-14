@@ -4,7 +4,6 @@ import time
 from re import Pattern
 
 from ok import og, Box
-from qfluentwidgets import FluentIcon
 
 from src.dungeon_config import DUNGEON_SETTINGS
 from src.packet_capture.parser import ActorState
@@ -27,7 +26,7 @@ class DungeonTaskBase(SRTask):
         self.name = self.task_name
         self.description = self.task_desc
         self.group_name = 'Dungeon'
-        self.group_icon = FluentIcon.GAME
+        self.group_icon = "gamepad"
 
     def get_dungeon_setting(self, key):
         """Return a shared dungeon setting, with defaults for headless tests."""

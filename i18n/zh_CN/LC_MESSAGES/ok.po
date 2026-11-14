@@ -857,3 +857,6 @@ msgstr "是"
 
 msgid "No"
 msgstr "否"
+
+msgid "Show grouped tasks in On-demand"
+msgstr "在手动任务中显示已分类任务"

@@ -7,16 +7,14 @@ import win32con
 import win32file
 
 from PySide6.QtCore import QSignalBlocker
-from PySide6.QtGui import QFontMetrics
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from PySide6.QtWidgets import QCheckBox, QScrollArea, QVBoxLayout, QWidget
 from numpy import ndarray
 from ok.task.exceptions import TaskDisabledException
-from qfluentwidgets import MessageBoxBase, SubtitleLabel, CheckBox, SmoothScrollArea, FluentIcon
 
 from ok import BaseTask, og
-from ok.gui.common.design_system import control_width
-from ok.gui.tasks.LabelAndDropDown import LabelAndDropDown
-from ok.util.collection import find_index_in_list
+from ok.ui.qt.kit.dialogs import Dialog
+from ok.ui.qt.kit.theme import theme
+from ok.ui.qt.tasks.config_editors import DropDownEditor
 from src.gui.MidiVisualizerDialog import MidiVisualizerDialog
 from src.tasks.midi_key_state import MidiKeyState
 from src.tasks.midi_schedule import plan_midi_events
@@ -24,18 +22,22 @@ from src.tasks.midi_schedule import plan_midi_events
 FILE_LIST_DIRECTORY = 0x0001
 
 
-class TrackSelectionDialog(MessageBoxBase):
+class TrackSelectionDialog(Dialog):
     def __init__(self, tracks, selected_indices, parent=None):
-        super().__init__(parent)
-        self.titleLabel = SubtitleLabel(og.app.tr("Track Selection"), self)
-        self.viewLayout.addWidget(self.titleLabel)
-        self.scroll_area = SmoothScrollArea(self)
+        super().__init__(
+            parent,
+            og.app.tr("Track Selection"),
+            ok_text=og.app.tr("OK"),
+            cancel_text=og.app.tr("Cancel"),
+            width=400,
+        )
+        self.scroll_area = QScrollArea(self.panel)
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        self.scroll_area.setMinimumHeight(300)
 
         self.scroll_widget = QWidget()
+        self.scroll_widget.setObjectName("scrollContents")
         self.scroll_layout = QVBoxLayout(self.scroll_widget)
-        self.scroll_widget.setStyleSheet("QWidget { background: transparent; }")
 
         self.checkboxes = []
         for i, track in enumerate(tracks):
@@ -44,17 +46,26 @@ class TrackSelectionDialog(MessageBoxBase):
                 if msg.type == 'track_name':
                     track_name = og.app.tr("Track {}: {}").format(i, msg.name)
                     break
-            cb = CheckBox(track_name)
+            cb = QCheckBox(track_name)
             # 如果之前没有选过，则默认全选
             cb.setChecked(selected_indices is None or i in selected_indices)
             self.scroll_layout.addWidget(cb)
             self.checkboxes.append((i, cb))
         self.scroll_layout.addStretch()
         self.scroll_area.setWidget(self.scroll_widget)
-        self.viewLayout.addWidget(self.scroll_area)
-        self.yesButton.setText(og.app.tr("OK"))
-        self.cancelButton.setText(og.app.tr("Cancel"))
-        self.widget.setMinimumSize(350, 450)
+        self.body.addWidget(self.scroll_area)
+        theme.changed.connect(self._refresh_scroll_theme)
+        self._refresh_scroll_theme()
+
+    def _refresh_scroll_theme(self):
+        surface = theme.color("surface").name()
+        self.scroll_area.setStyleSheet(
+            f"QScrollArea {{ background: {surface}; border: 0; }}"
+        )
+        self.scroll_area.viewport().setStyleSheet(f"background: {surface};")
+        self.scroll_widget.setStyleSheet(
+            f"QWidget#scrollContents {{ background: {surface}; }}"
+        )
 
     def get_selected_tracks(self):
         return [i for i, cb in self.checkboxes if cb.isChecked()]
@@ -66,7 +77,7 @@ class MidiPlayerTask(BaseTask):
         self.name = "MIDI Player"
         self.description = "Plays MIDI files using in-game instruments."
         self.group_name = 'Band'
-        self.group_icon = FluentIcon.MUSIC
+        self.group_icon = "play"
         self.midi_list = None
 
         self.pitch_to_key = {
@@ -97,14 +108,14 @@ class MidiPlayerTask(BaseTask):
         self.refresh_midi_list()
 
         self.config_type['Tracks'] = {'type': "button", 'buttons': [
-            {'icon': FluentIcon.MENU, 'text': og.app.tr('Select'), 'callback': self.open_track_selector},
+            {'icon': 'tasks', 'text': og.app.tr('Select'), 'callback': self.open_track_selector},
         ]}
         self.config_type['MIDI Folder'] = {'type': "button", 'buttons': [
-            {'icon': FluentIcon.FOLDER, 'text': og.app.tr('Locate'), 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))},
-            {'icon': FluentIcon.SYNC, 'text': og.app.tr('Reload'), 'callback': self.reload_options},
+            {'icon': 'folder', 'text': og.app.tr('Locate'), 'callback': lambda: os.startfile(os.path.abspath(self.midi_dir))},
+            {'icon': 'refresh', 'text': og.app.tr('Reload'), 'callback': self.reload_options},
         ]}
         self.config_type['Visualization'] = {'type': "button", 'buttons': [
-            {'icon': FluentIcon.MUSIC, 'text': og.app.tr('Visualize'), 'callback': self.open_visualizer},
+            {'icon': 'play', 'text': og.app.tr('Visualize'), 'callback': self.open_visualizer},
         ]}
 
         # 启动后台守护线程监听文件夹变动
@@ -139,6 +150,7 @@ class MidiPlayerTask(BaseTask):
             self.config['_track_selections'] = selections
             self.log_info(og.app.tr("Selected {} tracks for {}.").format(len(selected), midi_file_name))
             self.config.save_file()
+        dialog.deleteLater()
 
     def open_visualizer(self):
         """Open the MIDI visualizer dialog."""
@@ -166,6 +178,7 @@ class MidiPlayerTask(BaseTask):
             parent=og.app.main_window
         )
         dialog.exec()
+        dialog.deleteLater()
 
     def _monitor_directory(self):
         """在后台线程中阻塞监听文件夹"""
@@ -225,49 +238,25 @@ class MidiPlayerTask(BaseTask):
 
     def reload_options(self):
         self.refresh_midi_list()
-        main_window = og.app.main_window
-        tabs = [getattr(main_window, 'onetime_tab', None)]
-        tabs.extend(getattr(main_window, 'grouped_task_tabs', []))
-
-        for tab in filter(None, tabs):
-            for widget in getattr(tab, 'card_widgets', []):
-                if getattr(widget, 'task', None) is not self:
-                    continue
-
-                config_widget = getattr(widget, 'config_widget_by_key', {}).get('MIDI File')
-                if isinstance(config_widget, LabelAndDropDown):
-                    self._reload_midi_dropdown(config_widget)
-                    widget.update_config()
-                return
+        tasks_page = getattr(og.app.main_window, 'tasks_page', None)
+        if tasks_page is None or tasks_page.selected_task is not self:
+            return
+        form = tasks_page.detail.form
+        config_widget = form.config_widget_by_key.get('MIDI File') if form else None
+        if isinstance(config_widget, DropDownEditor):
+            self._reload_midi_dropdown(config_widget)
 
     def _reload_midi_dropdown(self, config_widget):
         """更新 MIDI 下拉框，不让 clear/addItems 的中间信号覆盖当前配置。"""
         options = self.config_type['MIDI File']['options']
         current_val = self.config.get('MIDI File')
-        index = find_index_in_list(options, current_val, -1)
-        if index == -1 and options:
-            index = 0
+        if current_val not in options and options:
             self.config['MIDI File'] = options[0]
-
-        config_widget.config = self.config
-        config_widget.tr_dict.clear()
-        config_widget.tr_options.clear()
-        for option in options:
-            translated = og.app.tr(option)
-            config_widget.tr_options.append(translated)
-            config_widget.tr_dict[translated] = option
-
-        blocker = QSignalBlocker(config_widget.combo_box)
-        try:
+        config_widget.options = list(options)
+        with QSignalBlocker(config_widget.combo_box):
             config_widget.combo_box.clear()
-            config_widget.combo_box.addItems(config_widget.tr_options)
-            config_widget.combo_box.setCurrentIndex(index)
-        finally:
-            del blocker
-
-        fm = QFontMetrics(config_widget.combo_box.font())
-        max_width = max((fm.horizontalAdvance(option) for option in config_widget.tr_options), default=0)
-        config_widget.combo_box.setFixedWidth(control_width(max_width + 50))
+            config_widget.combo_box.addItems([og.app.tr(option) for option in options])
+        config_widget.update_value()
 
     def tap_key(self, key):
         """模拟短按按键"""

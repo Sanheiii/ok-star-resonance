@@ -3,13 +3,14 @@ from mido import MidiFile, bpm2tempo
 from typing import List, Dict, Set, Tuple, Optional
 from dataclasses import dataclass
 
-from PySide6.QtWidgets import QWidget, QSizePolicy, QHBoxLayout, QSlider
+from PySide6.QtWidgets import QWidget, QSizePolicy, QHBoxLayout, QScrollArea, QSlider
 from PySide6.QtCore import Qt, QTimer, Signal, QPointF, QElapsedTimer, QEvent
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPainterPath
-from qfluentwidgets import (MessageBoxBase, SubtitleLabel, BodyLabel,
-                            StrongBodyLabel, ToolButton, FluentIcon,
-                            SmoothScrollArea, CaptionLabel, isDarkTheme, themeColor)
 from ok import og
+from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.dialogs import Dialog
+from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.kit.theme import theme
 
 
 @dataclass
@@ -316,6 +317,22 @@ class PianoRollWidget(QWidget):
 
         # Enable scrollbars via mouse wheel
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
+        theme.changed.connect(self._refresh_theme_colors)
+        self._refresh_theme_colors()
+
+    def _refresh_theme_colors(self):
+        self.COLOR_WHITE_KEY = theme.color("surface_alt")
+        self.COLOR_BLACK_KEY = theme.color("border_strong")
+        self.COLOR_GRID_BEAT = theme.color("border")
+        self.COLOR_GRID_MEASURE = theme.color("border_strong")
+        self.COLOR_PLAYHEAD = theme.accent()
+        self.COLOR_PLAYABLE = theme.accent()
+        self.COLOR_UNPLAYABLE = theme.color("danger")
+        self.COLOR_MULTI_PERSON = theme.color("warning")
+        self.COLOR_UNPLAYABLE_SECTION = QColor(self.COLOR_UNPLAYABLE)
+        self.COLOR_UNPLAYABLE_SECTION.setAlpha(50)
+        self.COLOR_BACKGROUND = theme.color("surface")
+        self.update()
 
     def set_notes(self, notes: List[NoteData], tempo_events: List[TempoEvent], duration: float, selected_tracks: Set[int] = None, unplayable_sections: List[UnplayableSection] = None):
         """Set the notes to display."""
@@ -619,7 +636,7 @@ class PianoRollWidget(QWidget):
                 painter.drawRect(0, int(rect_y), int(keyboard_rect * 0.6), int(self.v_zoom))
 
         # Draw octave labels
-        painter.setPen(QPen(QColor(100, 100, 100)))
+        painter.setPen(QPen(theme.color("text_secondary")))
         font = QFont()
         font.setPointSize(8)
         painter.setFont(font)
@@ -676,12 +693,12 @@ class PianoRollWidget(QWidget):
     def _draw_time_ruler(self, painter: QPainter):
         """Draw the time ruler at the top."""
         # Background
-        painter.setPen(QPen(QColor(200, 200, 200), 1))
-        painter.setBrush(QBrush(QColor(240, 240, 240)))
+        painter.setPen(QPen(theme.color("border"), 1))
+        painter.setBrush(QBrush(theme.color("surface_alt")))
         painter.drawRect(self.KEYBOARD_WIDTH, 0, self.width() - self.KEYBOARD_WIDTH, self.TIME_RULER_HEIGHT)
 
         # Time markers
-        painter.setPen(QPen(QColor(80, 80, 80)))
+        painter.setPen(QPen(theme.color("text_secondary")))
         font = QFont()
         font.setPointSize(8)
         painter.setFont(font)
@@ -725,11 +742,11 @@ class PianoRollWidget(QWidget):
 
             # Choose color based on playability and selection
             if note == self.selected_note:
-                color = QColor(255, 200, 0)  # Yellow for selected
+                color = theme.color("warning")
             elif note.is_multi_person:
                 color = self.COLOR_MULTI_PERSON  # Orange for multi-person notes
             elif note.is_playable:
-                color = self.COLOR_PLAYABLE or QColor(74, 144, 217)
+                color = self.COLOR_PLAYABLE
             else:
                 color = self.COLOR_UNPLAYABLE
 
@@ -763,7 +780,7 @@ class PianoRollWidget(QWidget):
                            int(y_bottom - y_top), self.COLOR_UNPLAYABLE_SECTION)
 
             # Draw red outline
-            painter.setPen(QPen(QColor(255, 0, 0), 2))
+            painter.setPen(QPen(self.COLOR_UNPLAYABLE, 2))
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(int(x_start), int(y_top), int(x_end - x_start),
                            int(y_bottom - y_top))
@@ -799,20 +816,23 @@ class PianoRollWidget(QWidget):
         y_max = self._pitch_to_y(playable_min) + self.v_zoom  # Bottom (lower pitch)
 
         # Draw semi-transparent background for playable area
-        playable_color = QColor(74, 144, 217, 30)  # Light blue, transparent
+        playable_color = QColor(theme.accent())
+        playable_color.setAlpha(30)
         painter.fillRect(self.KEYBOARD_WIDTH, int(y_min),
                         self.width() - self.KEYBOARD_WIDTH, int(y_max - y_min),
                         playable_color)
 
         # Draw border lines for playable range
-        painter.setPen(QPen(QColor(74, 144, 217, 100), 2, Qt.DashLine))
+        playable_border = QColor(theme.accent())
+        playable_border.setAlpha(100)
+        painter.setPen(QPen(playable_border, 2, Qt.DashLine))
         painter.drawLine(self.KEYBOARD_WIDTH, int(y_min),
                         self.width(), int(y_min))
         painter.drawLine(self.KEYBOARD_WIDTH, int(y_max),
                         self.width(), int(y_max))
 
         # Draw labels
-        painter.setPen(QPen(QColor(100, 100, 100)))
+        painter.setPen(QPen(theme.color("text_secondary")))
         font = QFont()
         font.setPointSize(7)
         painter.setFont(font)
@@ -827,34 +847,68 @@ class PianoRollWidget(QWidget):
             painter.drawLine(int(x), self.TIME_RULER_HEIGHT, int(x), self.height())
 
 
-class MidiVisualizerDialog(MessageBoxBase):
+class MidiVisualizerDialog(Dialog):
     """Main dialog for MIDI visualization."""
 
     def __init__(self, midi_path: str, playable_range: tuple = None,
                  selected_tracks: set = None, parent=None):
-        super().__init__(parent)
+        super().__init__(
+            parent,
+            og.app.tr("MIDI Visualizer"),
+            ok_text=og.app.tr("Close"),
+            width=900,
+        )
         self.midi_path = midi_path
         self.playable_range = playable_range
         self.selected_tracks = selected_tracks or set()
 
         self._setup_ui()
+        theme.changed.connect(self._refresh_controls_theme)
+        self._refresh_controls_theme()
+        self.accepted.connect(self._on_close)
         self._load_midi()
+
+    def _refresh_controls_theme(self):
+        accent = theme.accent().name()
+        border = theme.color("border_strong").name()
+        surface = theme.color("surface").name()
+        hover = theme.color("text_tertiary").name()
+        slider_style = f"""
+            QSlider::groove:horizontal {{ height: 6px; border-radius: 3px; background: {border}; }}
+            QSlider::sub-page:horizontal {{ border-radius: 3px; background: {accent}; }}
+            QSlider::handle:horizontal {{
+                width: 16px; height: 16px; margin: -5px 0;
+                border: 2px solid {accent}; border-radius: 8px; background: {surface};
+            }}
+            QSlider::handle:horizontal:hover {{ background: {accent}; }}
+        """
+        for slider in (self.h_zoom_slider, self.v_zoom_slider, self.timeline_slider):
+            slider.setStyleSheet(slider_style)
+
+        scrollbar_style = f"""
+            QScrollBar:vertical {{ background: transparent; width: 10px; margin: 2px 0; }}
+            QScrollBar:horizontal {{ background: transparent; height: 10px; margin: 0 2px; }}
+            QScrollBar::handle:vertical {{ background: {border}; border-radius: 3px; min-height: 32px; margin: 0 2px; }}
+            QScrollBar::handle:horizontal {{ background: {border}; border-radius: 3px; min-width: 32px; margin: 2px 0; }}
+            QScrollBar::handle:hover {{ background: {hover}; }}
+            QScrollBar::add-line, QScrollBar::sub-line {{ width: 0; height: 0; border: 0; }}
+            QScrollBar::add-page, QScrollBar::sub-page {{ background: none; }}
+        """
+        for scrollbar in (self.piano_scroll_area.verticalScrollBar(),
+                          self.piano_scroll_area.horizontalScrollBar()):
+            scrollbar.setStyleSheet(scrollbar_style)
 
     def _setup_ui(self):
         """Set up the dialog UI."""
-        # Title
-        self.titleLabel = SubtitleLabel(og.app.tr("MIDI Visualizer"), self)
-        self.viewLayout.addWidget(self.titleLabel)
-
         # Piano roll widget
         self.piano_roll = PianoRollWidget(self)
         self.piano_roll.setMinimumHeight(400)
 
         # Scroll area for piano roll
-        scroll = SmoothScrollArea(self)
-        scroll.setWidget(self.piano_roll)
-        scroll.setWidgetResizable(True)
-        self.viewLayout.addWidget(scroll)
+        self.piano_scroll_area = QScrollArea(self.panel)
+        self.piano_scroll_area.setWidget(self.piano_roll)
+        self.piano_scroll_area.setWidgetResizable(True)
+        self.body.addWidget(self.piano_scroll_area)
 
         # Toolbar
         self._setup_toolbar()
@@ -862,13 +916,8 @@ class MidiVisualizerDialog(MessageBoxBase):
         # Info panel
         self._setup_info_panel()
 
-        # Dialog buttons
-        self.yesButton.setText(og.app.tr("Close"))
-        self.yesButton.clicked.connect(self._on_close)
-        self.cancelButton.hide()
-
-        # Set dialog size
-        self.widget.setMinimumSize(800, 600)
+        self.set_cancel_visible(False)
+        self.panel.setMinimumHeight(600)
 
     def _setup_toolbar(self):
         """Set up the playback toolbar."""
@@ -877,20 +926,20 @@ class MidiVisualizerDialog(MessageBoxBase):
         toolbar_layout.setContentsMargins(0, 8, 0, 8)
 
         # Play/Pause button
-        self.play_btn = ToolButton(FluentIcon.PLAY, self)
+        self.play_btn = Button(icon="play", parent=self.panel)
         self.play_btn.setCheckable(True)
         self.play_btn.clicked.connect(self._toggle_playback)
         toolbar_layout.addWidget(self.play_btn)
 
         # Stop button
-        self.stop_btn = ToolButton(FluentIcon.POWER_BUTTON, self)
+        self.stop_btn = Button(icon="stop", parent=self.panel)
         self.stop_btn.clicked.connect(self._stop_playback)
         toolbar_layout.addWidget(self.stop_btn)
 
         toolbar_layout.addSpacing(20)
 
         # Horizontal zoom label
-        toolbar_layout.addWidget(BodyLabel(og.app.tr("Zoom H:")))
+        toolbar_layout.addWidget(Label(og.app.tr("Zoom H:")))
 
         # Horizontal zoom slider
         self.h_zoom_slider = QSlider(Qt.Horizontal, self)
@@ -903,7 +952,7 @@ class MidiVisualizerDialog(MessageBoxBase):
         toolbar_layout.addSpacing(10)
 
         # Vertical zoom label
-        toolbar_layout.addWidget(BodyLabel(og.app.tr("Zoom V:")))
+        toolbar_layout.addWidget(Label(og.app.tr("Zoom V:")))
 
         # Vertical zoom slider
         self.v_zoom_slider = QSlider(Qt.Horizontal, self)
@@ -928,10 +977,10 @@ class MidiVisualizerDialog(MessageBoxBase):
         toolbar_layout.addWidget(self.timeline_slider)
 
         # Time display
-        self.time_label = BodyLabel("0:00 / 0:00")
+        self.time_label = Label("0:00 / 0:00")
         toolbar_layout.addWidget(self.time_label)
 
-        self.viewLayout.addWidget(toolbar)
+        self.body.addWidget(toolbar)
 
     def _setup_info_panel(self):
         """Set up the note info panel."""
@@ -939,13 +988,13 @@ class MidiVisualizerDialog(MessageBoxBase):
         info_layout = QHBoxLayout(self.info_panel)
         info_layout.setContentsMargins(0, 4, 0, 4)
 
-        self.info_label = StrongBodyLabel(og.app.tr("Note: "))
-        self.info_value = BodyLabel(og.app.tr("Click a note to see details"))
+        self.info_label = Label(og.app.tr("Note: "), "strong")
+        self.info_value = Label(og.app.tr("Click a note to see details"))
         info_layout.addWidget(self.info_label)
         info_layout.addWidget(self.info_value)
         info_layout.addStretch()
 
-        self.viewLayout.addWidget(self.info_panel)
+        self.body.addWidget(self.info_panel)
 
         # Connect note click signal
         self.piano_roll.note_clicked.connect(self._on_note_clicked)
@@ -958,9 +1007,6 @@ class MidiVisualizerDialog(MessageBoxBase):
             parser = MidiParser(self.playable_range)
             notes, tempo_events, duration, unplayable_sections = parser.parse(midi_file, self.selected_tracks)
 
-            # Set playable color from theme
-            color = themeColor()
-            self.piano_roll.COLOR_PLAYABLE = color
             self.piano_roll.set_notes(notes, tempo_events, duration, self.selected_tracks, unplayable_sections)
 
             # Update time display
@@ -977,15 +1023,15 @@ class MidiVisualizerDialog(MessageBoxBase):
         """Toggle playback."""
         self.piano_roll.toggle_playback()
         if self.piano_roll.is_playing:
-            self.play_btn.setIcon(FluentIcon.PAUSE)
+            self.play_btn.set_icon("pause")
         else:
-            self.play_btn.setIcon(FluentIcon.PLAY)
+            self.play_btn.set_icon("play")
 
     def _stop_playback(self):
         """Stop playback and reset."""
         self.piano_roll.stop_playback()
         self.piano_roll.reset_playhead()
-        self.play_btn.setIcon(FluentIcon.PLAY)
+        self.play_btn.set_icon("play")
         self.play_btn.setChecked(False)
         # Explicitly reset slider and time display
         self._timeline_updating = True

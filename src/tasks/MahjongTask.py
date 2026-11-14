@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from mahjong_utils.models.tile import parse_tiles, Tile
 from mahjong_utils.shanten import shanten, regular_shanten
 from ok import og
-from qfluentwidgets import FluentIcon
 
 from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
 from src.tasks.SRTask import SRTask
@@ -19,7 +18,7 @@ class MahjongTask(SRTask):
         self.default_config.update({'Anti-Renchan': False})
         self.default_config.update({'Only Tanyao': False})
         self.config_type['Interruption'] = {'type': "button", 'buttons': [
-            {'icon': FluentIcon.PAUSE, 'text': 'Stop After Current Round', 'callback': self.stop_after_current_round},
+            {'icon': 'pause', 'text': 'Stop After Current Round', 'callback': self.stop_after_current_round},
         ]}
 
         # 记录已打出的牌

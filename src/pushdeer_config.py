@@ -1,5 +1,4 @@
 from ok import ConfigOption
-from qfluentwidgets import FluentIcon
 
 
 PUSHDEER_SETTINGS = ConfigOption(
@@ -14,5 +13,5 @@ PUSHDEER_SETTINGS = ConfigOption(
         "PushDeer Server": "Put your server url here if not using official server",
         "PushDeer ApiKey": "Get from your PushDeer app",
     },
-    icon=FluentIcon.SEND,
+    icon="bell",
 )

@@ -2,7 +2,7 @@ from typing import override
 
 import onnxruntime as ort
 
-from ok import Logger, sort_boxes, og
+from ok import Logger, sort_boxes
 from src.Yolo8Detect import Yolo8Detect
 
 logger = Logger.get_logger(__name__)
@@ -30,7 +30,7 @@ class OnnxYolo8Detect(Yolo8Detect):
 
         # Prioritize DirectML, then CUDA, then CPU
         providers = []
-        if og.use_dml and 'DmlExecutionProvider' in available_providers:
+        if 'DmlExecutionProvider' in available_providers:
             logger.info("Attempting to use DirectML Execution Provider.")
             providers.append(('DmlExecutionProvider', {'device_id': 0}))
         elif 'CUDAExecutionProvider' in available_providers:

@@ -9,15 +9,17 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QListWidget,
     QListWidgetItem,
-    QMessageBox,
     QVBoxLayout,
     QWidget,
 )
-from qfluentwidgets import BodyLabel, ComboBox, FluentIcon, PrimaryPushButton, PushButton
 
 from ok import Config, og
-from ok.gui.Communicate import communicate
-from ok.gui.widget.CustomTab import CustomTab
+from ok.ui.qt.Communicate import communicate
+from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.dialogs import Dialog
+from ok.ui.qt.kit.inputs import ComboBox
+from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.widget.CustomTab import CustomTab
 from src.packet_capture import NpcapCapture, WinDivertCapture, list_devices
 from src.packet_capture.adapter_detection import detect_process_device, game_window_pid
 from src.packet_capture.parser import ActorState, GamePacketParser
@@ -130,17 +132,21 @@ class PacketCaptureTab(CustomTab):
         controls = QWidget(self.view)
         controls_layout = QHBoxLayout(controls)
         controls_layout.setContentsMargins(0, 0, 0, 0)
-        self.capture_method_combo = ComboBox(controls)
+        self.capture_method_combo = ComboBox(parent=controls)
         self.capture_method_combo.addItems(
             [CAPTURE_METHOD_NPCAP, CAPTURE_METHOD_WINDIVERT]
         )
-        self.device_combo = ComboBox(controls)
-        self.refresh_button = PushButton(FluentIcon.SYNC, og.app.tr("Refresh adapters"), controls)
-        self.auto_select_button = PushButton(og.app.tr("Auto select"), controls)
-        self.capture_button = PrimaryPushButton(og.app.tr("Start capture"), controls)
-        controls_layout.addWidget(BodyLabel(og.app.tr("Capture method"), controls))
+        self.device_combo = ComboBox(parent=controls)
+        self.refresh_button = Button(
+            og.app.tr("Refresh adapters"), icon="refresh", parent=controls
+        )
+        self.auto_select_button = Button(og.app.tr("Auto select"), parent=controls)
+        self.capture_button = Button(
+            og.app.tr("Start capture"), variant="primary", parent=controls
+        )
+        controls_layout.addWidget(Label(og.app.tr("Capture method"), parent=controls))
         controls_layout.addWidget(self.capture_method_combo)
-        controls_layout.addWidget(BodyLabel(og.app.tr("Network adapter"), controls))
+        controls_layout.addWidget(Label(og.app.tr("Network adapter"), parent=controls))
         controls_layout.addWidget(self.device_combo, 1)
         controls_layout.addWidget(self.refresh_button)
         controls_layout.addWidget(self.auto_select_button)
@@ -150,35 +156,35 @@ class PacketCaptureTab(CustomTab):
         state = QWidget(self.view)
         state_layout = QVBoxLayout(state)
         state_layout.setContentsMargins(0, 12, 0, 0)
-        self.status_label = BodyLabel(og.app.tr("Capture has not started"), state)
+        self.status_label = Label(og.app.tr("Capture has not started"), parent=state)
         unknown = og.app.tr("Unknown")
-        self.server_position_label = BodyLabel(
-            og.app.tr("Server position: {position}").format(position=unknown), state
+        self.server_position_label = Label(
+            og.app.tr("Server position: {position}").format(position=unknown), parent=state
         )
-        self.local_position_label = BodyLabel(
-            og.app.tr("Local position: {position}").format(position=unknown), state
+        self.local_position_label = Label(
+            og.app.tr("Local position: {position}").format(position=unknown), parent=state
         )
-        self.facing_label = BodyLabel(
-            og.app.tr("Character facing: {facing}").format(facing=unknown), state
+        self.facing_label = Label(
+            og.app.tr("Character facing: {facing}").format(facing=unknown), parent=state
         )
-        self.player_id_label = BodyLabel(
-            og.app.tr("Character ID: {id}").format(id=unknown), state
+        self.player_id_label = Label(
+            og.app.tr("Character ID: {id}").format(id=unknown), parent=state
         )
-        self.scene_id_label = BodyLabel(
-            og.app.tr("Scene ID: {id}").format(id=unknown), state
+        self.scene_id_label = Label(
+            og.app.tr("Scene ID: {id}").format(id=unknown), parent=state
         )
-        self.combat_state_label = BodyLabel(
-            og.app.tr("Combat status: {status}").format(status=unknown), state
+        self.combat_state_label = Label(
+            og.app.tr("Combat status: {status}").format(status=unknown), parent=state
         )
-        self.actor_state_label = BodyLabel(
-            og.app.tr("Actor state: {state}").format(state=unknown), state
+        self.actor_state_label = Label(
+            og.app.tr("Actor state: {state}").format(state=unknown), parent=state
         )
-        self.nearby_title = BodyLabel(og.app.tr("Nearby entities"), state)
+        self.nearby_title = Label(og.app.tr("Nearby entities"), parent=state)
         self.nearby_entities = QListWidget(state)
         self.nearby_entities.setMinimumHeight(180)
         self._set_entity_list([])
-        self.copy_button = PushButton(
-            FluentIcon.COPY, og.app.tr("Copy local position XZ"), state
+        self.copy_button = Button(
+            og.app.tr("Copy local position XZ"), parent=state
         )
         self.copy_button.setEnabled(False)
         state_layout.addWidget(self.status_label)
@@ -218,7 +224,7 @@ class PacketCaptureTab(CustomTab):
 
     @property
     def icon(self):
-        return FluentIcon.DEVELOPER_TOOLS
+        return "terminal"
 
     @property
     def is_capturing(self):
@@ -656,18 +662,19 @@ class PacketCaptureTab(CustomTab):
             flags=flag_text,
             updated_at=updated_at_text,
         )
-        dialog = QMessageBox(self)
-        dialog.setWindowTitle(og.app.tr("Entity details"))
-        dialog.setText(details)
-        copy_button = dialog.addButton(
-            og.app.tr("Copy XZ"), QMessageBox.ButtonRole.ActionRole
+        dialog = Dialog(
+            self,
+            og.app.tr("Entity details"),
+            details,
+            ok_text=og.app.tr("Copy XZ"),
+            cancel_text=og.app.tr("Close"),
+            width=620,
         )
-        dialog.addButton(QMessageBox.StandardButton.Close)
-        dialog.exec()
-        if dialog.clickedButton() is copy_button:
+        if dialog.exec():
             QApplication.clipboard().setText(
                 f"{position[0]:.3f}, {position[2]:.3f}"
             )
+        dialog.deleteLater()
 
     def _copy_position(self):
         position = og.packet_capture_data.get_local_position()

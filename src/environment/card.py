@@ -2,16 +2,13 @@ from pathlib import Path
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import (
-    BodyLabel,
-    ComboBox,
-    FluentIcon,
-    MessageBox,
-    PrimaryPushButton,
-)
 
 from ok import Config, Logger, og
-from ok.gui.widget.Card import Card
+from ok.ui.qt.kit.buttons import Button
+from ok.ui.qt.kit.dialogs import Dialog
+from ok.ui.qt.kit.inputs import ComboBox
+from ok.ui.qt.kit.labels import Label
+from ok.ui.qt.widget.Card import Card
 from src.environment.checker import (
     PACKAGE_INDEXES,
     EnvironmentReport,
@@ -36,20 +33,20 @@ class PythonEnvironmentCard(Card):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
 
-        self.status_label = BodyLabel(
-            og.app.tr("Checking the runtime environment..."), content
+        self.status_label = Label(
+            og.app.tr("Checking the runtime environment..."), parent=content,
+            word_wrap=True,
         )
-        self.status_label.setWordWrap(True)
         layout.addWidget(self.status_label)
 
         self.controls_widget = QWidget(content)
         controls = QHBoxLayout(self.controls_widget)
         controls.setContentsMargins(0, 0, 0, 0)
         controls.addWidget(
-            BodyLabel(og.app.tr("Download source"), self.controls_widget)
+            Label(og.app.tr("Download source"), parent=self.controls_widget)
         )
 
-        self.index_combo = ComboBox(self.controls_widget)
+        self.index_combo = ComboBox(parent=self.controls_widget)
         self._index_by_label = {}
         for name in PACKAGE_INDEXES:
             label = og.app.tr(name)
@@ -68,10 +65,11 @@ class PythonEnvironmentCard(Card):
         controls.addWidget(self.index_combo)
         controls.addStretch(1)
 
-        self.install_button = PrimaryPushButton(
-            FluentIcon.DOWNLOAD,
+        self.install_button = Button(
             og.app.tr("Repair and restart"),
-            self.controls_widget,
+            icon="download",
+            variant="primary",
+            parent=self.controls_widget,
         )
         self.install_button.clicked.connect(self._confirm_update)
         controls.addWidget(self.install_button, 0, Qt.AlignRight)
@@ -152,17 +150,19 @@ class PythonEnvironmentCard(Card):
             self.check_environment()
             return
 
-        confirm = MessageBox(
+        confirm = Dialog(
+            self,
             og.app.tr("Repair runtime environment"),
             og.app.tr(
                 "The app will close before repairing the environment and restart "
                 "automatically when the repair succeeds."
             ),
-            self.window(),
+            ok_text=og.app.tr("Repair and restart"),
+            cancel_text=og.app.tr("Cancel"),
         )
-        confirm.yesButton.setText(og.app.tr("Repair and restart"))
-        confirm.cancelButton.setText(og.app.tr("Cancel"))
-        if not confirm.exec():
+        confirmed = confirm.exec()
+        confirm.deleteLater()
+        if not confirmed:
             return
 
         source_name = self._index_by_label.get(

@@ -1,12 +1,11 @@
 import time
 import heapq
 import numpy as np
-from PySide6.QtCore import QRectF, QTimer
+from PySide6.QtCore import QRectF
 from PySide6.QtGui import QColor, QPen
 from numpy._typing import NDArray
 from itertools import groupby
 from ok import BaseTask, og
-from ok.gui.tasks.LabelAndSpinBox import LabelAndSpinBox
 
 
 class TutorialTask(BaseTask):
@@ -16,6 +15,7 @@ class TutorialTask(BaseTask):
         self.name = "Tutorial Chart Performance"
         self.description = "Use in stable light; avoid moving objects/VFX at at the top."
         self.default_config.update({'Offset (ms)': -1})
+        self.config_type['Offset (ms)'] = {'min': -300, 'max': 1000}
         self.group_name = 'Band'
         self.default_config.update({})
         self.executed = False
@@ -38,22 +38,6 @@ class TutorialTask(BaseTask):
         }
         self.height_threshold = 0.15
         self.diff_threshold = 3
-
-    def on_create(self):
-        super().on_create()
-        QTimer.singleShot(1000, self.fix_offset_range)
-
-    def fix_offset_range(self):
-        for tab in og.app.main_window.grouped_task_tabs:
-            if tab.group_name == self.group_name:
-                v_box_layout = tab.vBoxLayout
-                for i in range(v_box_layout.count()):
-                    widget = v_box_layout.itemAt(i).widget()
-                    if widget and hasattr(widget, 'task') and widget.task is self:
-                        for config_widget in widget.config_widgets:
-                            if isinstance(config_widget, LabelAndSpinBox) and config_widget.key == 'Offset (ms)':
-                                config_widget.spin_box.setRange(-300, 1000)
-                        break
 
     def run(self):
         self._pressed_keys.clear()

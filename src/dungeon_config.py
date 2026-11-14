@@ -1,5 +1,4 @@
 from ok import ConfigOption
-from qfluentwidgets import FluentIcon
 
 
 DUNGEON_SETTINGS = ConfigOption(
@@ -14,5 +13,5 @@ DUNGEON_SETTINGS = ConfigOption(
         "Consumable Use Quantity": 0,
         "Target Clear Count (0 for unlimited)": 0,
     },
-    icon=FluentIcon.FLAG,
+    icon="tasks",
 )

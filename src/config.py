@@ -28,7 +28,7 @@ key_config_option = ConfigOption(
 config = {
     'custom_tasks':True, # enable creating and editing custom tasks
     'debug': False,  # Optional, default: False
-    'use_gui': True,
+    'gui': {'type': 'qt'},
     'config_folder': 'configs',
     'global_configs': [
         key_config_option,
@@ -90,7 +90,10 @@ config = {
         'sha256': '7e6239c6807db11d705ee154ff96e0541d4a3681f26f1a14fe9d909071713ed6',
     },
     'my_app': ['src.globals', 'Globals'], # 全局单例对象, 可以存放加载的模型, 使用og.my_app调用
-    'custom_tabs': [["src.gui.PacketCaptureTab", "PacketCaptureTab"]],
+    'custom_tabs': [
+        ["src.gui.PacketCaptureTab", "PacketCaptureTab"],
+        ["src.gui.EnvironmentTab", "EnvironmentTab"],
+    ],
     'onetime_tasks': [  # tasks to execute
         ["ok", "DiagnosisTask"],
         ["src.tasks.GuildHuntAssistTask", "GuildHuntAssistTask"],

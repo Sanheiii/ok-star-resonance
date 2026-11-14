@@ -1,5 +1,4 @@
 from ok import ConfigOption
-from qfluentwidgets import FluentIcon
 
 
 KEY_SETTINGS = ConfigOption(
@@ -16,5 +15,5 @@ KEY_SETTINGS = ConfigOption(
         "Toggle Walk/Run": "rctrl",
         "Switch Pole": "m",
     },
-    icon=FluentIcon.COMMAND_PROMPT,
+    icon="terminal",
 )
