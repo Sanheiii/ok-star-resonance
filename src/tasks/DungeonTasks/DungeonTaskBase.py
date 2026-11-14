@@ -379,10 +379,10 @@ class DungeonTaskBase(SRTask):
         self.info['Consumable Use Count'] += 1
         return True
 
-    def return_to_initial_state(self):
+    def return_to_initial_state(self, initial_scene_ids=(8, None)):
         self.info_set('State', '副本流程出现错误，尝试退回状态')
         # 在主城不截图
-        if self.scene_id != 8:
+        if self.scene_id != initial_scene_ids[0]:
             self.screenshot('dungeon/recovery_error')
         confirm = {
             'en': 'confirm_en',
@@ -402,7 +402,7 @@ class DungeonTaskBase(SRTask):
                 {'r': (255, 255), 'g': (255, 255), 'b': (255, 255)},
                 self.get_box_by_name('menu_icon'),
             )
-            if 0.5 < menu_icon_white_percentage < 1.0 and self.scene_id in [8, None]:
+            if 0.5 < menu_icon_white_percentage < 1.0 and self.scene_id in initial_scene_ids:
                 break
 
             if self.find_one('loading'):

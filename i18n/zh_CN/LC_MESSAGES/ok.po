@@ -261,6 +261,12 @@ msgstr "我是T"
 msgid "Combat Wait Time"
 msgstr "开战延时"
 
+msgid "Use Packet Capture"
+msgstr "使用抓包工具"
+
+msgid "Teammate Count"
+msgstr "队友人数"
+
 msgid "MIDI Player"
 msgstr "MIDI 播放器"
 
@@ -649,7 +655,7 @@ msgid "Teammate"
 msgstr "队友"
 
 msgid "Dummy"
-msgstr "假人"
+msgstr "虚拟实体"
 
 msgid "Drop"
 msgstr "掉落物"

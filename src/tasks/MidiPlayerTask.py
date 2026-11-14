@@ -102,6 +102,7 @@ class MidiPlayerTask(BaseTask):
         self.default_config.update({'Mute Pedal': False})
         self.default_config.update({'Ensemble Mode': False})
         self.default_config.update({'Delay (ms)': 0})
+        self.config_type['Delay (ms)'] = {'min': -10000, 'max': 10000}
         self.default_config.update({'_track_selections': {}})
         self.config_description['Ensemble Mode'] = 'Start this task before clicking the in-game Ensemble Start'
         self.load_config()
@@ -453,12 +454,12 @@ class MidiPlayerTask(BaseTask):
                     if np.any(np.all(np.abs(roi - target_color) < 2, axis=-1)):
                         break
 
-            # 如果设定了延迟先等一下
+            # 正延迟等待后开始，负延迟将 MIDI 时间轴提前。
             delay = self.config['Delay (ms)']
             if delay > 0:
                 self.sleep(delay/1000)
 
-            start_time = time.time()
+            start_time = time.time() + min(delay, 0) / 1000
 
             for msg_time, msg, target_state in planned_events:
                 if not self.running:

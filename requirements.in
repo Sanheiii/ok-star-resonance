@@ -9,6 +9,7 @@ pynput
 psutil
 pypushdeer
 mido
+polib
 mahjong-utils
 zstandard
 pydivert
