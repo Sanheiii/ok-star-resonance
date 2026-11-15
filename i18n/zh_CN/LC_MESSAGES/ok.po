@@ -267,6 +267,12 @@ msgstr "使用抓包工具"
 msgid "Boss Approach Distance (m)"
 msgstr "接近首领距离（米）"
 
+msgid "Approach Boss"
+msgstr "自动接近首领"
+
+msgid "Move Behind Boss"
+msgstr "自动绕到首领背后"
+
 msgid "Teammate Count"
 msgstr "队友人数"
 

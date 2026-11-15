@@ -18,7 +18,9 @@ class GuildHuntAssistTask(SRTask):
             'Opening Skill': 'Z',
             "Combat Wait Time": 5,
             'Use Packet Capture': False,
+            'Approach Boss': True,
             'Boss Approach Distance (m)': 9,
+            'Move Behind Boss': False,
         })
         self.config_type['Combat Wait Time'] = {'min': 0}
         self.config_type['Boss Approach Distance (m)'] = {'min': 0}
@@ -28,15 +30,19 @@ class GuildHuntAssistTask(SRTask):
         self.executed = False
         self._combat_teammates = set()
         self._combat_scene_id = None
+        self._boss_rear_target = None
         self.info['Teammate Count'] = 0
 
     def run(self):
-        if self.config.get('Use Packet Capture', False):
+        if self.config.get('Use Packet Capture', False) or self.config.get('Move Behind Boss', False):
             self._require_packet_capture()
         self._reset_hunt_state()
         self.info['Entry Count'] = 0
         while True:
-            use_packet_capture = self.config.get('Use Packet Capture', False)
+            use_packet_capture = (
+                self.config.get('Use Packet Capture', False)
+                or self.config.get('Move Behind Boss', False)
+            )
             if use_packet_capture:
                 self._require_packet_capture()
                 if self._combat_scene_id != self.scene_id:
@@ -215,6 +221,7 @@ class GuildHuntAssistTask(SRTask):
     def _handle_packet_combat(self):
         self._require_packet_capture()
         if self.scene_id in (None, 12000):
+            self._boss_rear_target = None
             return
         entities = self.nearby_entities
         teammates = {
@@ -228,6 +235,7 @@ class GuildHuntAssistTask(SRTask):
             for entity_uuid in teammates
         )
         if not in_combat:
+            self._boss_rear_target = None
             return
         self.info['Teammate Count'] = len(teammates)
         if self._combat_teammates - entities.keys():
@@ -236,27 +244,32 @@ class GuildHuntAssistTask(SRTask):
             return
         self._combat_teammates.update(teammates)
         if self.is_dead or self.actor_state in self._MOVE_BLOCKED_ACTOR_STATES:
+            self._boss_rear_target = None
             return
         current = self.position
         if current is None:
+            self._boss_rear_target = None
             return
         current_x, current_z = self._xz(current)
-        monsters = [
-            entity for entity in entities.values()
+        monsters = {
+            entity_uuid: entity for entity_uuid, entity in entities.items()
             if entity.get('entity_type') == 1
             and not entity.get('is_dead', False)
             and entity.get('current_hp') != 0
             and entity.get('position') is not None
-        ]
+        }
         if not monsters:
+            self._boss_rear_target = None
             return
-        target = min(monsters, key=lambda entity: math.dist(
-            (current_x, current_z), self._xz(entity['position']),
+        target_uuid = min(monsters, key=lambda entity_uuid: math.dist(
+            (current_x, current_z), self._xz(monsters[entity_uuid]['position']),
         ))
+        target = monsters[target_uuid]
         target_x, target_z = self._xz(target['position'])
         delta = target_x - current_x, target_z - current_z
         distance = math.hypot(*delta)
         if distance == 0:
+            self._boss_rear_target = None
             return
         self.detect_camera_direction()
         if not self._camera_direction_detected:
@@ -266,9 +279,51 @@ class GuildHuntAssistTask(SRTask):
             if not self.look_at(target['position']):
                 return
             relative = self._relative_target_angle(delta)
-        if distance > self.config.get('Boss Approach Distance (m)', 9):
+        rear_waypoint = self._boss_rear_waypoint(target_uuid, target, current, distance)
+        if rear_waypoint is not None:
+            relative = self._relative_target_angle((
+                rear_waypoint[0] - current_x, rear_waypoint[1] - current_z,
+            ))
             keys = self._MOVE_KEYS[round(relative / 45.0) % len(self._MOVE_KEYS)]
             self._move_briefly(keys, 0.2)
+        elif self.config.get('Approach Boss', True) and distance > self.config.get('Boss Approach Distance (m)', 9):
+            keys = self._MOVE_KEYS[round(relative / 45.0) % len(self._MOVE_KEYS)]
+            self._move_briefly(keys, 0.2)
+
+    def _boss_rear_waypoint(self, target_uuid, target, current, distance):
+        facing = target.get('facing')
+        if not self.config.get('Move Behind Boss', False) or facing is None:
+            self._boss_rear_target = None
+            return None
+        current_x, current_z = self._xz(current)
+        target_x, target_z = self._xz(target['position'])
+        bearing = math.degrees(math.atan2(current_x - target_x, current_z - target_z))
+        if self._boss_rear_target is None or self._boss_rear_target[0] != target_uuid:
+            self._boss_rear_target = None
+            if abs(self._angle_delta(bearing, facing)) > 60:
+                return None
+            self._boss_rear_target = target_uuid, distance
+
+        radius = self._boss_rear_target[1]
+        if self.config.get('Approach Boss', True):
+            radius = min(radius, self.config.get('Boss Approach Distance (m)', 9))
+        rear_heading = facing + 180
+        rear_radians = math.radians(rear_heading)
+        rear_point = (
+            target_x + radius * math.sin(rear_radians),
+            target_z + radius * math.cos(rear_radians),
+        )
+        if math.dist((current_x, current_z), rear_point) <= 1:
+            self._boss_rear_target = None
+            return None
+
+        # 每次最多沿圆周绕行 45 度，避免直接穿过首领中心。
+        turn = self._angle_delta(rear_heading, bearing)
+        waypoint_heading = math.radians(bearing + max(-45, min(45, turn)))
+        return (
+            target_x + radius * math.sin(waypoint_heading),
+            target_z + radius * math.cos(waypoint_heading),
+        )
 
     def _move_briefly(self, keys, duration):
         try:
