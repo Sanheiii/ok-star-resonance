@@ -3,7 +3,6 @@ import math
 from src.tasks.AutoPartyTask import AutoPartyTask
 from src.tasks.AutoReviveTask import AutoReviveTask
 from src.tasks.ClaimMonthlyPassTask import ClaimMonthlyPassTask
-from src.tasks.DungeonTasks.DungeonTaskBase import DungeonTaskBase
 from src.tasks.MissionEntryTask import MissionEntryTask
 from src.tasks.SRTask import SRTask
 
@@ -19,8 +18,10 @@ class GuildHuntAssistTask(SRTask):
             'Opening Skill': 'Z',
             "Combat Wait Time": 5,
             'Use Packet Capture': False,
+            'Boss Approach Distance (m)': 9,
         })
         self.config_type['Combat Wait Time'] = {'min': 0}
+        self.config_type['Boss Approach Distance (m)'] = {'min': 0}
         self._reset_hunt_state()
 
     def _reset_hunt_state(self):
@@ -67,7 +68,7 @@ class GuildHuntAssistTask(SRTask):
                 continue
 
             # 检测到在副本内
-            if not self.executed and self.find_one('guild_hunt_title',box=self.box_of_screen(0.02, 0.21, 0.06, 0.24), threshold=0.6):
+            if not self.executed and self._is_in_guild_hunt():
                 # Entry Count增加
                 self.info['Entry Count'] += 1
                 if self.config.get('I\'m Tank'):
@@ -75,7 +76,7 @@ class GuildHuntAssistTask(SRTask):
                     self.sleep(0.5)
                     self.send_key('e')
                     self.sleep(1)
-                    self._move_briefly(('a',), 0.5)
+                    self._move_briefly(('d',), 0.5)
                     self.sleep(0.5)
                     self.send_key(self.config.get('Opening Skill'))
                     self.sleep(0.5)
@@ -84,7 +85,7 @@ class GuildHuntAssistTask(SRTask):
                     # 不是T
                     wait_time = self.config.get("Combat Wait Time", 5)
                     self.sleep(wait_time)
-                    self._move_briefly(('w',), 2)
+                    self._move_briefly(('w', 'd'), 2)
                     self.sleep(0.5)
                     self.send_key(self.config.get('Opening Skill'))
                     self.sleep(0.5)
@@ -127,8 +128,88 @@ class GuildHuntAssistTask(SRTask):
         self.sleep(1)
         return True
 
+    def _is_in_guild_hunt(self):
+        return self.find_one(
+            'guild_hunt_title',
+            box=self.box_of_screen(0.02, 0.21, 0.06, 0.24),
+            threshold=0.6,
+        )
+
     def _return_to_guild_scene(self):
-        DungeonTaskBase.return_to_initial_state(self, initial_scene_ids=(12000,))
+        self.info_set('State', '协会狩猎回退，尝试退出副本')
+        if self.scene_id != 12000:
+            self.screenshot('guild_hunt/recovery_error')
+        confirm = {
+            'en': 'confirm_en',
+            'jp': 'confirm_jp',
+            'zht': 'confirm_zht',
+        }.get(self.get_game_language(), 'confirm')
+        claim_monthly_pass_task = self.get_task_by_class(ClaimMonthlyPassTask)
+
+        while True:
+            self._require_packet_capture()
+            if self.next_frame() is None:
+                self.log_warning('Unable to capture the game window while recovering; retrying')
+                self.sleep(1)
+                continue
+
+            menu_icon_white_percentage = self.calculate_color_percentage(
+                {'r': (255, 255), 'g': (255, 255), 'b': (255, 255)},
+                self.get_box_by_name('menu_icon'),
+            )
+            if 0.5 < menu_icon_white_percentage < 1.0 and self.scene_id == 12000:
+                break
+            if self.find_one('loading'):
+                self.sleep(1)
+                continue
+
+            handled = False
+            needs_confirmation = False
+
+            if claim_monthly_pass_task.handle_monthly_card():
+                handled = True
+
+            elif box := self.find_one(['escape', 'leave_dungeon', 'dungeon_timeout']):
+                self.click(box)
+                handled = True
+                needs_confirmation = True
+
+            elif self._is_in_guild_hunt():
+                self.send_key(self.get_custom_key('Exit Dungeon'))
+                handled = True
+                needs_confirmation = True
+
+            elif self.find_one('single_confirm'):
+                self.click(0.5, 0.74)
+                handled = True
+
+            elif self.find_one('anchor_login'):
+                self.click(0.5, 0.83)
+                handled = True
+
+            elif self.find_one('anchor_select_chara'):
+                self.click(0.86, 0.88)
+                handled = True
+
+            elif self.find_one(confirm):
+                self.click(0.37, 0.74)
+                handled = True
+
+            elif (self.calculate_color_percentage(
+                    {'r': (250, 255), 'g': (250, 255), 'b': (250, 255)},
+                    self.get_box_by_name('close')) > 0.15):
+                self.send_key('esc')
+                handled = True
+                needs_confirmation = True
+
+            if needs_confirmation and (box := self.wait_feature(confirm, time_out=1)):
+                self.click(box)
+
+            if not handled:
+                self.send_key('esc')
+
+            self.sleep(1)
+
         self._reset_hunt_state()
 
     def _handle_packet_combat(self):
@@ -185,7 +266,7 @@ class GuildHuntAssistTask(SRTask):
             if not self.look_at(target['position']):
                 return
             relative = self._relative_target_angle(delta)
-        if distance > 15:
+        if distance > self.config.get('Boss Approach Distance (m)', 9):
             keys = self._MOVE_KEYS[round(relative / 45.0) % len(self._MOVE_KEYS)]
             self._move_briefly(keys, 0.2)
 

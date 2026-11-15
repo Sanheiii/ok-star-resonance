@@ -264,6 +264,9 @@ msgstr "开战延时"
 msgid "Use Packet Capture"
 msgstr "使用抓包工具"
 
+msgid "Boss Approach Distance (m)"
+msgstr "接近首领距离（米）"
+
 msgid "Teammate Count"
 msgstr "队友人数"
 
